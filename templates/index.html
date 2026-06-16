@@ -14,31 +14,9 @@
 
 <div class="row g-3 mt-2">
     <div class="col-12">
-        <div class="p-4 rounded" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-            <h5 class="text-primary"><i class="bi bi-journals me-2"></i>Start Here</h5>
-            <p class="text-secondary mb-0">Click the <i class="bi bi-three-dots-vertical"></i> menu (top-left) to open the sidebar and begin with <strong>Step 1: Logs</strong>. Each section builds on the previous one — follow the SOC flow from logs through improvement.</p>
+        <div class="p-4 rounded text-center" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+            <p class="text-secondary mb-0">Click the <i class="bi bi-three-dots-vertical"></i> menu (top-left) to open the sidebar and begin learning.</p>
         </div>
     </div>
-    {% set flow = [
-        ("Logs", "bi-journal-text", "primary", "Where every investigation begins — raw event records from systems, networks, and applications."),
-        ("Alert", "bi-exclamation-triangle", "danger", "Suspicious events flagged by detection rules that need your attention."),
-        ("Triage", "bi-funnel", "warning", "Quickly classify alerts as real threats or false positives."),
-        ("Investigation", "bi-search-heart", "info", "Deep-dive analysis connecting evidence across multiple log sources."),
-        ("Response", "bi-shield-fill-check", "danger", "Contain, eradicate, and neutralize the threat."),
-        ("Recovery", "bi-arrow-clockwise", "info", "Safely restore systems and close vulnerabilities."),
-        ("Report", "bi-file-earmark-text", "success", "Document findings, actions, and recommendations."),
-        ("Improve", "bi-graph-up-arrow", "success", "Learn from incidents to prevent the next one.")
-    ] %}
-    {% for name, icon, color, desc in flow %}
-    <div class="col-md-6 col-lg-3">
-        <a href="{{ SOC_ROUTES[loop.index0] }}" class="text-decoration-none">
-            <div class="p-3 rounded h-100" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;transition:.2s;" onmouseover="this.style.borderColor='#0d6efd'" onmouseout="this.style.borderColor='#1f2937'">
-                <i class="bi {{ icon }} text-{{ color }} fs-4"></i>
-                <h6 class="mt-2 mb-1 text-light">{{ name }}</h6>
-                <small class="text-secondary">{{ desc[:80] }}...</small>
-            </div>
-        </a>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}

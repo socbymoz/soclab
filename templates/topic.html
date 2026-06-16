@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.title }}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4 mt-3">
+    <div class="bg-{{ topic.color }} bg-opacity-10 rounded-3 p-3"><i class="{{ topic.icon }} fs-3 text-{{ topic.color }}"></i></div>
+    <div>
+        <h4 class="mb-0">Step {{ topic.id }}: {{ topic.title }}</h4>
+        <small class="text-secondary">{{ topic.desc }}</small>
+    </div>
+</div>
+
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+    <h6 class="text-{{ topic.color }} mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes</h6>
+    <ol class="list-unstyled mb-0" style="line-height:2;">
+        {% for lesson in topic.lessons %}
+        <li><i class="bi bi-check-circle text-{{ topic.color }} me-2" style="font-size:0.8rem;"></i>{{ lesson }}</li>
+        {% endfor %}
+    </ol>
+</div>
+
+{% if topic.questions %}
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+    <h6 class="text-{{ topic.color }} mb-3"><i class="bi bi-question-circle me-2"></i>Quick Quiz</h6>
+    {% for q in topic.questions %}
+    <div class="mb-4 quiz-item" data-topic="{{ topic.id }}" data-q="{{ loop.index0 }}">
+        <p class="fw-bold mb-2">{{ loop.index }}. {{ q.q }}</p>
+        <div class="d-flex flex-column gap-2">
+            {% for opt in q.options %}
+            <button class="btn btn-sm text-start quiz-btn rounded" style="background:rgba(31,41,55,0.8);border:1px solid #374151;color:#e5e7eb;" data-answer="{{ loop.index0 }}">
+                <span class="badge bg-secondary me-2">{{ 'ABCDEFGHIJ'[loop.index0] }}</span>{{ opt }}
+            </button>
+            {% endfor %}
+        </div>
+        <div class="quiz-feedback mt-2 small" style="display:none;"></div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between">
+    {% if prev_topic %}
+    <a href="/topic/{{ prev_topic.id }}" class="btn btn-outline-secondary"><i class="bi bi-chevron-left me-1"></i>{{ prev_topic.title }}</a>
+    {% else %}<div></div>{% endif %}
+    {% if next_topic %}
+    <a href="/topic/{{ next_topic.id }}" class="btn btn-outline-primary">{{ next_topic.title }}<i class="bi bi-chevron-right ms-1"></i></a>
+    {% else %}<div></div>{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.quiz-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const item = this.closest('.quiz-item');
+        const buttons = item.querySelectorAll('.quiz-btn');
+        buttons.forEach(b => b.disabled = true);
+        const selected = parseInt(this.dataset.answer);
+        const topicId = parseInt(item.dataset.topic);
+        const questionIdx = parseInt(item.dataset.q);
+        fetch('/check-quiz', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({topic_id: topicId, question_idx: questionIdx, selected: selected})
+        }).then(r => r.json()).then(data => {
+            const fb = item.querySelector('.quiz-feedback');
+            fb.style.display = 'block';
+            if (data.correct) {
+                fb.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Correct!</span>';
+                this.style.borderColor = '#198754';
+                this.style.background = 'rgba(25,135,84,0.2)';
+            } else {
+                const correctLetter = 'ABCDEFGHIJ'[data.correct_option];
+                fb.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Incorrect. Answer was ${correctLetter}.</span>`;
+                this.style.borderColor = '#dc3545';
+                this.style.background = 'rgba(220,53,69,0.2)';
+                buttons[data.correct_option].style.borderColor = '#198754';
+                buttons[data.correct_option].style.background = 'rgba(25,135,84,0.2)';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
