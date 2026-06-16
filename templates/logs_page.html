@@ -7,10 +7,74 @@
             <div class="card-body d-flex align-items-center">
                 <i class="bi bi-journal-text fs-1 text-primary me-3"></i>
                 <div>
-                    <h3 class="mb-0">Log Collection</h3>
-                    <small class="text-muted">Unified view of all {{ events|length }} log events across all sources</small>
+                    <h3 class="mb-0">Step 1: Log Collection</h3>
+                    <small class="text-muted">Understanding log sources — the foundation of every SOC investigation</small>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-dark text-primary"><i class="bi bi-book"></i> What Are Logs and Why Do We Collect Them?</div>
+    <div class="card-body">
+        <p>A <strong>log</strong> is a record of an event that occurred on a system, application, or network device. Logs are the raw evidence in any security investigation — like a black box on an airplane. Without logs, you cannot know what happened, when, or how.</p>
+
+        <h6 class="text-primary mt-3">Types of Logs in This Lab</h6>
+        <div class="row">
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong><i class="bi bi-windows text-primary"></i> Windows Events</strong>
+                        <small class="d-block text-muted">Event IDs like <code>4624</code> (logon), <code>4625</code> (failed logon), <code>4720</code> (user created), <code>4688</code> (process start), <code>1102</code> (log cleared)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong><i class="bi bi-globe text-primary"></i> Web Server Logs</strong>
+                        <small class="d-block text-muted">HTTP requests: IP, method, URL, status code, user-agent. Look for <code>../</code> (path traversal), <code>1=1</code> (SQLi), unknown file uploads</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong><i class="bi bi-shield text-primary"></i> Firewall Logs</strong>
+                        <small class="d-block text-muted">Network connections allowed/blocked: source IP, destination IP, port, protocol, action. Unusual outbound connections are red flags</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong><i class="bi bi-terminal text-primary"></i> SSH Auth Logs</strong>
+                        <small class="d-block text-muted">Authentication attempts on Linux servers. Pattern: many "Failed password" from one IP followed by "Accepted" = successful brute force</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong><i class="bi bi-cpu text-primary"></i> Sysmon Logs</strong>
+                        <small class="d-block text-muted">Deep endpoint monitoring: process creation (<code>Event ID 1</code>), network connections (<code>3</code>), file creation (<code>11</code>), registry changes (<code>15</code>)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="text-primary mt-3">Key Log Analysis Questions</h6>
+        <ul>
+            <li><strong>WHO</strong> — What user, IP address, or system generated this event?</li>
+            <li><strong>WHAT</strong> — What action was taken? Login, file access, network connection, process start?</li>
+            <li><strong>WHEN</strong> — What is the timestamp? Is this happening outside normal hours?</li>
+            <li><strong>WHERE</strong> — Which system, application, or network device?</li>
+            <li><strong>WHY</strong> — Is this expected behavior? Does it match a known attack pattern?</li>
+        </ul>
+
+        <div class="alert alert-info mt-2">
+            <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> In a real SOC, you would use a SIEM (Security Information and Event Management) tool like Splunk, Elastic, or QRadar to aggregate logs from hundreds or thousands of sources. This lab simulates a small subset for learning.
         </div>
     </div>
 </div>
@@ -50,7 +114,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 65vh;">
+                <div class="table-responsive" style="max-height: 50vh;">
                     <table class="table table-dark table-hover mb-0">
                         <thead class="sticky-top">
                             <tr>
@@ -123,35 +187,20 @@ function filterLogs() {
         row.style.display = show ? '' : 'none';
     });
 }
-
 function submitQuiz(step) {
-    const answers = [];
-    const total = 2;
+    const answers = []; const total = 2;
     let allAnswered = true;
     for (let i = 0; i < total; i++) {
-        const selected = document.querySelector(`input[name="q${i}"]:checked`);
-        if (!selected) { allAnswered = false; break; }
-        answers.push(parseInt(selected.value));
+        const s = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!s) { allAnswered = false; break; }
+        answers.push(parseInt(s.value));
     }
-    if (!allAnswered) {
-        document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>';
-        return;
-    }
-    fetch('/quiz/' + step, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({answers: answers})
-    })
-    .then(r => r.json())
-    .then(data => {
+    if (!allAnswered) { document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>'; return; }
+    fetch('/quiz/' + step, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers: answers}) })
+    .then(r => r.json()).then(d => {
         const fb = document.getElementById('quizFeedback');
-        if (data.passed) {
-            fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>';
-            setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800);
-        } else {
-            let msg = '<div class="alert alert-danger">' + data.correct + '/' + data.total + ' correct. Try again.</div>';
-            fb.innerHTML = msg;
-        }
+        if (d.passed) { fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>'; setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800); }
+        else { fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>'; }
     });
 }
 </script>

@@ -7,10 +7,110 @@
             <div class="card-body d-flex align-items-center">
                 <i class="bi bi-search fs-1 text-info me-3"></i>
                 <div>
-                    <h3 class="mb-0">Incident Investigation</h3>
-                    <small class="text-muted">Correlated incident timeline combining all log sources</small>
+                    <h3 class="mb-0">Step 4: Incident Investigation</h3>
+                    <small class="text-muted">Deep dive — correlate evidence across log sources to understand the full attack chain</small>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4 border-info">
+    <div class="card-header bg-dark text-info"><i class="bi bi-book"></i> What Happens During Investigation?</div>
+    <div class="card-body">
+        <p>After triage identifies a True Positive alert, the investigation phase begins. This is where you move from "something suspicious happened" to understanding exactly what happened, how, and what the impact is.</p>
+
+        <h6 class="text-info mt-3">Key Investigation Activities</h6>
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong>1. Timeline Reconstruction</strong>
+                        <small class="d-block text-muted">Order events chronologically across all log sources. The timeline tells the story — initial access → lateral movement → privilege escalation → C2 → exfiltration.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong>2. IOC Identification</strong>
+                        <small class="d-block text-muted">Extract Indicators of Compromise: IP addresses, domains, file hashes, registry paths, process names. These IOCs are used to search for the attacker across other systems.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong>3. Artifact Analysis</strong>
+                        <small class="d-block text-muted">Examine the actual files, scripts, and network traffic involved. What does the malware do? What data was accessed?</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body py-2">
+                        <strong>4. Scope Determination</strong>
+                        <small class="d-block text-muted">How many systems are affected? What data or systems are at risk? Is the attacker still active?</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="text-info mt-3">The Attacker's Kill Chain (from our data)</h6>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-badge bg-warning"><i class="bi bi-shield"></i></div>
+                <div class="timeline-content">
+                    <h6>06:05 — Reconnaissance & Brute Force</h6>
+                    <small>45.33.32.156 launches SSH brute force against websrv-01. <span class="text-warning">12 failed attempts</span> for root, admin, oracle, stansimon.</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-badge bg-success"><i class="bi bi-person-check"></i></div>
+                <div class="timeline-content">
+                    <h6>06:15 — Initial Access</h6>
+                    <small>Brute force succeeds. Attacker logs in as <code>stansimon</code> via SSH from 45.33.32.156.</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-badge bg-warning"><i class="bi bi-shield"></i></div>
+                <div class="timeline-content">
+                    <h6>08:00-08:15 — Web Recon & Exploitation</h6>
+                    <small>192.168.1.50 scans WordPress endpoints. 45.33.32.156 runs sqlmap for SQL injection. Webshell uploaded via file upload at <code>/uploads/shell.php</code>.</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-badge bg-danger"><i class="bi bi-person-badge"></i></div>
+                <div class="timeline-content">
+                    <h6>09:00 — Privilege Escalation</h6>
+                    <small><code>backup_admin</code> account created and added to Administrators. PowerShell downloads payload from malicious.site. Wscript executes <code>malware.vbs</code>.</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-badge bg-danger"><i class="bi bi-arrow-up-right-circle"></i></div>
+                <div class="timeline-content">
+                    <h6>09:02+ — C2 & Lateral Movement</h6>
+                    <small>Beacon to 34.253.159.159:4444. Tor connection via 185.220.101.1:9050. Reflective DLL loaded. Registry persistence via <code>MaliciousBackdoor</code> Run key.</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-badge bg-danger"><i class="bi bi-arrow-up-right-circle"></i></div>
+                <div class="timeline-content">
+                    <h6>09:35 — Data Exfiltration</h6>
+                    <small><code>exfil_data.zip</code> created in <code>C:\Users\Public\</code> and uploaded to 34.253.159.159 via PowerShell.</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-badge bg-danger"><i class="bi bi-x-circle"></i></div>
+                <div class="timeline-content">
+                    <h6>10:00 — Cover Up</h6>
+                    <small><code>backup_admin</code> clears the Security audit log (Event ID 1102) to hide evidence.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3">
+            <i class="bi bi-lightbulb"></i> <strong>Key Insight:</strong> Notice how the investigation weaves together all 5 log sources (SSH, Web, Windows, Sysmon, Firewall) to tell one coherent story. A single log source would only show a small piece of the puzzle.
         </div>
     </div>
 </div>
@@ -41,73 +141,10 @@
                     <li class="list-group-item bg-transparent text-light small"><span class="text-danger">IP:</span> 185.220.101.1 (Tor Exit Node)</li>
                     <li class="list-group-item bg-transparent text-light small"><span class="text-danger">Domain:</span> malicious.site</li>
                     <li class="list-group-item bg-transparent text-light small"><span class="text-danger">Hash:</span> a3f5b8c2d1e4f7a0b9c6d3e0f2a5b8c1</li>
-                    <li class="list-group-item bg-transparent text-light small"><span class="text-danger">File:</span> malware.vbs, reflective.dll</li>
+                    <li class="list-group-item bg-transparent text-light small"><span class="text-danger">File:</span> malware.vbs, reflective.dll, exfil_data.zip</li>
                     <li class="list-group-item bg-transparent text-light small"><span class="text-danger">Registry:</span> HKLM\...\Run\MaliciousBackdoor</li>
+                    <li class="list-group-item bg-transparent text-light small"><span class="text-danger">User:</span> backup_admin (created by attacker)</li>
                 </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-dark"><i class="bi bi-clock-history"></i> Incident Timeline</div>
-    <div class="card-body">
-        <div class="timeline">
-            <div class="timeline-item">
-                <div class="timeline-badge bg-warning"><i class="bi bi-shield"></i></div>
-                <div class="timeline-content">
-                    <h6>06:05 - SSH Brute Force Begins</h6>
-                    <small>45.33.32.156 launches SSH brute force against websrv-01 — 5 failed attempts for root, admin, oracle in 5 minutes</small>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-badge bg-warning"><i class="bi bi-shield"></i></div>
-                <div class="timeline-content">
-                    <h6>08:00 - Web Reconnaissance</h6>
-                    <small>192.168.1.50 scans WordPress endpoints. 10.10.10.50 attempts path traversal on web server</small>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-badge bg-danger"><i class="bi bi-shield-exclamation"></i></div>
-                <div class="timeline-content">
-                    <h6>08:10 - SQL Injection Attempts</h6>
-                    <small>45.33.32.156 uses sqlmap for automated SQL injection against index.php</small>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-badge bg-danger"><i class="bi bi-bug"></i></div>
-                <div class="timeline-content">
-                    <h6>08:15 - Webshell Uploaded</h6>
-                    <small>File upload vulnerability exploited — shell.php deployed at /uploads/shell.php</small>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-badge bg-success"><i class="bi bi-person-check"></i></div>
-                <div class="timeline-content">
-                    <h6>06:15 - SSH Breach Success</h6>
-                    <small>Brute force succeeds — 45.33.32.156 authenticates as 'stansimon' on websrv-01</small>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-badge bg-danger"><i class="bi bi-person-badge"></i></div>
-                <div class="timeline-content">
-                    <h6>09:00 - Privilege Escalation</h6>
-                    <small>backup_admin account created, added to Administrators. PowerShell downloads payload from malicious.site</small>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-badge bg-danger"><i class="bi bi-arrow-up-right-circle"></i></div>
-                <div class="timeline-content">
-                    <h6>09:02+ - C2 & Exfiltration</h6>
-                    <small>Beacon to 34.253.159.159:4444. Tor connection to 185.220.101.1:9050. Data archived to exfil_data.zip and uploaded</small>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-badge bg-danger"><i class="bi bi-x-circle"></i></div>
-                <div class="timeline-content">
-                    <h6>10:00 - Logs Cleared</h6>
-                    <small>backup_admin clears Security audit log (Event ID 1102) to cover tracks</small>
-                </div>
             </div>
         </div>
     </div>

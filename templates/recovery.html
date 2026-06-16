@@ -7,10 +7,58 @@
             <div class="card-body d-flex align-items-center">
                 <i class="bi bi-arrow-clockwise fs-1 text-info me-3"></i>
                 <div>
-                    <h3 class="mb-0">Recovery</h3>
-                    <small class="text-muted">Restore normal operations and verify system integrity</small>
+                    <h3 class="mb-0">Step 6: Recovery</h3>
+                    <small class="text-muted">Restore normal operations safely and strengthen security to prevent recurrence</small>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4 border-info">
+    <div class="card-header bg-dark text-info"><i class="bi bi-book"></i> What Is Recovery in the SOC Process?</div>
+    <div class="card-body">
+        <p><strong>Recovery</strong> is the phase where you bring affected systems back to normal operation after containment and eradication. The key is to restore <em>safely</em> — you must ensure the attacker cannot immediately break back in.</p>
+
+        <h6 class="text-info mt-3">Three Pillars of Recovery</h6>
+        <div class="row">
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body">
+                        <strong><i class="bi bi-hdd"></i> System Restoration</strong>
+                        <small class="d-block text-muted mt-1">Restore systems from known-good backups or reimage them. Never trust a compromised system — it may have rootkits or firmware malware.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body">
+                        <strong><i class="bi bi-key"></i> Access Control Reset</strong>
+                        <small class="d-block text-muted mt-1">Reset all passwords, revoke sessions, reissue certificates. The attacker may have captured credentials from memory or keystroke logs.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card bg-dark h-100">
+                    <div class="card-body">
+                        <strong><i class="bi bi-shield"></i> Security Hardening</strong>
+                        <small class="d-block text-muted mt-1">Deploy additional security controls based on lessons learned — EDR, MFA, account lockout policies, network segmentation.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="text-info mt-3">How to Validate Recovery Is Complete</h6>
+        <ul>
+            <li><strong>Verify logs show no further malicious activity</strong> — the attacker should not reappear after IPs are blocked and accounts disabled</li>
+            <li><strong>Confirm backups are clean</strong> — check that the backup itself was not compromised before restoring</li>
+            <li><strong>Test restored systems</strong> — normal users should be able to work without issue</li>
+            <li><strong>Run a vulnerability scan</strong> — the patched vulnerabilities (e.g., file upload) should no longer be exploitable</li>
+            <li><strong>Monitor for 48-72 hours</strong> — some attackers return days later through a different entry point</li>
+        </ul>
+
+        <div class="alert alert-info">
+            <i class="bi bi-lightbulb"></i> <strong>Key Concept:</strong> Recovery is not the end. Data from this phase feeds directly into the Report and Improve phases. Track everything you did so you can document what worked and what didn't.
         </div>
     </div>
 </div>
@@ -30,7 +78,7 @@
                 </div>
                 <div class="form-check mb-2">
                     <input class="form-check-input recovery-check" type="checkbox" id="rec3" onchange="updateRecovery()">
-                    <label class="form-check-label" for="rec3">Verify integrity of other systems</label>
+                    <label class="form-check-label" for="rec3">Verify integrity of other systems (scan for IOCs)</label>
                 </div>
             </div>
         </div>
@@ -49,7 +97,7 @@
                 </div>
                 <div class="form-check mb-2">
                     <input class="form-check-input recovery-check" type="checkbox" id="rec6" onchange="updateRecovery()">
-                    <label class="form-check-label" for="rec6">Review and audit privileged access</label>
+                    <label class="form-check-label" for="rec6">Review and audit privileged access groups</label>
                 </div>
             </div>
         </div>
@@ -60,7 +108,7 @@
             <div class="card-body">
                 <div class="form-check mb-2">
                     <input class="form-check-input recovery-check" type="checkbox" id="rec7" onchange="updateRecovery()">
-                    <label class="form-check-label" for="rec7">Update firewall rules (block C2 ports)</label>
+                    <label class="form-check-label" for="rec7">Update firewall rules (block known C2 ports 4444, 9050, 9999)</label>
                 </div>
                 <div class="form-check mb-2">
                     <input class="form-check-input recovery-check" type="checkbox" id="rec8" onchange="updateRecovery()">
@@ -68,14 +116,14 @@
                 </div>
                 <div class="form-check mb-2">
                     <input class="form-check-input recovery-check" type="checkbox" id="rec9" onchange="updateRecovery()">
-                    <label class="form-check-label" for="rec9">Enable account lockout policies</label>
+                    <label class="form-check-label" for="rec9">Enable account lockout policies (5 failed attempts = 30 min lock)</label>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card">
+<div class="card mb-4">
     <div class="card-body text-center">
         <h4>Recovery Progress</h4>
         <div class="progress mb-2" style="height: 25px;">
@@ -107,6 +155,14 @@
     </div>
 </div>
 <script>
+function updateRecovery() {
+    const checks = document.querySelectorAll('.recovery-check');
+    const done = Array.from(checks).filter(c => c.checked).length;
+    const pct = Math.round(done / checks.length * 100);
+    document.getElementById('recoveryBar').style.width = pct + '%';
+    document.getElementById('recoveryBar').textContent = pct + '%';
+    document.getElementById('recoveryText').textContent = done + ' of ' + checks.length + ' tasks completed';
+}
 function submitQuiz(step) {
     const answers = []; const total = 2;
     let allAnswered = true;
@@ -122,18 +178,6 @@ function submitQuiz(step) {
         if (d.passed) { fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>'; setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800); }
         else { fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>'; }
     });
-}
-</script>
-{% endblock %}
-{% block scripts %}
-<script>
-function updateRecovery() {
-    const checks = document.querySelectorAll('.recovery-check');
-    const done = Array.from(checks).filter(c => c.checked).length;
-    const pct = Math.round(done / checks.length * 100);
-    document.getElementById('recoveryBar').style.width = pct + '%';
-    document.getElementById('recoveryBar').textContent = pct + '%';
-    document.getElementById('recoveryText').textContent = done + ' of ' + checks.length + ' tasks completed';
 }
 </script>
 {% endblock %}

@@ -7,10 +7,59 @@
             <div class="card-body d-flex align-items-center">
                 <i class="bi bi-exclamation-triangle fs-1 text-danger me-3"></i>
                 <div>
-                    <h3 class="mb-0">Security Alerts</h3>
-                    <small class="text-muted">{{ alerts|length }} suspicious events detected requiring attention</small>
+                    <h3 class="mb-0">Step 2: Security Alerts</h3>
+                    <small class="text-muted">Turning raw log events into actionable alerts — {{ alerts|length }} suspicious events detected</small>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4 border-danger">
+    <div class="card-header bg-dark text-danger"><i class="bi bi-book"></i> What Is an Alert and How Is It Different From a Log?</div>
+    <div class="card-body">
+        <p>A <strong>log</strong> is a raw record of an event. An <strong>alert</strong> is a log that matches a known pattern of malicious or suspicious activity. Think of it this way:</p>
+        <div class="row text-center mb-3">
+            <div class="col-6">
+                <div class="card bg-dark border-secondary h-100">
+                    <div class="card-body">
+                        <h1 class="text-secondary">1,000</h1>
+                        <p class="mb-0">Raw logs per minute</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card bg-dark border-danger h-100">
+                    <div class="card-body">
+                        <h1 class="text-danger">10</h1>
+                        <p class="mb-0">Actual alerts generated</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p>In a SOC, automated rules or SIEM correlation logic filter the noise and generate alerts for events that match attack signatures, behavioral anomalies, or policy violations.</p>
+
+        <h6 class="text-danger mt-3">Severity Levels Explained</h6>
+        <table class="table table-sm table-dark">
+            <thead><tr><th>Level</th><th>Color</th><th>Meaning</th><th>Example</th></tr></thead>
+            <tbody>
+                <tr><td><span class="badge bg-secondary">Info</span></td><td>Gray</td><td>Normal operational event</td><td>Successful login, process started</td></tr>
+                <tr><td><span class="badge bg-info text-dark">Warning</span></td><td>Blue</td><td>Slightly anomalous, worth checking</td><td>Failed login, connection blocked</td></tr>
+                <tr><td><span class="badge bg-warning text-dark">High</span></td><td>Yellow</td><td>Likely malicious, needs investigation</td><td>Registry modified, unusual file created</td></tr>
+                <tr><td><span class="badge bg-danger">Critical</span></td><td>Red</td><td>Confirmed attack or breach — immediate action</td><td>Log cleared, C2 connection, data exfil</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="text-danger mt-3">Common Alert Triggers</h6>
+        <ul>
+            <li><strong>Signature-based:</strong> Known attack patterns like SQL injection (<code>1=1</code>, <code>UNION SELECT</code>), path traversal (<code>../</code>)</li>
+            <li><strong>Anomaly-based:</strong> Behavior outside normal baseline — login at 3 AM, outbound connection to unknown IP</li>
+            <li><strong>Threshold-based:</strong> 10+ failed logins in 1 minute = brute force alert</li>
+            <li><strong>Correlation:</strong> Failed SSH login + new admin account + C2 traffic = multi-stage attack</li>
+        </ul>
+
+        <div class="alert alert-warning">
+            <i class="bi bi-lightbulb"></i> <strong>Tip for this lab:</strong> Below are all the suspicious events from our dataset. Each one triggered an alert because it matched a known malicious pattern. Notice how the Critical alerts (red) indicate active compromise or damage.
         </div>
     </div>
 </div>
@@ -59,7 +108,7 @@
 </div>
 <script>
 function submitQuiz(step) {
-    const answers = []; const total = 2; const key = [[1,3],[0,1],[1,1],[1,1],[1,1],[1,1],[1,1],[1,1]];
+    const answers = []; const total = 2;
     let allAnswered = true;
     for (let i = 0; i < total; i++) {
         const s = document.querySelector(`input[name="q${i}"]:checked`);

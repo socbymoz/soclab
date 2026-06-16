@@ -7,11 +7,46 @@
             <div class="card-body d-flex align-items-center">
                 <i class="bi bi-funnel fs-1 text-warning me-3"></i>
                 <div>
-                    <h3 class="mb-0">Alert Triage</h3>
-                    <small class="text-muted">Classify each alert as True Positive (TP), False Positive (FP), or Needs Investigation</small>
+                    <h3 class="mb-0">Step 3: Alert Triage</h3>
+                    <small class="text-muted">Quickly classify alerts as True Positive, False Positive, or Needs Investigation</small>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-dark text-warning"><i class="bi bi-book"></i> What Is Triage and Why Is It Critical?</div>
+    <div class="card-body">
+        <p><strong>Triage</strong> is the process of quickly evaluating alerts to determine their validity and priority. In a busy SOC, analysts may receive hundreds of alerts per shift. Without effective triage, the team drowns in noise and misses real attacks.</p>
+
+        <h6 class="text-warning mt-3">The Three Triage Categories</h6>
+        <table class="table table-sm table-dark">
+            <thead><tr><th>Category</th><th>Color</th><th>Meaning</th><th>Action</th></tr></thead>
+            <tbody>
+                <tr><td><span class="badge bg-success">True Positive (TP)</span></td><td>Green</td><td>Alert accurately detects a real threat</td><td>Escalate to investigation immediately</td></tr>
+                <tr><td><span class="badge bg-secondary">False Positive (FP)</span></td><td>Gray</td><td>Alert triggered but no real threat exists</td><td>Document and tune the rule to reduce noise</td></tr>
+                <tr><td><span class="badge bg-warning text-dark">Needs Investigation</span></td><td>Yellow</td><td>Insufficient information to classify yet</td><td>Gather more data and escalate</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="text-warning mt-3">Triage Decision Flow</h6>
+        <pre class="bg-dark text-light p-3 rounded"><code>1. Is this alert from a known-bad source (IP, domain, hash)? → <span class="text-success">TP</span>
+2. Does the alert match expected behavior or maintenance? → <span class="text-secondary">FP</span>
+3. Is more context needed (check other logs, ask the asset owner)? → <span class="text-warning">Investigate</span>
+4. Does this alert correlate with other alerts happening at the same time? → <span class="text-success">TP</span> (likely part of an attack chain)</code></pre>
+
+        <div class="alert alert-warning">
+            <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> In this exercise, all alerts in our dataset are <strong>True Positives</strong> — they are part of a real attack chain. In a real SOC, the FP rate can be 70-90%! A good SOC aims to reduce false positives by fine-tuning detection rules.
+        </div>
+
+        <h6 class="text-warning mt-3">Triage Best Practices</h6>
+        <ul>
+            <li><strong>Work critical alerts first</strong> — attackers don't wait</li>
+            <li><strong>Don't spend more than 5-10 minutes</strong> on a single alert during triage; if you can't classify it, mark "Investigate" and move on</li>
+            <li><strong>Use multiple log sources</strong> to confirm — a web alert + firewall alert + sysmon alert for the same IP = strong TP signal</li>
+            <li><strong>Document everything</strong> — your triage notes will be used later in investigation and reporting</li>
+        </ul>
     </div>
 </div>
 

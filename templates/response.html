@@ -7,10 +7,51 @@
             <div class="card-body d-flex align-items-center">
                 <i class="bi bi-shield-check fs-1 text-success me-3"></i>
                 <div>
-                    <h3 class="mb-0">Incident Response</h3>
-                    <small class="text-muted">Execute containment, eradication, and recovery actions</small>
+                    <h3 class="mb-0">Step 5: Incident Response</h3>
+                    <small class="text-muted">Execute containment and eradication actions to stop the attack and remove the threat</small>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4 border-success">
+    <div class="card-header bg-dark text-success"><i class="bi bi-book"></i> What Is Incident Response and What Actions Are Taken?</div>
+    <div class="card-body">
+        <p><strong>Incident Response (IR)</strong> is the organized approach to addressing and managing a security incident. The goal is to stop the attack, prevent further damage, and remove the attacker's access.</p>
+
+        <p>Following the <strong>NIST SP 800-61 framework</strong>, IR has four phases:</p>
+        <table class="table table-sm table-dark">
+            <thead><tr><th>Phase</th><th>What It Does</th><th>Examples</th></tr></thead>
+            <tbody>
+                <tr><td><span class="text-success">1. Containment</span></td><td>Stop the attack from spreading</td><td>Isolate systems, block IPs, disable accounts</td></tr>
+                <tr><td><span class="text-warning">2. Eradication</span></td><td>Remove the attacker's presence</td><td>Delete malware, remove persistence, kill processes</td></tr>
+                <tr><td><span class="text-info">3. Recovery</span></td><td>Restore normal operations safely</td><td>Restore from backup, reimage systems</td></tr>
+                <tr><td><span class="text-secondary">4. Post-Incident</span></td><td>Learn and improve</td><td>Report, lessons learned, improve controls</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="text-success mt-3">How to Prioritize Response Actions</h6>
+        <p>When responding to an incident, use this priority framework:</p>
+        <ul>
+            <li><strong>Stop the bleeding first</strong> — isolate affected systems, block attacker IPs at the firewall. Nothing else matters if the attacker is still active.</li>
+            <li><strong>Preserve evidence</strong> — take disk images and memory captures before deleting anything. You may need evidence for legal action.</li>
+            <li><strong>Remove access</strong> — disable compromised accounts, revoke sessions, reset passwords.</li>
+            <li><strong>Remove the threat</strong> — delete malware, remove persistence mechanisms, patch vulnerabilities.</li>
+        </ul>
+
+        <h6 class="text-success mt-3">Dangerous Indicators That Trigger Response</h6>
+        <ul>
+            <li><span class="badge bg-danger">CRITICAL</span> Active C2 beaconing — attacker is currently communicating with compromised systems</li>
+            <li><span class="badge bg-danger">CRITICAL</span> Data exfiltration — sensitive data is being uploaded to attacker servers</li>
+            <li><span class="badge bg-danger">CRITICAL</span> Ransomware execution — files are being encrypted</li>
+            <li><span class="badge bg-warning text-dark">HIGH</span> New admin accounts created — privilege escalation in progress</li>
+            <li><span class="badge bg-warning text-dark">HIGH</span> Registry persistence — attacker has established a foothold</li>
+            <li><span class="badge bg-warning text-dark">HIGH</span> Audit log clearing — attacker covering tracks</li>
+        </ul>
+
+        <div class="alert alert-success">
+            <i class="bi bi-lightbulb"></i> <strong>For this lab:</strong> Below are the containment and eradication actions needed for our incident. Check each box as you complete it — this simulates executing the response plan.
         </div>
     </div>
 </div>
@@ -18,7 +59,7 @@
 <div class="row">
     <div class="col-md-6 mb-3">
         <div class="card h-100">
-            <div class="card-header bg-dark"><i class="bi bi-shield-fill"></i> Containment</div>
+            <div class="card-header bg-dark"><i class="bi bi-shield-fill"></i> Containment — Stop the Attack</div>
             <div class="card-body">
                 <div class="form-check mb-2">
                     <input class="form-check-input response-check" type="checkbox" id="r1" onchange="updateProgress()">
@@ -45,7 +86,7 @@
     </div>
     <div class="col-md-6 mb-3">
         <div class="card h-100">
-            <div class="card-header bg-dark"><i class="bi bi-trash"></i> Eradication</div>
+            <div class="card-header bg-dark"><i class="bi bi-trash"></i> Eradication — Remove the Threat</div>
             <div class="card-body">
                 <div class="form-check mb-2">
                     <input class="form-check-input response-check" type="checkbox" id="e1" onchange="updateProgress()">
@@ -72,7 +113,7 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card mb-4">
     <div class="card-body text-center">
         <h4>Response Progress</h4>
         <div class="progress mb-2" style="height: 25px;">
@@ -104,6 +145,14 @@
     </div>
 </div>
 <script>
+function updateProgress() {
+    const checks = document.querySelectorAll('.response-check');
+    const done = Array.from(checks).filter(c => c.checked).length;
+    const pct = Math.round(done / checks.length * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressBar').textContent = pct + '%';
+    document.getElementById('progressText').textContent = done + ' of ' + checks.length + ' actions completed';
+}
 function submitQuiz(step) {
     const answers = []; const total = 2;
     let allAnswered = true;
@@ -119,18 +168,6 @@ function submitQuiz(step) {
         if (d.passed) { fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>'; setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800); }
         else { fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>'; }
     });
-}
-</script>
-{% endblock %}
-{% block scripts %}
-<script>
-function updateProgress() {
-    const checks = document.querySelectorAll('.response-check');
-    const done = Array.from(checks).filter(c => c.checked).length;
-    const pct = Math.round(done / checks.length * 100);
-    document.getElementById('progressBar').style.width = pct + '%';
-    document.getElementById('progressBar').textContent = pct + '%';
-    document.getElementById('progressText').textContent = done + ' of ' + checks.length + ' actions completed';
 }
 </script>
 {% endblock %}
