@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC Analyst Learning Path</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #0a0e14;
+            color: #e5e7eb;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        #logBackground {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background: radial-gradient(ellipse at 50% 0%, #0d1b2a 0%, #0a0e14 70%);
+        }
+        .content { position: relative; z-index: 1; }
+        .hero {
+            text-align: center;
+            padding: 48px 20px 32px;
+        }
+        .hero h1 { font-size: 2.2rem; font-weight: 800; }
+        .hero .greeting { color: #0d6efd; }
+        .hero p { color: #9ca3af; max-width: 600px; margin: 8px auto; }
+        .founder-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-top: 12px;
+            padding: 8px 16px;
+            border: 1px solid #1f2937;
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+        .founder-link:hover {
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+        .progress-card {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .progress-card .progress {
+            height: 8px;
+            background: #1f2937;
+        }
+        .topic-card {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+        .topic-card:hover { border-color: #374151; }
+        .topic-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .topic-header .num {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .topic-header .title-area { flex: 1; }
+        .topic-header .title-area h6 { margin: 0; font-weight: 600; }
+        .topic-header .title-area small { color: #6b7280; font-size: 0.8rem; }
+        .topic-header .badge-complete {
+            background: rgba(25, 135, 84, 0.15);
+            color: #198754;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .topic-header .chevron { color: #6b7280; transition: 0.2s; }
+        .topic-header .chevron.open { transform: rotate(180deg); }
+        .topic-body { display: none; padding: 0 20px 20px; }
+        .topic-body.open { display: block; }
+        .lesson-list { list-style: none; padding: 0; }
+        .lesson-list li {
+            padding: 6px 0;
+            font-size: 0.9rem;
+            color: #d1d5db;
+        }
+        .lesson-list li::before {
+            content: '\2022';
+            color: #0d6efd;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+        .quiz-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: #1a1d23;
+            border: 1px solid #374151;
+            color: #e5e7eb;
+            padding: 8px 14px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+        .quiz-option:hover { border-color: #0d6efd; background: rgba(13,110,253,0.1); }
+        .quiz-option.selected { border-color: #0d6efd; background: rgba(13,110,253,0.2); }
+        .quiz-option.correct { border-color: #198754; background: rgba(25,135,84,0.2); }
+        .quiz-option.wrong { border-color: #dc3545; background: rgba(220,53,69,0.2); }
+        .quiz-feedback { font-size: 0.85rem; margin-top: 8px; }
+        .footer-bar {
+            text-align: center;
+            padding: 24px;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        .btn-reset {
+            background: transparent;
+            border: 1px solid #374151;
+            color: #6b7280;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .btn-reset:hover { border-color: #dc3545; color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div id="logBackground"></div>
+
+    <div class="content container" style="max-width:720px;">
+
+        <div class="hero">
+            <i class="bi bi-shield-shaded display-4 text-primary"></i>
+            <h1 class="mt-2"><span class="greeting">{{ greeting }}</span></h1>
+            <p><strong>SOC Analyst Learning Path</strong> — Master the technical skills for a career in the Security Operations Center.</p>
+            <a href="https://github.com/socbymoz" target="_blank" class="founder-link">
+                <i class="bi bi-github"></i> Built by socbymoz
+                <i class="bi bi-box-arrow-up-right" style="font-size:0.7rem;"></i>
+            </a>
+        </div>
+
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-secondary"><i class="bi bi-bookmark-check me-1"></i> Your Progress</small>
+                <small class="text-secondary">{{ progress }} / {{ total }} topics</small>
+            </div>
+            <div class="progress">
+                <div class="progress-bar bg-primary" style="width: {% if total %}{{ (progress / total * 100)|int }}{% else %}0{% endif %}%;"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-2">
+                <small class="text-secondary">{% if total %}{{ (progress / total * 100)|int }}{% else %}0{% endif %}% complete</small>
+                {% if progress > 0 %}
+                <a href="/reset_progress" class="btn-reset" onclick="return confirm('Reset all progress?')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% for topic in curriculum %}
+        {% set is_completed = topic.id in completed %}
+        <div class="topic-card" id="topic-{{ topic.id }}">
+            <div class="topic-header" onclick="toggleTopic({{ topic.id }})">
+                <div class="num bg-{{ topic.color }} bg-opacity-10 text-{{ topic.color }}{% if is_completed %} border border-success{% endif %}">
+                    {% if is_completed %}<i class="bi bi-check-lg text-success"></i>{% else %}{{ topic.id }}{% endif %}
+                </div>
+                <div class="title-area">
+                    <h6>
+                        <i class="bi {{ topic.icon }} text-{{ topic.color }} me-2"></i>{{ topic.title }}
+                        {% if is_completed %}<span class="badge-complete ms-2"><i class="bi bi-check-circle me-1"></i>Done</span>{% endif %}
+                    </h6>
+                    <small>{{ topic.desc[:100] }}...</small>
+                </div>
+                <i class="bi bi-chevron-down chevron"></i>
+            </div>
+            <div class="topic-body" id="body-{{ topic.id }}">
+                <p class="text-muted small">{{ topic.desc }}</p>
+                <h6 class="text-primary mt-3 mb-2"><i class="bi bi-journal-text"></i> Lessons</h6>
+                <ul class="lesson-list">
+                    {% for lesson in topic.lessons %}
+                    <li>{{ lesson }}</li>
+                    {% endfor %}
+                </ul>
+                <h6 class="text-warning mt-3 mb-2"><i class="bi bi-question-circle"></i> Knowledge Check</h6>
+                <div id="quiz-{{ topic.id }}">
+                    {% for q in topic.questions %}
+                    {% set qi = loop.index0 %}
+                    <div class="mb-3">
+                        <small class="d-block mb-1 text-secondary">Q{{ loop.index }}: {{ q.q }}</small>
+                        {% for opt in q.options %}
+                        {% set oi = loop.index0 %}
+                        <button class="quiz-option" onclick="answerQuiz({{ topic.id }}, {{ qi }}, {{ oi }})" data-topic="{{ topic.id }}" data-q="{{ qi }}" data-opt="{{ oi }}">
+                            {{ opt }}
+                        </button>
+                        {% endfor %}
+                        <div class="quiz-feedback" id="fb-{{ topic.id }}-{{ qi }}"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if is_completed %}
+                <button class="btn btn-sm btn-outline-secondary mt-2" onclick="markIncomplete({{ topic.id }})"><i class="bi bi-x-circle me-1"></i>Mark Incomplete</button>
+                {% else %}
+                <button class="btn btn-sm btn-outline-success mt-2" onclick="markComplete({{ topic.id }})"><i class="bi bi-check-circle me-1"></i>Mark Complete</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="footer-bar">
+            <i class="bi bi-shield-shaded me-1"></i> SOC Analyst Learning Path
+        </div>
+    </div>
+
+    <script>
+        const ANSWERS = {};
+        {% for topic in curriculum %}
+        {% for q in topic.questions %}
+        ANSWERS['{{ topic.id }}-{{ loop.index0 }}'] = {{ q.answer }};
+        {% endfor %}
+        {% endfor %}
+
+        function toggleTopic(id) {
+            const body = document.getElementById('body-' + id);
+            const card = document.getElementById('topic-' + id);
+            const chevron = card.querySelector('.chevron');
+            body.classList.toggle('open');
+            chevron.classList.toggle('open');
+        }
+
+        function answerQuiz(tid, qi, oi) {
+            const correct = ANSWERS[tid + '-' + qi];
+            const fb = document.getElementById('fb-' + tid + '-' + qi);
+            const topicCard = document.getElementById('topic-' + tid);
+            const btns = topicCard.querySelectorAll(`[data-topic="${tid}"][data-q="${qi}"]`);
+
+            btns.forEach(b => {
+                b.disabled = true;
+                b.classList.remove('selected', 'correct', 'wrong');
+                const opt = parseInt(b.dataset.opt);
+                if (opt === correct) b.classList.add('correct');
+                if (opt === oi && oi !== correct) b.classList.add('wrong');
+                if (opt === oi && oi === correct) b.classList.add('selected');
+            });
+
+            if (oi === correct) {
+                fb.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Correct!</span>';
+            } else {
+                fb.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> Incorrect. The correct answer is: ' + topicCard.querySelector(`[data-topic="${tid}"][data-q="${qi}"][data-opt="${correct}"]`).textContent + '</span>';
+            }
+        }
+
+        function markComplete(tid) {
+            fetch('/complete_topic/' + tid).then(r => r.json()).then(data => {
+                location.reload();
+            });
+        }
+
+        function markIncomplete(tid) {
+            fetch('/uncomplete_topic/' + tid).then(r => r.json()).then(data => {
+                location.reload();
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
