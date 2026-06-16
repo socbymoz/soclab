@@ -33,7 +33,7 @@
             border-radius: 16px;
             padding: 40px;
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             margin: 40px auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             animation: fadeInUp 0.8s ease-out;
@@ -56,6 +56,9 @@
             box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
         }
         .form-control::placeholder { color: #6b7280; }
+        .form-control.is-invalid { border-color: #dc3545; }
+        .form-control.is-valid { border-color: #198754; }
+        .invalid-feedback { color: #f87171; font-size: 0.8rem; }
         .btn-primary {
             background: #0d6efd;
             border: none;
@@ -75,16 +78,33 @@
             font-size: 0.9rem;
         }
         .form-label { color: #9ca3af; font-size: 0.85rem; margin-bottom: 4px; }
-        .input-icon { position: relative; }
-        .input-icon i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6b7280;
-            z-index: 10;
+        .input-group-custom {
+            display: flex;
+            gap: 8px;
         }
-        .input-icon .form-control { padding-left: 40px; }
+        .input-group-custom select {
+            background: #1a1d23;
+            border: 1px solid #374151;
+            color: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            width: 110px;
+            flex-shrink: 0;
+        }
+        .input-group-custom select:focus {
+            border-color: #0d6efd;
+            outline: none;
+        }
+        .input-group-custom input {
+            flex: 1;
+        }
+        .country-hint {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 4px;
+            display: none;
+        }
+        .country-hint.show { display: block; }
     </style>
 </head>
 <body>
@@ -113,12 +133,38 @@
                 </div>
                 <div class="col-6">
                     <label class="form-label"><i class="bi bi-envelope me-1"></i>Email</label>
-                    <input type="email" class="form-control" name="email" placeholder="you@example.com" required>
+                    <input type="email" class="form-control" name="email" placeholder="example@gmail.com" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$" required>
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-telephone me-1"></i>Phone Number</label>
-                <input type="tel" class="form-control" name="phone" placeholder="e.g. +1 555-1234" required>
+                <label class="form-label"><i class="bi bi-telephone me-1"></i>Phone Number <small class="text-secondary">(with country code)</small></label>
+                <div class="input-group-custom">
+                    <select id="countryCode" name="country_code" onchange="updatePhoneHint()" required>
+                        <option value="">Code</option>
+                        <option value="+1">US/CA +1</option>
+                        <option value="+44">UK +44</option>
+                        <option value="+61">AU +61</option>
+                        <option value="+91">IN +91</option>
+                        <option value="+81">JP +81</option>
+                        <option value="+49">DE +49</option>
+                        <option value="+33">FR +33</option>
+                        <option value="+39">IT +39</option>
+                        <option value="+55">BR +55</option>
+                        <option value="+7">RU +7</option>
+                        <option value="+86">CN +86</option>
+                        <option value="+82">KR +82</option>
+                        <option value="+65">SG +65</option>
+                        <option value="+971">AE +971</option>
+                        <option value="+966">SA +966</option>
+                        <option value="+27">ZA +27</option>
+                        <option value="+52">MX +52</option>
+                        <option value="+63">PH +63</option>
+                        <option value="+62">ID +62</option>
+                        <option value="+64">NZ +64</option>
+                    </select>
+                    <input type="tel" class="form-control" name="phone" placeholder="Phone number after code" pattern="\d{6,15}" required>
+                </div>
+                <div id="phoneHint" class="country-hint"></div>
             </div>
             <hr class="text-secondary">
             <div class="mb-3">
@@ -140,6 +186,58 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const phoneFormats = {
+            '+1': { country: 'US/Canada', format: '+1 XXX XXX XXXX (10 digits)' },
+            '+44': { country: 'UK', format: '+44 XXXX XXXXXX (10-11 digits)' },
+            '+61': { country: 'Australia', format: '+61 X XXXX XXXX (9 digits)' },
+            '+91': { country: 'India', format: '+91 XXXXX XXXXX (10 digits)' },
+            '+81': { country: 'Japan', format: '+81 XX XXXX XXXX (10-11 digits)' },
+            '+49': { country: 'Germany', format: '+49 XXXX XXXXXXX (10-11 digits)' },
+            '+33': { country: 'France', format: '+33 X XX XX XX XX (9 digits)' },
+            '+39': { country: 'Italy', format: '+39 XXX XXXXXXX (9-10 digits)' },
+            '+55': { country: 'Brazil', format: '+55 XX XXXXX XXXX (10-11 digits)' },
+            '+86': { country: 'China', format: '+86 XXX XXXX XXXX (11 digits)' },
+            '+82': { country: 'South Korea', format: '+82 XX XXXX XXXX (9-10 digits)' },
+            '+65': { country: 'Singapore', format: '+65 XXXX XXXX (8 digits)' },
+            '+971': { country: 'UAE', format: '+971 XX XXX XXXX (9 digits)' },
+            '+966': { country: 'Saudi Arabia', format: '+966 XX XXX XXXX (9 digits)' },
+            '+27': { country: 'South Africa', format: '+27 XX XXX XXXX (9 digits)' },
+            '+52': { country: 'Mexico', format: '+52 XX XXXX XXXX (10 digits)' },
+            '+63': { country: 'Philippines', format: '+63 XXX XXX XXXX (10 digits)' },
+            '+62': { country: 'Indonesia', format: '+62 XX XXXX XXXX (9-11 digits)' },
+            '+64': { country: 'New Zealand', format: '+64 XX XXX XXXX (8-10 digits)' },
+            '+7': { country: 'Russia', format: '+7 XXX XXX XX XX (10 digits)' },
+        };
+
+        function updatePhoneHint() {
+            const code = document.getElementById('countryCode').value;
+            const hint = document.getElementById('phoneHint');
+            if (code && phoneFormats[code]) {
+                hint.textContent = phoneFormats[code].country + ' — expected: ' + phoneFormats[code].format;
+                hint.className = 'country-hint show';
+            } else {
+                hint.className = 'country-hint';
+            }
+        }
+
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const code = document.getElementById('countryCode').value;
+            const number = document.querySelector('input[name="phone"]').value;
+            if (!code) {
+                e.preventDefault();
+                alert('Please select your country code.');
+                return;
+            }
+            if (!number.match(/^\d{6,15}$/)) {
+                e.preventDefault();
+                alert('Please enter a valid phone number (6-15 digits after country code).');
+                return;
+            }
+            // Combine country code + number into the phone field
+            document.querySelector('input[name="phone"]').value = code + ' ' + number;
+        });
+    </script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

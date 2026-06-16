@@ -18,50 +18,49 @@
 <div class="card mb-4 border-danger">
     <div class="card-header bg-dark text-danger"><i class="bi bi-book"></i> What Is an Alert and How Is It Different From a Log?</div>
     <div class="card-body">
-        <p>A <strong>log</strong> is a raw record of an event. An <strong>alert</strong> is a log that matches a known pattern of malicious or suspicious activity. Think of it this way:</p>
-        <div class="row text-center mb-3">
-            <div class="col-6">
-                <div class="card bg-dark border-secondary h-100">
-                    <div class="card-body">
-                        <h1 class="text-secondary">1,000</h1>
-                        <p class="mb-0">Raw logs per minute</p>
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4 class="text-danger">Definition: What Is a Security Alert?</h4>
+                    <p style="font-size:1.1rem">An <strong>alert</strong> is a log event that matches a known malicious or suspicious pattern. <span class="text-muted">Logs are passive records. Alerts are active notifications.</span></p>
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-secondary fs-6">Log = Record</span>
+                        <span class="badge bg-danger fs-6">Alert = Notification</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-danger h-100">
+                        <div class="card-body text-center py-3">
+                            <i class="bi bi-exclamation-triangle-fill text-danger display-6"></i>
+                            <div class="mt-2"><small class="text-muted">Alert requires action</small></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-6">
-                <div class="card bg-dark border-danger h-100">
-                    <div class="card-body">
-                        <h1 class="text-danger">10</h1>
-                        <p class="mb-0">Actual alerts generated</p>
-                    </div>
-                </div>
+
+            <h6 class="text-danger mt-3"><i class="bi bi-lightning"></i> Real Alert Examples</h6>
+            <div class="mb-2">
+                <small class="text-info">Brute Force Alert (Windows Security Log):</small>
+                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">[ALERT] Brute-Force Detected
+Rule: 10+ failed logins in 60s
+Source IP: 45.33.32.156
+Target: CORP\Administrator
+Events: 12x Event ID 4625 (failed logon)
+Severity: HIGH → Escalated to L2</pre>
+            </div>
+            <div class="mb-2">
+                <small class="text-info">C2 Beacon Alert (Firewall Log):</small>
+                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">[ALERT] C2 Beacon Detected
+Rule: Outbound connection to known malicious IP
+Source: 10.10.10.50:49157
+Destination: 185.220.101.1:9050 (Tor)
+Process: powershell.exe
+Severity: CRITICAL → Immediate response required</pre>
+            </div>
+
+            <div class="alert alert-danger mt-2">
+                <i class="bi bi-lightbulb"></i> <strong>Key insight:</strong> In this lab, alerts have already been generated from the raw logs. Your job as an analyst is to review them and decide which need triage.
             </div>
         </div>
-        <p>In a SOC, automated rules or SIEM correlation logic filter the noise and generate alerts for events that match attack signatures, behavioral anomalies, or policy violations.</p>
-
-        <h6 class="text-danger mt-3">Severity Levels Explained</h6>
-        <table class="table table-sm table-dark">
-            <thead><tr><th>Level</th><th>Color</th><th>Meaning</th><th>Example</th></tr></thead>
-            <tbody>
-                <tr><td><span class="badge bg-secondary">Info</span></td><td>Gray</td><td>Normal operational event</td><td>Successful login, process started</td></tr>
-                <tr><td><span class="badge bg-info text-dark">Warning</span></td><td>Blue</td><td>Slightly anomalous, worth checking</td><td>Failed login, connection blocked</td></tr>
-                <tr><td><span class="badge bg-warning text-dark">High</span></td><td>Yellow</td><td>Likely malicious, needs investigation</td><td>Registry modified, unusual file created</td></tr>
-                <tr><td><span class="badge bg-danger">Critical</span></td><td>Red</td><td>Confirmed attack or breach — immediate action</td><td>Log cleared, C2 connection, data exfil</td></tr>
-            </tbody>
-        </table>
-
-        <h6 class="text-danger mt-3">Common Alert Triggers</h6>
-        <ul>
-            <li><strong>Signature-based:</strong> Known attack patterns like SQL injection (<code>1=1</code>, <code>UNION SELECT</code>), path traversal (<code>../</code>)</li>
-            <li><strong>Anomaly-based:</strong> Behavior outside normal baseline — login at 3 AM, outbound connection to unknown IP</li>
-            <li><strong>Threshold-based:</strong> 10+ failed logins in 1 minute = brute force alert</li>
-            <li><strong>Correlation:</strong> Failed SSH login + new admin account + C2 traffic = multi-stage attack</li>
-        </ul>
-
-        <div class="alert alert-warning">
-            <i class="bi bi-lightbulb"></i> <strong>Tip for this lab:</strong> Below are all the suspicious events from our dataset. Each one triggered an alert because it matched a known malicious pattern. Notice how the Critical alerts (red) indicate active compromise or damage.
-        </div>
-    </div>
 </div>
 
 <div class="card mt-4 border-danger">

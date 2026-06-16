@@ -18,36 +18,44 @@
 <div class="card mb-4 border-warning">
     <div class="card-header bg-dark text-warning"><i class="bi bi-book"></i> What Is Triage and Why Is It Critical?</div>
     <div class="card-body">
-        <p><strong>Triage</strong> is the process of quickly evaluating alerts to determine their validity and priority. In a busy SOC, analysts may receive hundreds of alerts per shift. Without effective triage, the team drowns in noise and misses real attacks.</p>
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4 class="text-warning">Definition: What Is Triage?</h4>
+                    <p style="font-size:1.1rem"><strong>Triage</strong> is the process of quickly evaluating alerts to determine which are real threats (True Positives) and which are false alarms. <span class="text-muted">Borrowed from emergency medicine — treat the most critical first.</span></p>
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-success fs-6">TP = Real Threat</span>
+                        <span class="badge bg-danger fs-6">FP = False Alarm</span>
+                        <span class="badge bg-warning text-dark fs-6">BP = Benign</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-warning h-100">
+                        <div class="card-body text-center py-3">
+                            <i class="bi bi-funnel-fill text-warning display-6"></i>
+                            <div class="mt-2"><small class="text-muted">Filter. Prioritize. Escalate.</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <h6 class="text-warning mt-3">The Three Triage Categories</h6>
-        <table class="table table-sm table-dark">
-            <thead><tr><th>Category</th><th>Color</th><th>Meaning</th><th>Action</th></tr></thead>
-            <tbody>
-                <tr><td><span class="badge bg-success">True Positive (TP)</span></td><td>Green</td><td>Alert accurately detects a real threat</td><td>Escalate to investigation immediately</td></tr>
-                <tr><td><span class="badge bg-secondary">False Positive (FP)</span></td><td>Gray</td><td>Alert triggered but no real threat exists</td><td>Document and tune the rule to reduce noise</td></tr>
-                <tr><td><span class="badge bg-warning text-dark">Needs Investigation</span></td><td>Yellow</td><td>Insufficient information to classify yet</td><td>Gather more data and escalate</td></tr>
-            </tbody>
-        </table>
+            <h6 class="text-warning mt-3"><i class="bi bi-lightning"></i> Real Triage Example</h6>
+            <div class="mb-2">
+                <small class="text-info">Triage queue — alerts needing classification:</small>
+                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;"># Triage Queue — 2026-06-15
+═══════════════════════════════════════
+[CRITICAL] C2 Beacon → 10.10.10.50 → 185.220.101.1:9050 → TP (confirmed)
+[HIGH]    Log Cleared  → backup_admin cleared Security log → TP (confirmed)
+[HIGH]    Web Shell    → shell.php uploaded + cmd=whoami → TP (confirmed)
+[WARNING] Failed Logins → 45.33.32.156, 12 attempts → TP (brute force)
+[INFO]    New User     → backup_admin created → TP (part of attack chain)
+═══════════════════════════════════════
+Result: 5 alerts → 5 True Positives → Escalate to Investigation</pre>
+            </div>
 
-        <h6 class="text-warning mt-3">Triage Decision Flow</h6>
-        <pre class="bg-dark text-light p-3 rounded"><code>1. Is this alert from a known-bad source (IP, domain, hash)? → <span class="text-success">TP</span>
-2. Does the alert match expected behavior or maintenance? → <span class="text-secondary">FP</span>
-3. Is more context needed (check other logs, ask the asset owner)? → <span class="text-warning">Investigate</span>
-4. Does this alert correlate with other alerts happening at the same time? → <span class="text-success">TP</span> (likely part of an attack chain)</code></pre>
-
-        <div class="alert alert-warning">
-            <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> In this exercise, all alerts in our dataset are <strong>True Positives</strong> — they are part of a real attack chain. In a real SOC, the FP rate can be 70-90%! A good SOC aims to reduce false positives by fine-tuning detection rules.
+            <div class="alert alert-warning mt-2">
+                <i class="bi bi-lightbulb"></i> <strong>Key insight:</strong> Not every alert is a real threat. Triage separates the signal from the noise so investigators don't waste time on false positives.
+            </div>
         </div>
-
-        <h6 class="text-warning mt-3">Triage Best Practices</h6>
-        <ul>
-            <li><strong>Work critical alerts first</strong> — attackers don't wait</li>
-            <li><strong>Don't spend more than 5-10 minutes</strong> on a single alert during triage; if you can't classify it, mark "Investigate" and move on</li>
-            <li><strong>Use multiple log sources</strong> to confirm — a web alert + firewall alert + sysmon alert for the same IP = strong TP signal</li>
-            <li><strong>Document everything</strong> — your triage notes will be used later in investigation and reporting</li>
-        </ul>
-    </div>
 </div>
 
 <div class="card mt-4 border-warning">

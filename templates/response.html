@@ -18,42 +18,54 @@
 <div class="card mb-4 border-success">
     <div class="card-header bg-dark text-success"><i class="bi bi-book"></i> What Is Incident Response and What Actions Are Taken?</div>
     <div class="card-body">
-        <p><strong>Incident Response (IR)</strong> is the organized approach to addressing and managing a security incident. The goal is to stop the attack, prevent further damage, and remove the attacker's access.</p>
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4 class="text-danger">Definition: What Is Incident Response?</h4>
+                    <p style="font-size:1.1rem"><strong>Response</strong> is the active phase where you contain, eradicate, and neutralize the threat. <span class="text-muted">Speed is critical — every minute counts during a breach.</span></p>
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-danger fs-6">Contain = Stop spread</span>
+                        <span class="badge bg-warning text-dark fs-6">Eradicate = Remove</span>
+                        <span class="badge bg-success fs-6">Recover = Restore</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-danger h-100">
+                        <div class="card-body text-center py-3">
+                            <i class="bi bi-shield-fill-check text-danger display-6"></i>
+                            <div class="mt-2"><small class="text-muted">Act now, analyze later</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <p>Following the <strong>NIST SP 800-61 framework</strong>, IR has four phases:</p>
-        <table class="table table-sm table-dark">
-            <thead><tr><th>Phase</th><th>What It Does</th><th>Examples</th></tr></thead>
-            <tbody>
-                <tr><td><span class="text-success">1. Containment</span></td><td>Stop the attack from spreading</td><td>Isolate systems, block IPs, disable accounts</td></tr>
-                <tr><td><span class="text-warning">2. Eradication</span></td><td>Remove the attacker's presence</td><td>Delete malware, remove persistence, kill processes</td></tr>
-                <tr><td><span class="text-info">3. Recovery</span></td><td>Restore normal operations safely</td><td>Restore from backup, reimage systems</td></tr>
-                <tr><td><span class="text-secondary">4. Post-Incident</span></td><td>Learn and improve</td><td>Report, lessons learned, improve controls</td></tr>
-            </tbody>
-        </table>
+            <h6 class="text-danger mt-3"><i class="bi bi-lightning"></i> Real Response Actions Taken</h6>
+            <div class="mb-2">
+                <small class="text-info">Incident response actions for the SOC breach:</small>
+                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">RESPONSE ACTIONS — Case #2026-0615
+═════════════════════════════════════
+[CONTAIN]
+  • Isolated CORP-WS-01 from network (VLAN quarantine)
+  • Blocked 45.33.32.156, 34.253.159.159 at firewall
+  • Disabled backup_admin account
+  • Revoked all active sessions
 
-        <h6 class="text-success mt-3">How to Prioritize Response Actions</h6>
-        <p>When responding to an incident, use this priority framework:</p>
-        <ul>
-            <li><strong>Stop the bleeding first</strong> — isolate affected systems, block attacker IPs at the firewall. Nothing else matters if the attacker is still active.</li>
-            <li><strong>Preserve evidence</strong> — take disk images and memory captures before deleting anything. You may need evidence for legal action.</li>
-            <li><strong>Remove access</strong> — disable compromised accounts, revoke sessions, reset passwords.</li>
-            <li><strong>Remove the threat</strong> — delete malware, remove persistence mechanisms, patch vulnerabilities.</li>
-        </ul>
+[ERADICATE]
+  • Killed malicious processes (powershell.exe, wscript.exe)
+  • Removed malware.vbs and reflective.dll
+  • Deleted persistence registry keys
+  • Scanned with EDR for additional threats
 
-        <h6 class="text-success mt-3">Dangerous Indicators That Trigger Response</h6>
-        <ul>
-            <li><span class="badge bg-danger">CRITICAL</span> Active C2 beaconing — attacker is currently communicating with compromised systems</li>
-            <li><span class="badge bg-danger">CRITICAL</span> Data exfiltration — sensitive data is being uploaded to attacker servers</li>
-            <li><span class="badge bg-danger">CRITICAL</span> Ransomware execution — files are being encrypted</li>
-            <li><span class="badge bg-warning text-dark">HIGH</span> New admin accounts created — privilege escalation in progress</li>
-            <li><span class="badge bg-warning text-dark">HIGH</span> Registry persistence — attacker has established a foothold</li>
-            <li><span class="badge bg-warning text-dark">HIGH</span> Audit log clearing — attacker covering tracks</li>
-        </ul>
+[VERIFY]
+  • Confirmed no lateral movement to other hosts
+  • Checked backup_admin did not access other systems
+  • Scanned websrv-01 for SSH backdoors
+═════════════════════════════════════</pre>
+            </div>
 
-        <div class="alert alert-success">
-            <i class="bi bi-lightbulb"></i> <strong>For this lab:</strong> Below are the containment and eradication actions needed for our incident. Check each box as you complete it — this simulates executing the response plan.
+            <div class="alert alert-danger mt-2">
+                <i class="bi bi-lightbulb"></i> <strong>Key insight:</strong> Containment is the #1 priority. Stop the bleeding before you clean the wound. Eradication removes the threat. Verification ensures it's gone.
+            </div>
         </div>
-    </div>
 </div>
 
 <div class="card mt-4 border-success">

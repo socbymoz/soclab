@@ -241,50 +241,55 @@
     </div>
 </div>
 
-<div class="card-body">
-        <p><strong>Recovery</strong> is the phase where you bring affected systems back to normal operation after containment and eradication. The key is to restore <em>safely</em> — you must ensure the attacker cannot immediately break back in.</p>
+    <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4 class="text-info">Definition: What Is Recovery?</h4>
+                    <p style="font-size:1.1rem"><strong>Recovery</strong> is the process of safely restoring affected systems to normal operations after the threat has been contained and eradicated. <span class="text-muted">Return to business with improved defenses.</span></p>
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-info fs-6">Restore = From clean backup</span>
+                        <span class="badge bg-success fs-6">Harden = Fix vulnerabilities</span>
+                        <span class="badge bg-primary fs-6">Monitor = Watch for re-infection</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-info h-100">
+                        <div class="card-body text-center py-3">
+                            <i class="bi bi-arrow-clockwise text-info display-6"></i>
+                            <div class="mt-2"><small class="text-muted">Safe restoration</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <h6 class="text-info mt-3">Three Pillars of Recovery</h6>
-        <div class="row">
-            <div class="col-md-4 mb-2">
-                <div class="card bg-dark h-100">
-                    <div class="card-body">
-                        <strong><i class="bi bi-hdd"></i> System Restoration</strong>
-                        <small class="d-block text-muted mt-1">Restore systems from known-good backups or reimage them. Never trust a compromised system — it may have rootkits or firmware malware.</small>
-                    </div>
-                </div>
+            <h6 class="text-info mt-3"><i class="bi bi-lightning"></i> Real Recovery Checklist</h6>
+            <div class="mb-2">
+                <small class="text-info">Post-incident recovery steps for CORP-WS-01:</small>
+                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">RECOVERY CHECKLIST — Case #2026-0615
+═════════════════════════════════════
+[DAY 1]
+  ✓ Restored CORP-WS-01 from pre-incident backup
+  ✓ Reset all local admin passwords
+  ✓ Rotated domain admin credentials
+  ✓ Updated EDR signatures and ran full scan
+
+[DAY 2]
+  ✓ Patched vulnerability used for initial access
+  ✓ Implemented AppLocker rules (block PowerShell from Office)
+  ✓ Deployed additional Sysmon logging rules
+  ✓ Verified logs are forwarding to SIEM
+
+[DAY 3]
+  ✓ 24-hour enhanced monitoring window started
+  ✓ No anomalous activity detected
+  ✓ System returned to production
+═════════════════════════════════════</pre>
             </div>
-            <div class="col-md-4 mb-2">
-                <div class="card bg-dark h-100">
-                    <div class="card-body">
-                        <strong><i class="bi bi-key"></i> Access Control Reset</strong>
-                        <small class="d-block text-muted mt-1">Reset all passwords, revoke sessions, reissue certificates. The attacker may have captured credentials from memory or keystroke logs.</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-2">
-                <div class="card bg-dark h-100">
-                    <div class="card-body">
-                        <strong><i class="bi bi-shield"></i> Security Hardening</strong>
-                        <small class="d-block text-muted mt-1">Deploy additional security controls based on lessons learned — EDR, MFA, account lockout policies, network segmentation.</small>
-                    </div>
-                </div>
+
+            <div class="alert alert-info mt-2">
+                <i class="bi bi-lightbulb"></i> <strong>Key insight:</strong> Recovery isn't just restoring from backup. It's about verifying the restored system is clean, closing the vulnerabilities that were exploited, and monitoring for re-infection.
             </div>
         </div>
-
-        <h6 class="text-info mt-3">How to Validate Recovery Is Complete</h6>
-        <ul>
-            <li><strong>Verify logs show no further malicious activity</strong> — the attacker should not reappear after IPs are blocked and accounts disabled</li>
-            <li><strong>Confirm backups are clean</strong> — check that the backup itself was not compromised before restoring</li>
-            <li><strong>Test restored systems</strong> — normal users should be able to work without issue</li>
-            <li><strong>Run a vulnerability scan</strong> — the patched vulnerabilities (e.g., file upload) should no longer be exploitable</li>
-            <li><strong>Monitor for 48-72 hours</strong> — some attackers return days later through a different entry point</li>
-        </ul>
-
-        <div class="alert alert-info">
-            <i class="bi bi-lightbulb"></i> <strong>Key Concept:</strong> Recovery is not the end. Data from this phase feeds directly into the Report and Improve phases. Track everything you did so you can document what worked and what didn't.
-        </div>
-    </div>
 </div>
 
 <div class="row">

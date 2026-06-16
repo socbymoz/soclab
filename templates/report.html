@@ -18,52 +18,61 @@
 <div class="card mb-4 border-secondary">
     <div class="card-header bg-dark text-secondary"><i class="bi bi-book"></i> Why Is Incident Reporting Important?</div>
     <div class="card-body">
-        <p>An <strong>incident report</strong> is a formal document that summarizes the entire incident lifecycle. It serves multiple audiences:</p>
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4 class="text-success">Definition: What Is Incident Reporting?</h4>
+                    <p style="font-size:1.1rem"><strong>Reporting</strong> is the documentation of everything that happened during the incident — the timeline, findings, actions taken, and recommendations. <span class="text-muted">If it wasn't documented, it didn't happen.</span></p>
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-success fs-6">Executive = Business impact</span>
+                        <span class="badge bg-primary fs-6">Technical = Investigation details</span>
+                        <span class="badge bg-secondary fs-6">Recommend = Fix root cause</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-success h-100">
+                        <div class="card-body text-center py-3">
+                            <i class="bi bi-file-earmark-text text-success display-6"></i>
+                            <div class="mt-2"><small class="text-muted">Document everything</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="row">
-            <div class="col-md-4 mb-2">
-                <div class="card bg-dark h-100">
-                    <div class="card-body py-2 text-center">
-                        <i class="bi bi-people fs-2 text-secondary"></i>
-                        <h6>Management</h6>
-                        <small class="text-muted">Needs executive summary, business impact, financial cost, and regulatory implications</small>
-                    </div>
-                </div>
+            <h6 class="text-success mt-3"><i class="bi bi-lightning"></i> Real Incident Report Template</h6>
+            <div class="mb-2">
+                <small class="text-info">Incident summary — the report stakeholders will read:</small>
+                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">INCIDENT REPORT #2026-0615
+═══════════════════════════════
+TITLE:    Multi-stage intrusion via SSH brute force
+SEVERITY: CRITICAL
+STATUS:   CONTAINED — Recovery in progress
+
+EXECUTIVE SUMMARY:
+An external attacker gained access to websrv-01 via
+SSH brute force, then pivoted to CORP-WS-01, created
+a privileged account, deployed C2 malware, established
+persistence, and exfiltrated data.
+
+TIMELINE: 06:05 — 10:00 UTC (4 hours)
+AFFECTED: 2 systems, 1 user account compromised
+DATA LOST: ~50MB (exfil_data.zip)
+
+ACTIONS TAKEN:
+  • Contained: Systems isolated, malicious IPs blocked
+  • Eradicated: Malware removed, persistence deleted
+  • Recovering: Restoration from clean backup in progress
+
+RECOMMENDATIONS:
+  1. Disable SSH password auth — use key-based only
+  2. Deploy MFA for all administrative access
+  3. Implement network segmentation
+  4. Enable failed login alerting (threshold: 5/min)</pre>
             </div>
-            <div class="col-md-4 mb-2">
-                <div class="card bg-dark h-100">
-                    <div class="card-body py-2 text-center">
-                        <i class="bi bi-shield fs-2 text-secondary"></i>
-                        <h6>SOC Team</h6>
-                        <small class="text-muted">Needs technical details — IOCs, timeline, attack vector, TTPs used, what worked and what didn't</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-2">
-                <div class="card bg-dark h-100">
-                    <div class="card-body py-2 text-center">
-                        <i class="bi bi-file-check fs-2 text-secondary"></i>
-                        <h6>Legal & Compliance</h6>
-                        <small class="text-muted">Needs evidence chain of custody, data breach notification details, regulatory compliance proof</small>
-                    </div>
-                </div>
+
+            <div class="alert alert-success mt-2">
+                <i class="bi bi-lightbulb"></i> <strong>Key insight:</strong> A good report serves two audiences: executives care about business impact, and technical teams care about the investigation details. Write for both.
             </div>
         </div>
-
-        <h6 class="text-secondary mt-3">What Makes a Good Incident Report?</h6>
-        <ul>
-            <li><strong>Executive Summary</strong> — one page that tells the whole story: what happened, what was affected, what was done</li>
-            <li><strong>Timeline</strong> — chronological list of key events from initial access to containment</li>
-            <li><strong>Findings</strong> — root cause analysis, attack vector, IOCs discovered, systems affected</li>
-            <li><strong>Actions Taken</strong> — containment, eradication, and recovery steps executed</li>
-            <li><strong>Evidence</strong> — log excerpts, screenshots, file hashes, network captures</li>
-            <li><strong>Recommendations</strong> — security improvements to prevent recurrence</li>
-        </ul>
-
-        <div class="alert alert-secondary">
-            <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> Write the report as if the attacker will read it. Assume every detail will be scrutinized in court or by regulators. Precision matters — use exact times, exact commands, exact IP addresses.
-        </div>
-    </div>
 </div>
 
 <div class="card mt-4 border-secondary">

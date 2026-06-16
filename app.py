@@ -430,14 +430,16 @@ def register():
         password = request.form.get('password', '')
         name = request.form.get('name', '').strip()
         age = request.form.get('age', '').strip()
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         phone = request.form.get('phone', '').strip()
         if not username or not password or not name or not age or not email or not phone:
             error = 'All fields are required.'
         elif not age.isdigit() or int(age) < 1 or int(age) > 150:
             error = 'Please enter a valid age.'
-        elif '@' not in email or '.' not in email:
-            error = 'Please enter a valid email address.'
+        elif not email or '@' not in email or '.' not in email.split('@')[-1]:
+            error = 'Please enter a valid email address (e.g. you@gmail.com).'
+        elif not phone.startswith('+'):
+            error = 'Phone number must include country code (e.g. +1 5551234).'
         else:
             created = create_user(username, hash_password(password), name, int(age), email, phone)
             if created:

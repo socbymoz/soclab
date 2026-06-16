@@ -18,94 +18,54 @@
 <div class="card mb-4 border-success">
     <div class="card-header bg-dark text-success"><i class="bi bi-book"></i> Why the "Improve" Phase Is the Most Important</div>
     <div class="card-body">
-        <p>Every security incident is a learning opportunity. The <strong>Improve</strong> phase (also called Post-Incident Activity or Lessons Learned) is where you ensure the same attack cannot happen again.</p>
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4 class="text-success">Definition: What Is the Improve Phase?</h4>
+                    <p style="font-size:1.1rem"><strong>Improve</strong> is the final phase where you identify gaps, implement lessons learned, and strengthen defenses to prevent similar incidents. <span class="text-muted">Every incident makes you stronger.</span></p>
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-success fs-6">Lessons = What went wrong</span>
+                        <span class="badge bg-primary fs-6">Gaps = What was missing</span>
+                        <span class="badge bg-warning text-dark fs-6">Actions = Fix it</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-success h-100">
+                        <div class="card-body text-center py-3">
+                            <i class="bi bi-graph-up-arrow text-success display-6"></i>
+                            <div class="mt-2"><small class="text-muted">Always improving</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="alert alert-success">
-            <i class="bi bi-quote"></i> <em>"A company that experiences a breach and does not learn from it will experience the same breach again — often worse."</em>
+            <h6 class="text-success mt-3"><i class="bi bi-lightning"></i> Real Lessons Learned & Action Items</h6>
+            <div class="mb-2">
+                <small class="text-info">Post-incident review findings and remediation plan:</small>
+                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">POST-INCIDENT REVIEW — Case #2026-0615
+══════════════════════════════════════════
+GAP FOUND                          → REMEDIATION
+──────────────────────────────────────────────────
+SSH password auth enabled          → Disable, use key-only + MFA
+No failed login alerting           → Deploy threshold alert (5/min)
+No network segmentation            → Implement VLANs for DMZ/Prod
+Backup_admin account had no MFA    → MFA for ALL admin accounts
+No EDR on production servers       → Deploy EDR to all servers
+No logging on critical systems     → Enable + forward to SIEM
+Weak password policy               → Enforce 16-char min + complexity
+No incident response playbook      → Create and test IR playbook
+
+PRIORITY ACTIONS (Next 30 Days):
+  1. [Week 1] Deploy EDR to all servers
+  2. [Week 1] Disable SSH password auth
+  3. [Week 2] Implement network segmentation
+  4. [Week 2] Deploy MFA
+  5. [Week 4] Create and test IR playbook</pre>
+            </div>
+
+            <div class="alert alert-success mt-2">
+                <i class="bi bi-lightbulb"></i> <strong>Key insight:</strong> If you don't improve after an incident, you'll get compromised the same way again. The goal is not just to fix this incident — it's to prevent the next one.
+            </div>
         </div>
-
-        <h6 class="text-success mt-3">The Improvement Cycle</h6>
-        <div class="row text-center mb-3">
-            <div class="col-3">
-                <div class="card bg-dark h-100">
-                    <div class="card-body">
-                        <i class="bi bi-search fs-2 text-danger"></i>
-                        <h6>Identify Gaps</h6>
-                        <small class="text-muted">What security controls failed?</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="card bg-dark h-100">
-                    <div class="card-body">
-                        <i class="bi bi-pencil fs-2 text-warning"></i>
-                        <h6>Prioritize</h6>
-                        <small class="text-muted">What should we fix first?</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="card bg-dark h-100">
-                    <div class="card-body">
-                        <i class="bi bi-tools fs-2 text-info"></i>
-                        <h6>Implement</h6>
-                        <small class="text-muted">Deploy fixes and new controls</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="card bg-dark h-100">
-                    <div class="card-body">
-                        <i class="bi bi-arrow-repeat fs-2 text-success"></i>
-                        <h6>Validate</h6>
-                        <small class="text-muted">Test that fixes actually work</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <h6 class="text-success mt-3">Gaps Found in This Incident</h6>
-        <p>Our investigation revealed several critical security gaps. Each one allowed the attack to progress:</p>
-        <table class="table table-sm table-dark">
-            <thead><tr><th>Gap</th><th>What Allowed</th><th>Recommendation</th></tr></thead>
-            <tbody>
-                <tr>
-                    <td>No account lockout policy</td>
-                    <td>Attacker brute-forced SSH password (12 attempts in 10 minutes)</td>
-                    <td>Lock account after 5 failed attempts for 30 minutes</td>
-                </tr>
-                <tr>
-                    <td>File upload vulnerability</td>
-                    <td>Webshell uploaded to web server</td>
-                    <td>Validate file types, restrict upload directory permissions</td>
-                </tr>
-                <tr>
-                    <td>No MFA on admin accounts</td>
-                    <td>Attacker used compromised password to create new admin</td>
-                    <td>Require MFA for all administrative access</td>
-                </tr>
-                <tr>
-                    <td>Unrestricted outbound traffic</td>
-                    <td>C2 beaconing and data exfiltration succeeded</td>
-                    <td>Deploy firewall with allow-list outbound rules only</td>
-                </tr>
-                <tr>
-                    <td>No EDR on endpoints</td>
-                    <td>Malware execution undetected for hours</td>
-                    <td>Deploy EDR on all workstations and servers</td>
-                </tr>
-                <tr>
-                    <td>No log monitoring alerts</td>
-                    <td>Brute force not detected until log review</td>
-                    <td>Create real-time alert rules for brute force patterns</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="alert alert-success">
-            <i class="bi bi-lightbulb"></i> <strong>Key Insight:</strong> The Improve phase closes the loop. Every previous phase (Logs → Alert → Triage → Investigation → Response → Recovery → Report) contributed information that we now use to make the organization stronger. This is called <strong>continuous improvement</strong>.
-        </div>
-    </div>
 </div>
 
 <div class="card mt-4 border-success">
