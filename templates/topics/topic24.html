@@ -1,0 +1,37 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-info mt-3">1. Lab Architecture</h6>
+<p>A malware analysis lab must be isolated from the production network to prevent accidental infection spread. The key principle: the malware should <b>never</b> be able to reach the internet or internal corporate resources.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Example architecture: A dedicated analysis computer (VM host) running VMware Workstation. Inside it: a Windows 10 VM for dynamic analysis (Flare VM) and a Linux VM for network simulation (REMnux). The VM host is on a physically separate network segment with no route to production. The VMs use a host-only network adapter — they can only talk to each other and the host.
+</div>
+
+<h6 class="text-info mt-3">2. Essential Tools</h6>
+<p><b>REMnux (Linux):</b> A Ubuntu-based distro with 100+ malware analysis tools pre-installed. Includes network analysis (Wireshark, tcpdump, INetSim), forensics (bulk_extractor, strings), and reverse engineering tools (Radare2, edb-debugger).</p>
+<p><b>Flare VM (Windows):</b> A Windows 10 VM with all analysis tools pre-installed via a PowerShell script. Includes debuggers (x64dbg, IDA Free), disassemblers, process monitors (ProcMon, Process Hacker), and .NET analysis tools (dnSpy, ILSpy).</p>
+<p><b>Cuckoo Sandbox:</b> An open-source automated malware analysis system. You submit a sample, it executes it in an isolated VM and returns a detailed report: processes created, files written, registry changes, network connections, and memory dumps.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Example workflow: You receive a suspicious .exe file. You submit it to Cuckoo. 5 minutes later, the report shows the malware created a scheduled task, wrote a DLL to C:\Windows\System32, and attempted to connect to 185.220.101.1:9050 (Tor). This gives you all the IOCs you need for detection and containment.
+</div>
+
+<h6 class="text-info mt-3">3. Network Simulation</h6>
+<p>Malware often checks for internet connectivity before executing its payload. If it can't reach the internet, it may not run or may behave differently. Network simulation tools create fake internet services to trick the malware.</p>
+<p><b>INetSim:</b> Simulates HTTP, HTTPS, DNS, SMTP, FTP, and other services. When malware makes an HTTP request to evil.com, INetSim responds with a fake webpage instead of a connection timeout.</p>
+<p><b>FakeDNS:</b> Intercepts all DNS queries and responds with a fake IP (usually the INetSim server). All domains resolve to your controlled server.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Example: You run a sample of Emotet malware. It makes DNS queries to 5 different C2 domains. FakeDNS resolves all of them to your INetSim server. INetSim captures the HTTP POST requests containing the infected machine's information. You can see the data the malware would have sent to the real C2.
+</div>
+
+<h6 class="text-info mt-3">4. Safe Handling Procedures</h6>
+<ul class="mb-0">
+<li><b>Never analyze malware on a production machine.</b> Always use dedicated VMs with snapshots taken before analysis.</li>
+<li><b>Disable shared folders and clipboard</b> between host and VM to prevent accidental infection.</li>
+<li><b>Use a "jump box" VM</b> to transfer samples into the analysis environment — never connect directly.</li>
+<li><b>Mimikatz and other credential dumpers</b> should only run in isolated VMs with no domain trust.</li>
+<li><b>Always revert to clean snapshot</b> after each analysis session.</li>
+</ul>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Incident: An analyst downloaded a ransomware sample to their corporate laptop by mistake. The ransomware immediately encrypted their Documents folder. Lesson learned: Always use a dedicated analysis machine with no network shares mapped. The analyst now uses a REMnux VM with host-only networking.
+</div>
+</div>

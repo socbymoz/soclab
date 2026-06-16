@@ -1,0 +1,57 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-success mt-3">1. Hash Lookups</h3>
+<p>VirusTotal hash lookups return detection ratio, file metadata, community comments, and relationships. Look for: file type, compilation timestamp (is it recent? matches the claimed file?), signature info (signed by a legitimate CA?), first submission date (brand new = suspicious), and detection ratio (if 0/70 = not necessarily clean — could be custom malware).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> An analyst submits SHA256 <code>a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6</code>.<br>
+Results: 38/70 detections, first submission 2 days ago, filename <code>invoice_2026.pdf.exe</code>, compile time <code>2026-06-15 03:00:00 UTC</code> (says it was compiled at 3 AM — unusual), file type <code>PE32 executable (GUI) Intel 80386</code> (not a PDF despite the name), signing info <code>No signing info</code>. The detection names include <code>Trojan.CobaltStrike</code>, <code>Win64/Beacon</code>, <code>Malicious_Behavior.SB</code>. Community comment: "This is the JupiterLoader variant — C2 at evil-c2.ddns.net:443." The analyst blocks the hash and uploads to sandbox for behavioral analysis.
+</div>
+
+<h6 class="text-success mt-3">2. File Upload</h3>
+<p>VT accepts file uploads up to 650MB (registered users). Uploaded files get scanned by 70+ engines and behavioral analysis sandbox (VirusTotal Jujubox). Results include: process tree, file operations, registry changes, network connections, and MITRE ATT&CK tactics mapping.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> The analyst uploads <code>suspicious_sample.exe</code>. After analysis:<br>
+Detection tab: 45/70 engines detect as malicious. Tags: <code>peexe</code>, <code>packed-upx</code>, <code>overlay</code>.<br>
+Details tab: SHA256, MD5, SHA1, file type, size, first/last submission, compilation timestamp, TRiD file type identifier: <code>Win32 Executable Generic</code>.<br>
+Behaviour tab: Sandbox report shows:<br>
+- <code>CreateProcess: C:\Windows\System32\cmd.exe /c whoami</code><br>
+- <code>CreateProcess: C:\Windows\System32\powershell.exe -enc ...</code><br>
+- <code>Network: HTTP GET evil-c2.ddns.net/beacon — 200 OK</code><br>
+- <code>File: C:\Users\admin\AppData\Local\svchost.exe written</code><br>
+- <code>Registry: HKCU\...\Run\WindowsUpdate created</code><br>
+MITRE mapping: T1059.001 (PowerShell), T1071.001 (Web Protocols), T1547.001 (Registry Run Keys).
+</div>
+
+<h6 class="text-success mt-3">3. Graphs / Relationships</h3>
+<p>The Relations tab shows connected entities: contacting IPs, domains, dropped files, parent/child files. This graph view reveals infrastructure relationships and helps identify related samples. The "Graph" visualization is interactive with clickable nodes.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> Viewing the Relations tab for the malware hash reveals:<br>
+- Contacted IPs: <code>185.130.5.201 (18 detections)</code>, <code>203.0.113.5 (6 detections)</code><br>
+- Contacted domains: <code>evil-c2.ddns.net (15 detections)</code>, <code>cdn-verify.net (8 detections)</code><br>
+- Dropped files: <code>svchost.exe (SHA256: b2c3d4e5... — 32/70 detections)</code><br>
+- Parent relationships: <code>invoice.docm (SHA256: c3d4e5f6... — 25/70 detections, VBS/DownLoader)</code><br>
+- Graph view: <code>invoice.docm -> malicious.exe -> svchost.exe + evil-c2.ddns.net + 185.130.5.201</code><br>
+The analyst clicks on <code>evil-c2.ddns.net</code> and sees it resolves to 5 different IPs across 3 months — indicating a dynamic C2 infrastructure probably using Fast Flux DNS. This helps the analyst build a complete picture of the attacker's infrastructure.
+</div>
+
+<h6 class="text-success mt-3">4. API Automation</h3>
+<p>VirusTotal provides a REST API for automated queries: hash lookups, file uploads, URL scans, IP/domain reports. Python library <code>vt-py</code> simplifies integration. API key scopes control access. Rate limits apply (4 requests/min for free, higher for premium).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Python Script:</b><br>
+<code>import vt</code><br>
+<code>client = vt.Client("YOUR_API_KEY")</code><br>
+<code>hash = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6"</code><br>
+<code>file = client.get_object(f"/files/{hash}")</code><br>
+<code>print(f"Detection ratio: {file.last_analysis_stats['malicious']}/70")</code><br>
+<code>print(f"Type: {file.type_description}")</code><br>
+<code>print(f"Tags: {', '.join(file.tags)}")</code><br>
+<code># Get relationships</code><br>
+<code>relations = client.get_object(f"/files/{hash}/relationships/contacted_domains")</code><br>
+<code>for domain in relations.data:</code><br>
+<code>&nbsp;&nbsp;print(f"Domain: {domain.id}")</code><br>
+<code>client.close()</code><br>
+This script can be integrated into a SOAR playbook. When a new phishing alert fires, the SOAR automatically queries VT for the attachment hash, enriches the alert with detection ratio and tags, and auto-closes if 0/70 (low confidence) or escalates if 10+/70 detections.
+</div>
+
+</div>

@@ -1,0 +1,49 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-success mt-3">1. Architecture Overview</h6>
+<p>A home SOC lab typically consists of: a SIEM (log collection + correlation), EDR (endpoint detection), a firewall/router (network visibility), and attack simulation tools (to generate test alerts). The goal is to create an environment where you can practice detection, investigation, and response.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Example home lab setup on a single laptop with 32GB RAM:
+- VMware Workstation running 4 VMs: Wazuh SIEM (4GB), Security Onion (8GB), Windows 10 with Wazuh agent (4GB), Kali Linux (4GB)
+- The Windows VM has a vulnerable service (Deliberately vulnerable web app)
+- Kali runs attacks against the Windows VM
+- Security Onion captures all network traffic and sends alerts to Wazuh
+- You investigate the alerts using the Wazuh dashboard
+</div>
+
+<h6 class="text-success mt-3">2. Setting up Wazuh SIEM</h6>
+<p>Wazuh is a free, open-source SIEM platform based on the Elastic Stack (Elasticsearch, Logstash, Kibana). It includes an XDR (Extended Detection and Response) agent that monitors endpoints for file changes, registry modifications, process creation, and network connections.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Installation: Deploy the Wazuh OVA (pre-built VM with all components). It automatically sets up Elasticsearch, Kibana, and the Wazuh manager. On your Windows VM, install the Wazuh agent and point it to the manager's IP. Within minutes, you'll see security events appearing in the Kibana dashboard — process starts, logon events, file integrity changes.
+</div>
+
+<h6 class="text-success mt-3">3. Deploying Security Onion</h6>
+<p>Security Onion is a free IDS/IPS, NSM, and log management platform. It includes: <b>Suricata</b> (IDS/IPS engine), <b>Zeek</b> (network analysis framework), <b>Wireshark</b> (packet capture), and <b>Elastic Stack</b> (search and visualization).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Deploy Security Onion as a VM with two network interfaces: one for management (your home network) and one for monitoring (connected to a mirror port or network TAP). It captures all traffic and generates alerts for suspicious patterns. Example: When you run an nmap scan from Kali to Windows, Security Onion's Suricata immediately alerts: "ET SCAN NMAP -sS scan detected."
+</div>
+
+<h6 class="text-success mt-3">4. Attack Simulation</h6>
+<p><b>Atomic Red Team:</b> A library of simple, modular atomic tests that map to MITRE ATT&CK techniques. Each test is a PowerShell command that simulates a specific attack technique. It's safe to run in a lab environment.</p>
+<p><b>Caldera:</b> An automated adversary emulation system that runs complete attack chains (recon → execution → persistence → C2 → exfiltration). It uses plugins to simulate specific threat actors.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Example using Atomic Red Team:
+1. Open PowerShell as Admin on Windows VM
+2. Run: <code>Invoke-AtomicTest T1059.003</code> (PowerShell execution technique)
+3. This simulates a PowerShell launching a suspicious encoded command
+4. The Wazuh agent detects this and sends an alert
+5. You investigate the alert in Kibana — see the exact PowerShell command, the user who ran it, the parent process
+6. Document your findings and update detection rules
+</div>
+
+<h6 class="text-success mt-3">5. Learning Path & Practice Exercises</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+Week 1: Set up Wazuh SIEM + Windows agent. Learn the Kibana dashboard. Look at normal events first.
+Week 2: Deploy Security Onion. Generate nmap scans and see them detected as alerts.
+Week 3: Install Atomic Red Team. Run tests for 5 MITRE techniques. Practice investigation workflow.
+Week 4: Set up Kali and run Metasploit against the Windows VM. Practice full incident response: detect → investigate → contain → report.
+Week 5: Add a Linux server to the lab. Practice SSH brute force detection (use Fail2Ban logs). Set up custom SIEM correlation rules.
+Week 6: Build custom detection rules in Wazuh. Write a report for each simulated incident.
+</div>
+</div>

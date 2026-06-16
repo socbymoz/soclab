@@ -1,0 +1,39 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-primary mt-3">1. Firewall Log Analysis</h3>
+<p>Firewall logs contain source/destination IP, port, protocol, action (ALLOW/DENY), bytes transferred, and timestamp. Key analysis patterns: outbound connections from internal servers to unknown external IPs, DENY logs showing failed connection attempts (reconnaissance), and data volume anomalies (exfiltration).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> Firewall log extract:<br>
+<code>2026-06-17 10:15:30 ALLOW TCP 10.0.0.5:49156 185.130.5.201:443 1200 bytes</code><br>
+<code>2026-06-17 10:16:30 ALLOW TCP 10.0.0.5:49157 185.130.5.201:443 450 bytes</code><br>
+<code>2026-06-17 10:17:30 ALLOW TCP 10.0.0.5:49158 185.130.5.201:443 3200 bytes</code><br>
+The pattern shows beaconing (60-second intervals, varying payload sizes). 10.0.0.5 is the web server — unusual for a web server to initiate outbound connections to unknown IPs. The analyst queries for other connections from 10.0.0.5 and finds similar patterns to 5 different IPs over the past 7 days — all with recent domain registrations.
+</div>
+
+<h6 class="text-primary mt-3">2. DNS Log Analysis — DGA / Tunneling</h3>
+<p>DNS logs are critical for detecting beaconing via Domain Generation Algorithms (DGA) and DNS tunneling. DGA domains look random (e.g., <code>a3k2j9sdf7.example.com</code>), have high NXDOMAIN rates, and high query volume to non-existent TLDs. DNS tunneling uses base64-encoded subdomains to exfiltrate data (<code>base64data.evil.com</code>).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example (DGA):</b> DNS server logs show queries for <code>jf83kdh29d.com</code>, <code>mz47dkeo12.net</code>, <code>pq83mcnf55.org</code> at intervals of ~2 hours. The domains are 12 characters (consonant-vowel pattern) — typical of DGAs like <code>DGArchive</code> (Kraken, Necurs, Ramnit). Running <code>dnspython</code> script to check query frequency per domain shows these domains have 1000+ failed resolutions over 24 hours with zero legitimate users resolving them. This is a DGA beacon attempting to find its C2 server.
+</div>
+
+<h6 class="text-primary mt-3">3. NetFlow Analysis</h3>
+<p>NetFlow (v5/v9/IPFIX) records summarize IP conversations: source/dest IPs, ports, protocol, packets, bytes, and timestamps. Unlike full packet capture, NetFlow is lightweight and useful for behavioral baselining — identifying unusual hosts, ports, protocols, and traffic volumes.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> NetFlow anomaly: A workstation (192.168.1.50) typically generates 100 MB/day of traffic. Today it shows 2.5 GB outbound at 3:00 AM to IP 203.0.113.5 on port 443. The flow record shows:<br>
+<code>192.168.1.50:54321 -> 203.0.113.5:443 | PROTO: TCP | PACKETS: 50K | BYTES: 2.5GB | DURATION: 1200s</code><br>
+The data volume (2.5GB in 20 minutes) and the unusual time suggest data exfiltration. The analyst cross-references with EDR and finds that at 3:00 AM, <code>rclone.exe</code> was spawned by <code>cmd.exe</code> with config <code>C:\Users\victim\.config\rclone\rclone.conf</code> targeting <code>remote:dropbox</code>.
+</div>
+
+<h6 class="text-primary mt-3">4. C2 Detection Patterns</h3>
+<p>C2 (Command & Control) traffic patterns: periodic beaconing (fixed or jittered intervals), HTTP POST with encrypted or base64 payloads, User-Agent strings mimicking browsers/update services, low-volume traffic blending in with legitimate traffic, and JA3/JA3S fingerprints matching known C2 frameworks.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example C2 Detection:</b> The SOC receives an alert: "Host 10.0.0.15 made 47 HTTP connections in 1 hour to <code>cdn-verify.net</code> with interval of ~65s (±5s jitter)." HTTP request headers:<br>
+<code>GET /api/v3/check?id=9k4J2 HTTP/1.1</code><br>
+<code>Host: cdn-verify.net</code><br>
+<code>User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0)</code><br>
+<code>Cookie: session=base64encodeddata</code><br>
+Response size: exactly 512 bytes each time. JA3 hash <code>6734f37431670b3ab4292b8f60f29984</code> matches known Cobalt Strike HTTPS beacon. The analyst confirms C2 beaconing and initiates immediate containment — isolate host, block domain/IP on firewall, and search for additional infected hosts with the same JA3 fingerprint.
+</div>
+
+</div>

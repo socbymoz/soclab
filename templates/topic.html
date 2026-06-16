@@ -9,75 +9,132 @@
     </div>
 </div>
 
-<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-    <h6 class="text-{{ topic.color }} mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes</h6>
-    <ol class="list-unstyled mb-0" style="line-height:2;">
-        {% for lesson in topic.lessons %}
-        <li><i class="bi bi-check-circle text-{{ topic.color }} me-2" style="font-size:0.8rem;"></i>{{ lesson }}</li>
-        {% endfor %}
-    </ol>
-</div>
+{% set detail_file = "topics/topic" ~ topic.id ~ ".html" %}
+{% include detail_file ignore missing %}
 
-{% if topic.questions %}
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-    <h6 class="text-{{ topic.color }} mb-3"><i class="bi bi-question-circle me-2"></i>Quick Quiz</h6>
-    {% for q in topic.questions %}
-    <div class="mb-4 quiz-item" data-topic="{{ topic.id }}" data-q="{{ loop.index0 }}">
-        <p class="fw-bold mb-2">{{ loop.index }}. {{ q.q }}</p>
-        <div class="d-flex flex-column gap-2">
-            {% for opt in q.options %}
-            <button class="btn btn-sm text-start quiz-btn rounded" style="background:rgba(31,41,55,0.8);border:1px solid #374151;color:#e5e7eb;" data-answer="{{ loop.index0 }}">
-                <span class="badge bg-secondary me-2">{{ 'ABCDEFGHIJ'[loop.index0] }}</span>{{ opt }}
-            </button>
-            {% endfor %}
-        </div>
-        <div class="quiz-feedback mt-2 small" style="display:none;"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="text-{{ topic.color }} mb-0"><i class="bi bi-question-circle me-2"></i>Knowledge Check ({{ PASS_SCORE }}/10 to pass)</h6>
+        <div id="quizStatus" class="small text-secondary"></div>
     </div>
-    {% endfor %}
+    <div id="quizContainer"></div>
+    <div id="quizResult" style="display:none;" class="text-center py-3"></div>
+    <button id="retryBtn" onclick="resetQuiz()" class="btn btn-outline-warning btn-sm mt-2" style="display:none;"><i class="bi bi-arrow-clockwise me-1"></i>Retry (Shuffled)</button>
 </div>
-{% endif %}
 
 <div class="d-flex justify-content-between">
     {% if prev_topic %}
     <a href="/topic/{{ prev_topic.id }}" class="btn btn-outline-secondary"><i class="bi bi-chevron-left me-1"></i>{{ prev_topic.title }}</a>
     {% else %}<div></div>{% endif %}
     {% if next_topic %}
-    <a href="/topic/{{ next_topic.id }}" class="btn btn-outline-primary">{{ next_topic.title }}<i class="bi bi-chevron-right ms-1"></i></a>
+    <a id="nextTopicBtn" href="/topic/{{ next_topic.id }}" class="btn btn-outline-secondary disabled" style="pointer-events:none;">{{ next_topic.title }}<i class="bi bi-chevron-right ms-1"></i></a>
     {% else %}<div></div>{% endif %}
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-document.querySelectorAll('.quiz-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const item = this.closest('.quiz-item');
-        const buttons = item.querySelectorAll('.quiz-btn');
-        buttons.forEach(b => b.disabled = true);
-        const selected = parseInt(this.dataset.answer);
-        const topicId = parseInt(item.dataset.topic);
-        const questionIdx = parseInt(item.dataset.q);
-        fetch('/check-quiz', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({topic_id: topicId, question_idx: questionIdx, selected: selected})
-        }).then(r => r.json()).then(data => {
-            const fb = item.querySelector('.quiz-feedback');
-            fb.style.display = 'block';
-            if (data.correct) {
-                fb.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Correct!</span>';
-                this.style.borderColor = '#198754';
-                this.style.background = 'rgba(25,135,84,0.2)';
-            } else {
-                const correctLetter = 'ABCDEFGHIJ'[data.correct_option];
-                fb.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Incorrect. Answer was ${correctLetter}.</span>`;
-                this.style.borderColor = '#dc3545';
-                this.style.background = 'rgba(220,53,69,0.2)';
-                buttons[data.correct_option].style.borderColor = '#198754';
-                buttons[data.correct_option].style.background = 'rgba(25,135,84,0.2)';
-            }
-        });
-    });
-});
+const questions = {{ topic.questions | tojson | safe }};
+const PASS_SCORE = {{ PASS_SCORE }};
+const TOPIC_ID = {{ topic.id }};
+let shuffled = [];
+let currentQ = 0;
+let score = 0;
+let answered = 0;
+let quizDone = false;
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function initQuiz() {
+    shuffled = shuffle([...questions.keys()]);
+    currentQ = 0;
+    score = 0;
+    answered = 0;
+    quizDone = false;
+    document.getElementById('retryBtn').style.display = 'none';
+    document.getElementById('quizResult').style.display = 'none';
+    const nextBtn = document.getElementById('nextTopicBtn');
+    if (nextBtn) { nextBtn.classList.add('disabled'); nextBtn.style.pointerEvents = 'none'; }
+    renderQuestion();
+}
+
+function renderQuestion() {
+    if (currentQ >= shuffled.length) {
+        showResult();
+        return;
+    }
+    const qIdx = shuffled[currentQ];
+    const q = questions[qIdx];
+    const container = document.getElementById('quizContainer');
+    container.innerHTML = `
+        <p class="fw-bold mb-2">Question ${currentQ + 1}/${shuffled.length}: ${q.q}</p>
+        <div class="d-flex flex-column gap-2">
+            ${q.options.map((opt, i) => `
+                <button class="btn btn-sm text-start quiz-btn rounded" style="background:rgba(31,41,55,0.8);border:1px solid #374151;color:#e5e7eb;" onclick="submitAnswer(${qIdx}, ${i})">
+                    <span class="badge bg-secondary me-2">${'ABCDEFGHIJ'[i]}</span>${opt}
+                </button>
+            `).join('')}
+        </div>
+        <div id="quizFeedback" class="mt-2 small"></div>
+    `;
+    document.getElementById('quizStatus').textContent = `Score: ${score}/${answered}`;
+}
+
+function submitAnswer(qIdx, selected) {
+    if (quizDone) return;
+    const buttons = document.querySelectorAll('.quiz-btn');
+    buttons.forEach(b => b.disabled = true);
+    answered++;
+    const qData = questions[qIdx];
+    const correct = qData.answer === selected;
+    const fb = document.getElementById('quizFeedback');
+    if (correct) {
+        score++;
+        fb.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Correct!</span>';
+        buttons[selected].style.borderColor = '#198754';
+        buttons[selected].style.background = 'rgba(25,135,84,0.2)';
+    } else {
+        fb.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Incorrect. Answer was ${'ABCDEFGHIJ'[qData.answer]}.</span>`;
+        buttons[selected].style.borderColor = '#dc3545';
+        buttons[selected].style.background = 'rgba(220,53,69,0.2)';
+        buttons[qData.answer].style.borderColor = '#198754';
+        buttons[qData.answer].style.background = 'rgba(25,135,84,0.2)';
+    }
+    document.getElementById('quizStatus').textContent = `Score: ${score}/${answered}`;
+    setTimeout(() => {
+        currentQ++;
+        renderQuestion();
+    }, 1200);
+}
+
+function showResult() {
+    quizDone = true;
+    const container = document.getElementById('quizContainer');
+    container.innerHTML = '';
+    const result = document.getElementById('quizResult');
+    result.style.display = 'block';
+    const passed = score >= PASS_SCORE;
+    if (passed) {
+        result.innerHTML = `<h4 class="text-success"><i class="bi bi-trophy-fill me-2"></i>Passed! (${score}/${shuffled.length})</h4><p class="text-secondary">You're ready to move to the next topic.</p>`;
+        const nextBtn = document.getElementById('nextTopicBtn');
+        if (nextBtn) { nextBtn.classList.remove('disabled'); nextBtn.style.pointerEvents = 'auto'; }
+    } else {
+        result.innerHTML = `<h4 class="text-warning"><i class="bi bi-arrow-clockwise me-2"></i>Score: ${score}/${shuffled.length}</h4><p class="text-secondary">You need ${PASS_SCORE}/${shuffled.length} to pass. Questions will shuffle for your retry.</p>`;
+        document.getElementById('retryBtn').style.display = 'inline-block';
+    }
+    document.getElementById('quizStatus').textContent = `Final: ${score}/${shuffled.length} — ${passed ? 'PASSED' : 'NOT PASSED'}`;
+}
+
+function resetQuiz() {
+    initQuiz();
+}
+
+initQuiz();
 </script>
 {% endblock %}

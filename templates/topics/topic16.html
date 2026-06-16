@@ -1,0 +1,35 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-info mt-3">1. Log Ingestion & Normalization</h3>
+<p>SIEMs ingest logs from diverse sources (Windows Event Logs, Syslog, JSON, CEF, LEEF) via agents (Winlogbeat, Sysmon), syslog forwarders, or API collectors. Normalization maps disparate fields to a common schema — source IP, destination IP, user, action, time. This enables cross-source correlation.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> Two different sources send login data. Windows: <code>EventID 4624, Account Name: jdoe, Workstation: PC-001, LogonType: 2</code>. VPN: <code>vendor=Juniper, action=authentication-success, src_ip=203.0.113.5, user=jdoe@corp.com</code>. The SIEM normalizes both to <code>event_type=login, user=jdoe, source_host=PC-001, source_ip=203.0.113.5, timestamp=2026-06-17T08:00:00Z</code>. A correlation rule can then detect "jdoe logged in from both the office PC and VPN within 5 seconds" — impossible travel detection.
+</div>
+
+<h6 class="text-info mt-3">2. Correlation Rules — Threshold / Aggregation / Sequence</h3>
+<p>Threshold rules trigger when a count exceeds a limit (e.g., 10 failed logins in 5 minutes). Aggregation rules look for rare events (e.g., first-time process execution). Sequence rules detect event chains (e.g., scheduled task creation followed by network connection to unknown IP).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example (Threshold):</b> Rule: <code>winlog.event_id=4625 | stats count by Source_Network_Address | where count > 5 within 5 minutes</code>. This rule triggers when an IP generates 5+ failed logins in 5 minutes — indicating brute force attack. The analyst sees 127 failed attempts from <code>185.130.5.201</code> targeting user <code>admin</code> on the domain controller.<br>
+<b>Example (Sequence):</b> Rule detects: Event 1: <code>winword.exe spawns cmd.exe</code> (Sysmon E1), followed within 3s by Event 2: <code>cmd.exe spawns powershell.exe with encoded args</code>, followed within 5s by Event 3: <code>powershell.exe makes HTTP connection to external IP</code>. This ordered sequence has a confidence score of 95% for phishing->macro->C2 attack chain.
+</div>
+
+<h6 class="text-info mt-3">3. Dashboards</h3>
+<p>SOC dashboards visualize real-time security posture: top alert types, source IPs, affected assets, MITRE techniques, and alert triage status. Common widgets: alert timeline, geographic map of source IPs, top 10 affected users, correlation rule effectiveness, and MTTR (Mean Time to Respond).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Splunk Dashboard:</b> A SOC analyst checks the "Executive Summary" dashboard showing:<br>
+- Alerts last 24h: 1,247 (12 Critical, 45 High, 190 Medium, 1000 Low)<br>
+- Top MITRE techniques: T1059 (PowerShell) - 34%, T1566 (Phishing) - 22%, T1078 (Valid Accounts) - 15%<br>
+- Open incidents: 8 (SEV-1: 1, SEV-2: 3, SEV-3: 4)<br>
+- MTTR: 2.5 hours (last 7 days)<br>
+- Most targeted users: jdoe (12 alerts), asmith (8 alerts), admin_svc (6 alerts)<br>
+The analyst filters by "Critical" alerts and starts triaging by creation time.
+</div>
+
+<h6 class="text-info mt-3">4. Alert Tuning</h3>
+<p>Alert tuning reduces false positives by adjusting thresholds, adding exclusion lists, improving correlation logic, and implementing suppression rules. Tuning is continuous — a rule that works today may generate FPs tomorrow due to infrastructure changes.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> Rule "Multiple Failed Logins" triggered 500 times in 24 hours for IP <code>10.0.0.50</code> (an internal vulnerability scanner). Analysis reveals the scanner performs authentication tests and generates 5000+ failed logins daily as part of its normal operation. The analyst excludes the IP: <code>NOT Source_Network_Address="10.0.0.50"</code>. After 7 days, the rule drops from 500 to 12 alerts/day. Another rule "Suspicious Process" fires for <code>wscript.exe C:\Windows\System32\manage-bde.wsf</code> — this is a legitimate BitLocker management script. The analyst adds a whitelist condition: <code>NOT (Process="wscript.exe" AND CommandLine LIKE "*manage-bde*")</code>.
+</div>
+
+</div>

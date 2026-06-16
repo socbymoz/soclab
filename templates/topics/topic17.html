@@ -1,0 +1,48 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-danger mt-3">1. Incident Classification (SEV-1 through SEV-4)</h3>
+<p>Severity levels define response urgency: SEV-1 (Critical) — active ransomware, data breach with PII, or full DC compromise; immediate response with legal & exec notification. SEV-2 (High) — lateral movement, C2 beaconing, or malware outbreak in non-critical systems; respond within 2 hours. SEV-3 (Medium) — single host compromised with no lateral movement; respond within 8 hours. SEV-4 (Low) — user reported phishing with no compromise; respond next business day.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Classification:</b> Alert: "Cobalt Strike beacon detected on DC-01 with outbound connections to known C2." Classification: SEV-1 because (a) domain controller is CRITICAL asset, (b) Cobalt Strike indicates state-level or sophisticated actor, (c) active C2 means data exfiltration is ongoing. Action: Immediate incident bridge with Tier-3, CISO, and IT Director. Legal notified for potential data breach. IR retainer activated.<br>
+<b>Example SEV-3:</b> Alert: "Malicious document detected on sales-user's laptop. EDR quarantined file. No lateral movement. No outbound C2." Analyst confirms the host is isolated, runs full scan, and schedules reimage. Ticket closed within 4 hours. No escalation needed.
+</div>
+
+<h6 class="text-danger mt-3">2. Containment Strategies</h3>
+<p>Containment stops the incident from spreading: host isolation (EDR quarantine or network cut), account disablement, firewall rules blocking C2 IPs, email gateway blocking malicious senders/domains, and application-level blocks (e.g., blocking PowerShell for non-admin users via GPO).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Containment:</b> During a ransomware outbreak detected on 3 workstations in the finance department:<br>
+(1) EDR Actions: Isolate all 3 hosts via CrowdStrike's "Network Contain" feature — blocks all network traffic except to CrowdStrike cloud.<br>
+(2) Firewall: Deploy block rule for ransomware C2 domain <code>evil-ransom.ddns.net</code> and IP <code>185.130.5.0/24</code> across all branch firewalls.<br>
+(3) AD: Disable the service account <code>svc_ransom</code> that was used for lateral movement. Reset all passwords for users on affected hosts.<br>
+(4) Email: Block all emails with attachment extensions .docm, .xlsm, .js from external senders via transport rule.<br>
+(5) Microsoft 365: Enable "Alert" policy for any admin-role elevation attempt.
+</div>
+
+<h6 class="text-danger mt-3">3. Eradication</h3>
+<p>Eradication removes the threat from the environment: reformat and reimage compromised hosts, revoke and rotate compromised credentials, patch exploited vulnerabilities, remove persistence mechanisms, and clean up attacker artifacts (scheduled tasks, registry keys, malware binaries).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example Eradication:</b> After containment, the incident response team:<br>
+(1) Reimages all 3 compromised hosts from known-good gold image (Windows 11 23H2 + security baseline).<br>
+(2) Rotates 45 user passwords for the finance department (affected plus adjacent users).<br>
+(3) Rotates 2 domain admin credentials (the attacker had LSA secrets access).<br>
+(4) Patches the exploited vulnerability: Apache Struts CVE-2023-34362 — immediate deployment of patch to all 12 internet-facing servers.<br>
+(5) Removes persistence: deletes 14 scheduled tasks, 9 registry Run keys, and 3 WMI subscriptions across the environment using PowerShell remoting.
+</div>
+
+<h6 class="text-danger mt-3">4. Post-Incident Review (PIR) Process</h3>
+<p>The PIR is a blameless retrospective held within 5 business days after containment. It reviews: timeline, root cause, detection gaps, response effectiveness, containment SLAs, and identifies improvements. Outputs: action items with owners and deadlines, updated runbooks, and new detection rules.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example PIR Summary:</b><br>
+- Incident #: INC-2026-042 | SEV-1 | Duration: 6h containment, 24h full eradication<br>
+- Root Cause: Unpatched Apache Struts (CVE-2023-34362) on WEB01<br>
+- Detection Gap: WAF in monitor-only mode for critical rule 933210 (Struts OGNL Injection). WAF was not tuned for Struts after initial deployment.<br>
+- Response Gap: SOC Tier-1 took 45 min to escalate (target: 15 min). Root cause: Cobalt Strike beacon not in runbook.<br>
+- Action Items:<br>
+  - [P1] Enable WAF blocking mode for all critical rules (Owner: NetSec, Due: 7 days)<br>
+  - [P1] Deploy virtual patching for known-critical CVEs via WAF (Owner: AppSec, Due: 30 days)<br>
+  - [P2] Add Cobalt Strike detection procedure to Tier-1 runbook (Owner: SOC Lead, Due: 14 days)<br>
+  - [P2] Implement automatic host isolation playbook in SOAR for C2 detection (Owner: SOC Eng, Due: 30 days)
+</div>
+
+</div>

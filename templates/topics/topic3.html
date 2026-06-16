@@ -1,0 +1,30 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-warning mt-3">1. Tactics vs Techniques</h6>
+<p>MITRE ATT&CK is a knowledge base of adversary behavior. Tactics (the "why") represent the goal — like TA0001 (Initial Access) or TA0005 (Defense Evasion). Techniques (the "how") are specific methods — like T1566 (Phishing) or T1055 (Process Injection). Sub-techniques provide finer granularity.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> TA0001 (Initial Access) includes T1566.001 (Spearphishing Attachment). The analyst sees an email with a malicious .docm file. Mapping this to MITRE tells you the adversary's tactic is Initial Access, the technique is Phishing, and the sub-technique is Spearphishing Attachment — informing containment and EDR hunting queries.
+</div>
+
+<h6 class="text-warning mt-3">2. ATT&CK Matrix Overview</h6>
+<p>The matrix organizes 14 tactics across columns with techniques listed vertically. Enterprise covers Windows, macOS, Linux, cloud, network, and ICS. Each technique has an ID, name, description, detection recommendations, and mitigation mappings.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> An alert for <code>reg.exe add HKLM\SYSTEM\CurrentControlSet\Services\...</code> maps to T1543.003 (Create or Modify System Process: Windows Service). The matrix shows it belongs to TA0003 (Persistence) and TA0004 (Privilege Escalation). The detection section suggests monitoring service creation events (Event ID 4697 / 7045).
+</div>
+
+<h6 class="text-warning mt-3">3. Key Techniques: T1078, T1059, T1047</h6>
+<p>T1078 (Valid Accounts) covers using legitimate credentials to bypass auth controls. T1059 (Command and Scripting Interpreter) includes PowerShell, Bash, VBScript. T1047 (Windows Management Instrumentation) covers using WMI for execution, lateral movement, and information discovery.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example (T1078):</b> A compromised service account <code>svc_backup</code> is used to RDP into a SQL server — Event ID 4624 with LogonType 10. The account has never logged into this server before, indicating credential misuse.<br>
+<b>Example (T1059):</b> <code>powershell.exe -Exec Bypass -C "Invoke-Command -Computer DC01 {Get-Process}"</code> — Event ID 4104 captures PowerShell script block logging showing lateral movement.<br>
+<b>Example (T1047):</b> <code>wmic /node:DC01 process call create "cmd.exe /c whoami"</code> — Sysmon Event ID 1 shows wmic.exe spawning cmd.exe on a remote system.
+</div>
+
+<h6 class="text-warning mt-3">4. Mapping Alerts to MITRE</h6>
+<p>Each SOC alert should be tagged with the relevant MITRE technique(s). This enables trend analysis (most common techniques), coverage gaps, and improved detection rules. Many SIEM integrations (Splunk ES, Azure Sentinel) map rules to MITRE IDs automatically.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> An alert triggers: <code>schtasks.exe /create /tn "Updater" /tr "C:\Windows\System32\cmd.exe /c start powershell.exe"</code>. The analyst maps this to T1053.005 (Scheduled Task). Adding this to the alert in the SIEM allows the SOC to run a report showing that 40% of incidents this quarter used Scheduled Tasks for persistence, triggering a recommendation to audit all scheduled task creation via GPO.
+</div>
+
+</div>

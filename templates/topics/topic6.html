@@ -1,0 +1,28 @@
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+
+<h6 class="text-danger mt-3">1. Server-Side Request Forgery (SSRF)</h6>
+<p>SSRF exploits a web application to make requests to internal resources. Attackers target <code>http://169.254.169.254/</code> (cloud metadata), <code>http://localhost:9200/</code> (Elasticsearch), or internal services via URL parameters like <code>?url=</code>, <code>?file=</code>, <code>?redirect=</code>.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> A web app's profile image feature: <code>GET /fetch?url=http://evil.com/photo.jpg</code>. The attacker changes to <code>http://169.254.169.254/latest/meta-data/iam/security-credentials/admin</code> and receives AWS access keys in the response. Logs show the source IP is the internal load balancer (10.0.0.1), proving the request was made server-side.
+</div>
+
+<h6 class="text-danger mt-3">2. Insecure Deserialization</h6>
+<p>Insecure deserialization occurs when untrusted data is deserialized without validation, leading to RCE. Common in Java (ObjectInputStream, readObject), PHP (unserialize), Python (pickle), and .NET (BinaryFormatter). Detection involves monitoring for serialized stream magic bytes and anomalous child processes.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example:</b> A Java application sends cookie values like <code>Cookie: user=ACED0005737200116A6176612E7574696C2E486173684D6170</code>. The hex <code>ACED0005</code> is Java serialization magic bytes. A <code>ysoserial</code> payload with CommonsCollections4 chain triggers <code>Runtime.exec("calc.exe")</code>. WAF logs show the cookie size jumped from 120 bytes to 4500 bytes — a clear anomaly.
+</div>
+
+<h6 class="text-danger mt-3">3. API Abuse</h6>
+<p>Common API attacks include broken authentication (missing JWT validation), lack of rate limiting (account takeover via credential stuffing), and IDOR (Insecure Direct Object Reference) where user A modifies <code>/api/user/12345</code> to access user B's data.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example (IDOR):</b> API log: <code>GET /api/v2/orders/ORD-00199</code> from user <code>alice@corp.com</code> is fine. But the same user then sends <code>GET /api/v2/orders/ORD-00200</code>, <code>ORD-00201</code>, through <code>ORD-00500</code> in rapid succession (200 req/min). The API returns order details including PII (names, credit card last-4) for other customers. The analyst sees the API lacks authorization checks — only the JWT user ID is verified, not resource ownership.
+</div>
+
+<h6 class="text-danger mt-3">4. WAF Bypass Techniques</h6>
+<p>Attackers bypass WAF rules using encoding (URL double-encoding, Unicode normalization), HTTP parameter pollution (HPP), case variations, comment injection (<code>/**/</code>), null bytes, and content-type switching (JSON vs form-data).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Example (SQLi bypass):</b> The attacker sends <code>?id=1'/*!14400UNION*/+/*!14400SELECT*/+1,2,3--</code>. MySQL treats <code>/*!14400 code */</code> as conditional SQL — the version number (14400 > MySQL version) causes the server to execute the code, while the WAF regex <code>/UNION\s+SELECT/i</code> fails to match because of the comment. The request gets through and the attacker extracts data.
+</div>
+
+</div>
