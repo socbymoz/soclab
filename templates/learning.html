@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Learning Center{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-primary">
+            <div class="card-body text-center">
+                <h1><i class="bi bi-book"></i> SOC Log Analysis - Learning Center</h1>
+                <p class="lead">Tutorials, Guides, Tips & Tricks for beginner SOC analysts</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><h5 class="mb-0"><i class="bi bi-journals"></i> Quick Reference - Short Notes</h5></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-primary text-white py-1"><strong>Windows Event IDs to Know</strong></div>
+                            <div class="card-body py-2 small">
+                                <table class="table table-sm mb-0">
+                                    <tr><td>4624</td><td>Successful Logon</td></tr>
+                                    <tr><td>4625</td><td>Failed Logon</td></tr>
+                                    <tr><td>4634</td><td>Logoff</td></tr>
+                                    <tr><td>4648</td><td>Logon with explicit creds</td></tr>
+                                    <tr><td>4672</td><td>Admin Logon</td></tr>
+                                    <tr><td>4688</td><td>Process Created</td></tr>
+                                    <tr><td>4720</td><td>User Account Created</td></tr>
+                                    <tr><td>4722</td><td>User Enabled</td></tr>
+                                    <tr><td>4728</td><td>Member Added to Group</td></tr>
+                                    <tr><td>4732</td><td>Member Added to Security Group</td></tr>
+                                    <tr><td>5156</td><td>Connection Established</td></tr>
+                                    <tr><td>1102</td><td>Audit Log Cleared</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-success">
+                            <div class="card-header bg-success text-white py-1"><strong>HTTP Status Codes</strong></div>
+                            <div class="card-body py-2 small">
+                                <table class="table table-sm mb-0">
+                                    <tr><td>1xx</td><td>Informational</td></tr>
+                                    <tr><td>200</td><td>OK (Success)</td></tr>
+                                    <tr><td>301/302</td><td>Redirect</td></tr>
+                                    <tr><td>400</td><td>Bad Request</td></tr>
+                                    <tr><td>401</td><td>Unauthorized</td></tr>
+                                    <tr><td>403</td><td>Forbidden</td></tr>
+                                    <tr><td>404</td><td>Not Found</td></tr>
+                                    <tr><td>405</td><td>Method Not Allowed</td></tr>
+                                    <tr><td>500</td><td>Internal Server Error</td></tr>
+                                    <tr><td>502</td><td>Bad Gateway</td></tr>
+                                    <tr><td>503</td><td>Service Unavailable</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-warning">
+                            <div class="card-header bg-warning text-dark py-1"><strong>Linux Log Locations</strong></div>
+                            <div class="card-body py-2 small">
+                                <table class="table table-sm mb-0">
+                                    <tr><td>/var/log/syslog</td><td>General system log</td></tr>
+                                    <tr><td>/var/log/auth.log</td><td>Auth attempts (Debian)</td></tr>
+                                    <tr><td>/var/log/secure</td><td>Auth attempts (RHEL)</td></tr>
+                                    <tr><td>/var/log/kern.log</td><td>Kernel messages</td></tr>
+                                    <tr><td>/var/log/httpd/</td><td>Apache HTTP logs</td></tr>
+                                    <tr><td>/var/log/nginx/</td><td>Nginx HTTP logs</td></tr>
+                                    <tr><td>/var/log/mysql/</td><td>MySQL logs</td></tr>
+                                    <tr><td>/var/log/cron</td><td>Cron job logs</td></tr>
+                                    <tr><td>/var/log/maillog</td><td>Mail server logs</td></tr>
+                                    <tr><td>/var/log/btmp</td><td>Failed login records</td></tr>
+                                    <tr><td>/var/log/wtmp</td><td>Login history records</td></tr>
+                                    <tr><td>/var/log/lastlog</td><td>Last login per user</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><h5 class="mb-0"><i class="bi bi-bookmark-check"></i> Tutorial: How to Analyze Logs Like a SOC Analyst</h5></div>
+            <div class="card-body">
+                <div class="accordion" id="tutorialAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step1">Step 1: Understand Your Environment</button></h2>
+                        <div id="step1" class="accordion-collapse collapse show" data-bs-parent="#tutorialAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Know what you're protecting:</strong> Before diving into logs, understand the network topology, critical assets, and normal traffic patterns.</p>
+                                <ul>
+                                    <li>Map out IP ranges, servers, and their roles</li>
+                                    <li>Identify critical systems (domain controllers, file servers, databases)</li>
+                                    <li>Establish baseline behavior for normal activity</li>
+                                    <li>Know which log sources are available and where they're stored</li>
+                                </ul>
+                                <div class="alert alert-info"><strong>Tip:</strong> In our lab, the environment includes a web server (10.10.10.5), workstations, and external internet access. The adversary has compromised the web server and is moving laterally.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step2">Step 2: Start with Suspicious Patterns</button></h2>
+                        <div id="step2" class="accordion-collapse collapse" data-bs-parent="#tutorialAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Look for the low-hanging fruit:</strong> Certain patterns are almost always malicious.</p>
+                                <h6>Red Flags in Web Logs:</h6>
+                                <ul>
+                                    <li><code>../</code> or <code>%2E%2E%2F</code> - Path Traversal attempts</li>
+                                    <li><code>' OR 1=1</code> or <code>%27</code> - SQL Injection</li>
+                                    <li><code>&lt;script&gt;</code> or <code>%3Cscript%3E</code> - XSS attempts</li>
+                                    <li>POST to <code>/upload.php</code> followed by GET to <code>/uploads/shell.php</code> - Webshell upload</li>
+                                    <li>Requests to <code>/.env</code>, <code>/wp-config.php.bak</code> - Information disclosure attempts</li>
+                                </ul>
+                                <h6>Red Flags in Windows Logs:</h6>
+                                <ul>
+                                    <li>Event ID 1102 - Audit log cleared (attacker covering tracks)</li>
+                                    <li>Event ID 4720 + 4732 - New user created and added to Admin group</li>
+                                    <li>Multiple 4625 followed by 4624 - Successful brute force</li>
+                                    <li>4688 with unusual parent-child process chains (e.g., Office spawning cmd.exe)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3">Step 3: Correlate Across Log Sources</button></h2>
+                        <div id="step3" class="accordion-collapse collapse" data-bs-parent="#tutorialAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Connect the dots:</strong> A single log entry tells you little. Correlate across sources to see the full attack chain.</p>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Example Attack Chain (as seen in our lab):</h6>
+                                        <ol>
+                                            <li><strong>Web Log:</strong> GET /../etc/passwd (Path traversal discovery)</li>
+                                            <li><strong>Web Log:</strong> POST /upload.php + GET /uploads/shell.php (Webshell uploaded)</li>
+                                            <li><strong>Firewall Log:</strong> Outbound connection to 34.253.159.159:4444 (C2 callback)</li>
+                                            <li><strong>Windows Log (4688):</strong> cmd.exe -> powershell.exe -> download payload</li>
+                                            <li><strong>Windows Log (4720):</strong> New user 'backup_admin' created by Administrator</li>
+                                            <li><strong>Sysmon (Event 15):</strong> Registry Run key modified for persistence</li>
+                                            <li><strong>Windows Log (1102):</strong> Audit log cleared - attacker covering tracks</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step4">Step 4: Document and Escalate</button></h2>
+                        <div id="step4" class="accordion-collapse collapse" data-bs-parent="#tutorialAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Build your case:</strong> Document everything you find with timestamps.</p>
+                                <ul>
+                                    <li>Record all suspicious events with exact timestamps</li>
+                                    <li>Note which systems/users are involved</li>
+                                    <li>Create a timeline of the attack</li>
+                                    <li>Note what indicators (IPs, hashes, filenames) to block</li>
+                                    <li>Escalate to senior analysts with your evidence package</li>
+                                </ul>
+                                <div class="alert alert-warning"><strong>Remember:</strong> In a real SOC, every investigation should produce an incident report that can stand up to legal scrutiny.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-light"><h5 class="mb-0"><i class="bi bi-tools"></i> Essential SOC Tools</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Tool</th><th>Purpose</th><th>Example Command</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>grep</strong></td><td>Search text in logs</td><td><code>grep "Failed password" auth.log</code></td></tr>
+                            <tr><td><strong>awk</strong></td><td>Parse structured logs</td><td><code>awk '{print $1,$7}' access.log</code></td></tr>
+                            <tr><td><strong>cut</strong></td><td>Extract columns</td><td><code>cut -d' ' -f1,4 access.log</code></td></tr>
+                            <tr><td><strong>sort/uniq</strong></td><td>Count unique entries</td><td><code>sort access.log | uniq -c | sort -rn</code></td></tr>
+                            <tr><td><strong>sed</strong></td><td>Find/replace in logs</td><td><code>sed 's/old/new/g' file.log</code></td></tr>
+                            <tr><td><strong>jq</strong></td><td>Parse JSON logs</td><td><code>jq '.event' syslog.json</code></td></tr>
+                            <tr><td><strong>tcpdump</strong></td><td>Capture network traffic</td><td><code>tcpdump -i eth0 port 80</code></td></tr>
+                            <tr><td><strong>Wireshark</strong></td><td>Packet analysis GUI</td><td>Follow TCP streams</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-light"><h5 class="mb-0"><i class="bi bi-gem"></i> Tips & Tricks for Beginners</h5></div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">1</span> Always check the timestamps first</h6>
+                        <small>Logs without accurate timestamps are nearly useless. Ensure all systems use NTP for time synchronization.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">2</span> Focus on outliers</h6>
+                        <small>In web logs, look for requests happening outside business hours. In auth logs, look for logins from unusual geo-locations.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">3</span> Follow the 5 Ws</h6>
+                        <small>Who (user/IP), What (action/event), When (timestamp), Where (system/log source), Why (is this suspicious?).</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">4</span> Chains are more important than individual events</h6>
+                        <small>A single failed login is nothing. 100 failed logins followed by a success is an incident.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">5</span> Never ignore log clearing events</h6>
+                        <small>Event ID 1102 (Windows) or 'rm /var/log/*' (Linux) is almost always an attacker covering tracks.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">6</span> Use the SIEM's correlation features</h6>
+                        <small>Don't look at logs in isolation. A good SIEM correlates web, firewall, and endpoint logs automatically.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">7</span> Know normal to spot abnormal</h6>
+                        <small>Spend time learning what normal traffic looks like in YOUR environment. Every network is different.</small>
+                    </div>
+                    <div class="list-group-item">
+                        <h6><span class="badge bg-primary">8</span> Document everything</h6>
+                        <small>You will forget what you found 5 minutes ago. Take notes with timestamps as you investigate.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><h5 class="mb-0"><i class="bi bi-diagram-3"></i> Common Attack Patterns to Know</h5></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-danger">
+                            <div class="card-header bg-danger text-white">Brute Force Attack</div>
+                            <div class="card-body small">
+                                <p><strong>Signs:</strong> Multiple rapid failed logins (Event ID 4625 or SSH "Failed password") from same IP</p>
+                                <p><strong>Look for:</strong> Different usernames, same source IP, consistent timing intervals</p>
+                                <p><strong>What to do:</strong> Block the IP, check if any success followed (4624), reset compromised credentials</p>
+                                <p><strong>In our lab:</strong> 45.33.32.156 brute-forcing SSH - see SSH logs</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-danger">
+                            <div class="card-header bg-danger text-white">Web Shell / RCE</div>
+                            <div class="card-body small">
+                                <p><strong>Signs:</strong> Unknown file uploads, then GET requests to the uploaded file with cmd parameters</p>
+                                <p><strong>Look for:</strong> POST to /upload.php, .php/.asp files in /uploads/, URLs with ?cmd= or ?exec=</p>
+                                <p><strong>What to do:</strong> Remove the webshell, patch the upload vulnerability, scan for other shells</p>
+                                <p><strong>In our lab:</strong> 10.10.10.50 accessing /shell.php?cmd=id - see Web logs</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-danger">
+                            <div class="card-header bg-danger text-white">Data Exfiltration</div>
+                            <div class="card-body small">
+                                <p><strong>Signs:</strong> Large outbound data transfers to external IPs on unusual ports</p>
+                                <p><strong>Look for:</strong> Unusual outbound connections (non-standard ports), large file creations followed by network connections</p>
+                                <p><strong>What to do:</strong> Block the C2 IP, check what data was accessed, contain the breach</p>
+                                <p><strong>In our lab:</strong> 10.10.10.50 connecting to 34.253.159.159 on ports 4444/9999</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><h5 class="mb-0"><i class="bi bi-terminal"></i> Practical Guide: Using Command Line for Log Analysis</h5></div>
+            <div class="card-body">
+                <p>In a real SOC, you'll often work with raw log files on Linux systems. Here are essential command patterns:</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-header"><strong>Find failed SSH logins</strong></div>
+                            <div class="card-body"><code>grep "Failed password" /var/log/auth.log</code></div>
+                        </div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-header"><strong>Count unique IPs attacking SSH</strong></div>
+                            <div class="card-body"><code>grep "Failed password" auth.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn</code></div>
+                        </div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-header"><strong>Find top URLs accessed on web server</strong></div>
+                            <div class="card-body"><code>awk '{print $7}' access.log | sort | uniq -c | sort -rn | head -20</code></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-header"><strong>Find HTTP 404 errors</strong></div>
+                            <div class="card-body"><code>grep ' 404 ' access.log | awk '{print $1, $7}' | sort -u</code></div>
+                        </div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-header"><strong>Extract IPs making POST requests</strong></div>
+                            <div class="card-body"><code>grep '"POST' access.log | awk '{print $1}' | sort -u</code></div>
+                        </div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-header"><strong>Check for path traversal attempts</strong></div>
+                            <div class="card-body"><code>grep -E '\.\.\/|%2E%2E%2F' access.log</code></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

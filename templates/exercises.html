@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Quizzes & Exercises{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-primary">
+            <div class="card-body text-center">
+                <h1><i class="bi bi-puzzle"></i> SOC Knowledge Quizzes</h1>
+                <p class="lead">Test your understanding of SOC log analysis concepts</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-question-circle"></i> Quiz Questions</span>
+                    <span id="scoreDisplay" class="badge bg-success fs-6">Score: 0/0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% for quiz in quizzes %}
+                <div class="card mb-3 quiz-card" data-question="{{ loop.index0 }}">
+                    <div class="card-header d-flex justify-content-between">
+                        <strong>Question {{ loop.index }}</strong>
+                        <span class="badge bg-secondary">{{ loop.index }}/{{ quizzes|length }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3"><strong>{{ quiz.q }}</strong></p>
+                        <div class="options">
+                            {% set outer_index = loop.index0 %}
+                            {% for option in quiz.options %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input quiz-option" type="radio" name="q{{ outer_index }}" value="{{ loop.index0 }}" id="q{{ outer_index }}_o{{ loop.index0 }}">
+                                <label class="form-check-label" for="q{{ outer_index }}_o{{ loop.index0 }}">{{ option }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="result-feedback mt-2" style="display:none;"></div>
+                        <button class="btn btn-sm btn-primary mt-2 check-btn" onclick="checkAnswer(this)">Check Answer</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><i class="bi bi-graph-up"></i> Your Progress</div>
+            <div class="card-body">
+                <canvas id="quizProgressChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><i class="bi bi-trophy"></i> Achievements</div>
+            <div class="card-body">
+                <ul class="list-group" id="achievements">
+                    <li class="list-group-item d-flex align-items-center">
+                        <span class="badge bg-secondary me-2" id="ach-first">?</span>
+                        <span>Complete your first quiz question</span>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                        <span class="badge bg-secondary me-2" id="ach-half">?</span>
+                        <span>Answer 5 questions correctly</span>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                        <span class="badge bg-secondary me-2" id="ach-all">?</span>
+                        <span>Complete all quiz questions</span>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                        <span class="badge bg-secondary me-2" id="ach-perfect">?</span>
+                        <span>Get 100% on the quiz</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><i class="bi bi-clipboard-data"></i> Practical Exercise: Analyze the Attack</div>
+            <div class="card-body">
+                <p>Use the log viewers to investigate the simulated attack. Answer these questions:</p>
+                <ol>
+                    <li>What is the IP address that performed the path traversal attack? (Check Web Logs)</li>
+                    <li>What username was brute-forced successfully via SSH? (Check SSH Logs)</li>
+                    <li>What Event ID shows the new user account creation? (Check Windows Logs)</li>
+                    <li>What IP and port was the C2 beacon connecting to? (Check Sysmon Logs)</li>
+                    <li>What was the attacker's final action to hide their tracks? (Check Windows Logs)</li>
+                    <li>What Tor-related connection was observed in the firewall logs?</li>
+                </ol>
+                <details>
+                    <summary class="btn btn-sm btn-outline-secondary">Show Answers</summary>
+                    <div class="mt-2">
+                        <ol>
+                            <li><strong>10.10.10.50</strong> - Made requests to /../etc/passwd</li>
+                            <li><strong>stansimon</strong> - Multiple failed attempts then successful login</li>
+                            <li><strong>4720</strong> - User 'backup_admin' created</li>
+                            <li><strong>34.253.159.159:4444</strong> - PowerShell C2 connection</li>
+                            <li><strong>Audit Log Cleared (Event ID 1102)</strong> - Covering tracks</li>
+                            <li><strong>10.10.10.50 -> 185.220.101.1:9050</strong> - Tor network connection</li>
+                        </ol>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.currentQuizData = {{ quizzes|tojson }};</script>
+{% endblock %}

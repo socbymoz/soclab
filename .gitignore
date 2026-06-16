@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+logs/
+backups/
+server_*.txt
+venv/
+.vscode/
+.idea/
+*.zip
+*.tar.gz

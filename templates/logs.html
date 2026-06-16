@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                <li class="breadcrumb-item active">{{ title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <div class="card bg-dark text-light border-primary">
+            <div class="card-body">
+                <h4><i class="bi bi-info-circle"></i> About {{ title }}</h4>
+                <p class="mb-0">{{ description }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark text-light border-info">
+            <div class="card-body">
+                <h6><i class="bi bi-lightbulb"></i> Pro Tips</h6>
+                <ul class="small mb-0">
+                    {% if log_type == 'windows' %}
+                    <li>Focus on Event IDs 4624, 4625, 4720, 4688, 5156</li>
+                    <li>Check for log clearing (Event ID 1102)</li>
+                    <li>Correlate process creation with network connections</li>
+                    {% elif log_type == 'web' %}
+                    <li>Look for ../ patterns (path traversal)</li>
+                    <li>Check for %27 or %22 (SQL injection encoding)</li>
+                    <li>Monitor for unknown file uploads (.php, .asp)</li>
+                    {% elif log_type == 'firewall' %}
+                    <li>Watch outbound connections on unusual ports</li>
+                    <li>Check for beaconing intervals (regular connections)</li>
+                    <li>Look for Tor exit node IPs (port 9050/9150)</li>
+                    {% elif log_type == 'ssh' %}
+                    <li>Multiple failures + one success = successful brute force</li>
+                    <li>Check for unusual usernames</li>
+                    <li>Correlate with firewall logs for full picture</li>
+                    {% elif log_type == 'sysmon' %}
+                    <li>Event ID 1 + Event ID 3 = process connecting out</li>
+                    <li>Check for unsigned binaries in temp directories</li>
+                    <li>Registry modifications in Run keys = persistence</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-light d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list"></i> {{ title }} - {{ data|length }} Events</span>
+                <div>
+                    <span class="badge bg-info me-1" onclick="filterSeverity('')" style="cursor:pointer">All</span>
+                    <span class="badge bg-success me-1" onclick="filterSeverity('info')" style="cursor:pointer">Info</span>
+                    <span class="badge bg-warning me-1" onclick="filterSeverity('warning')" style="cursor:pointer">Warning</span>
+                    <span class="badge bg-danger me-1" onclick="filterSeverity('high')" style="cursor:pointer">High</span>
+                    <span class="badge bg-dark me-1" onclick="filterSeverity('critical')" style="cursor:pointer">Critical</span>
+                    <span class="badge bg-danger" onclick="filterSuspicious()" style="cursor:pointer">Suspicious Only</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search logs..." onkeyup="searchLogs()">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="severityFilter" onchange="applyFilters()">
+                            <option value="">All Severities</option>
+                            <option value="info">Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="suspiciousToggle" onchange="applyFilters()">
+                            <label class="form-check-label" for="suspiciousToggle">Suspicious Only</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm" id="logTable">
+                        <thead class="table-dark">
+                            <tr>
+                                {% if log_type == 'windows' %}
+                                <th>Event ID</th>
+                                <th>Time</th>
+                                <th>Source</th>
+                                <th>User</th>
+                                <th>Event Type</th>
+                                <th>Details</th>
+                                <th>Severity</th>
+                                <th>Flag</th>
+                                {% elif log_type == 'web' %}
+                                <th>IP</th>
+                                <th>Time</th>
+                                <th>Method</th>
+                                <th>URL</th>
+                                <th>Status</th>
+                                <th>Size</th>
+                                <th>User-Agent</th>
+                                <th>Severity</th>
+                                <th>Flag</th>
+                                {% elif log_type == 'firewall' %}
+                                <th>Time</th>
+                                <th>Protocol</th>
+                                <th>Source IP</th>
+                                <th>SRC Port</th>
+                                <th>Dest IP</th>
+                                <th>DST Port</th>
+                                <th>Action</th>
+                                <th>Rule</th>
+                                <th>Severity</th>
+                                <th>Flag</th>
+                                {% elif log_type == 'ssh' %}
+                                <th>Time</th>
+                                <th>Host</th>
+                                <th>User</th>
+                                <th>Source IP</th>
+                                <th>Event</th>
+                                <th>Details</th>
+                                <th>Severity</th>
+                                <th>Flag</th>
+                                {% elif log_type == 'sysmon' %}
+                                <th>Event ID</th>
+                                <th>Time</th>
+                                <th>Host</th>
+                                <th>Event Type</th>
+                                <th>Details</th>
+                                <th>Severity</th>
+                                <th>Flag</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in data %}
+                            <tr class="log-row {% if entry.get('suspicious') %}table-danger{% endif %}">
+                                {% if log_type == 'windows' %}
+                                <td><span class="badge bg-secondary">{{ entry.id }}</span></td>
+                                <td>{{ entry.time }}</td>
+                                <td>{{ entry.source }}</td>
+                                <td>{{ entry.user }}</td>
+                                <td>{{ entry.event }}</td>
+                                <td class="details-cell">{{ entry.details }}</td>
+                                <td>
+                                    <span class="badge {% if entry.severity == 'critical' %}bg-dark{% elif entry.severity == 'high' %}bg-danger{% elif entry.severity == 'warning' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ entry.severity }}
+                                    </span>
+                                </td>
+                                <td><button class="btn btn-sm btn-outline-danger flag-btn" onclick="flagEvent(this, '{{ entry.event }}', '{{ entry.time }}', '{{ entry.severity }}')"><i class="bi bi-flag"></i></button></td>
+                                {% elif log_type == 'web' %}
+                                <td>{{ entry.ip }}</td>
+                                <td>{{ entry.time }}</td>
+                                <td><span class="badge {% if entry.method == 'POST' %}bg-warning text-dark{% else %}bg-info{% endif %}">{{ entry.method }}</span></td>
+                                <td class="details-cell"><small>{{ entry.url }}</small></td>
+                                <td>
+                                    <span class="badge {% if entry.status >= 500 %}bg-dark{% elif entry.status >= 400 %}bg-warning text-dark{% elif entry.status >= 300 %}bg-info{% else %}bg-success{% endif %}">
+                                        {{ entry.status }}
+                                    </span>
+                                </td>
+                                <td>{{ entry.size }}</td>
+                                <td><small>{{ entry.user_agent[:30] }}...</small></td>
+                                <td>
+                                    <span class="badge {% if entry.severity == 'critical' %}bg-dark{% elif entry.severity == 'high' %}bg-danger{% elif entry.severity == 'warning' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ entry.severity }}
+                                    </span>
+                                </td>
+                                <td><button class="btn btn-sm btn-outline-danger flag-btn" onclick="flagEvent(this, '{{ entry.url }}', '{{ entry.time }}', '{{ entry.severity }}')"><i class="bi bi-flag"></i></button></td>
+                                {% elif log_type == 'firewall' %}
+                                <td>{{ entry.time }}</td>
+                                <td>{{ entry.protocol }}</td>
+                                <td>{{ entry.src_ip }}</td>
+                                <td>{{ entry.src_port }}</td>
+                                <td>{{ entry.dst_ip }}</td>
+                                <td>{{ entry.dst_port }}</td>
+                                <td>
+                                    <span class="badge {% if entry.action == 'BLOCK' %}bg-danger{% else %}bg-success{% endif %}">{{ entry.action }}</span>
+                                </td>
+                                <td><small>{{ entry.rule }}</small></td>
+                                <td>
+                                    <span class="badge {% if entry.severity == 'critical' %}bg-dark{% elif entry.severity == 'high' %}bg-danger{% elif entry.severity == 'warning' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ entry.severity }}
+                                    </span>
+                                </td>
+                                <td><button class="btn btn-sm btn-outline-danger flag-btn" onclick="flagEvent(this, '{{ entry.rule }}', '{{ entry.time }}', '{{ entry.severity }}')"><i class="bi bi-flag"></i></button></td>
+                                {% elif log_type == 'ssh' %}
+                                <td>{{ entry.time }}</td>
+                                <td>{{ entry.host }}</td>
+                                <td>{{ entry.user }}</td>
+                                <td>{{ entry.src_ip }}</td>
+                                <td>{{ entry.event }}</td>
+                                <td class="details-cell">{{ entry.details }}</td>
+                                <td>
+                                    <span class="badge {% if entry.severity == 'critical' %}bg-dark{% elif entry.severity == 'high' %}bg-danger{% elif entry.severity == 'warning' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ entry.severity }}
+                                    </span>
+                                </td>
+                                <td><button class="btn btn-sm btn-outline-danger flag-btn" onclick="flagEvent(this, '{{ entry.event|escape }}', '{{ entry.time }}', '{{ entry.severity }}')"><i class="bi bi-flag"></i></button></td>
+                                {% elif log_type == 'sysmon' %}
+                                <td><span class="badge bg-secondary">{{ entry.id }}</span></td>
+                                <td>{{ entry.time }}</td>
+                                <td>{{ entry.host }}</td>
+                                <td>{{ entry.event }}</td>
+                                <td class="details-cell">{{ entry.details }}</td>
+                                <td>
+                                    <span class="badge {% if entry.severity == 'critical' %}bg-dark{% elif entry.severity == 'high' %}bg-danger{% elif entry.severity == 'warning' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ entry.severity }}
+                                    </span>
+                                </td>
+                                <td><button class="btn btn-sm btn-outline-danger flag-btn" onclick="flagEvent(this, '{{ entry.event|escape }}', '{{ entry.time }}', '{{ entry.severity }}')"><i class="bi bi-flag"></i></button></td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><i class="bi bi-bar-chart"></i> Severity Distribution</div>
+            <div class="card-body"><canvas id="severityChart_{{ log_type }}" height="150"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-light"><i class="bi bi-flag"></i> Flagged Events</div>
+            <div class="card-body">
+                <div id="flaggedList" class="small">Click the flag icon on any row to flag it for investigation.</div>
+                <button class="btn btn-sm btn-danger mt-2" onclick="clearFlags()"><i class="bi bi-trash"></i> Clear All Flags</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    const logType = '{{ log_type }}';
+    const allData = {{ data|tojson }};
+</script>
+{% endblock %}
