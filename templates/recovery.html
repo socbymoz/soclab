@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Recovery{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-info">
+            <div class="card-body d-flex align-items-center">
+                <i class="bi bi-arrow-clockwise fs-1 text-info me-3"></i>
+                <div>
+                    <h3 class="mb-0">Recovery</h3>
+                    <small class="text-muted">Restore normal operations and verify system integrity</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-hdd"></i> System Restoration</div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec1" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec1">Restore websrv-01 from clean backup</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec2" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec2">Reimage CORP-WS-01 workstation</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec3" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec3">Verify integrity of other systems</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-key"></i> Access Control</div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec4" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec4">Reset all domain passwords</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec5" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec5">Enable MFA for all admin accounts</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec6" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec6">Review and audit privileged access</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-shield"></i> Security Hardening</div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec7" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec7">Update firewall rules (block C2 ports)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec8" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec8">Deploy EDR on all endpoints</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input recovery-check" type="checkbox" id="rec9" onchange="updateRecovery()">
+                    <label class="form-check-label" for="rec9">Enable account lockout policies</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body text-center">
+        <h4>Recovery Progress</h4>
+        <div class="progress mb-2" style="height: 25px;">
+            <div class="progress-bar bg-info" id="recoveryBar" role="progressbar" style="width:0%">0%</div>
+        </div>
+        <small class="text-muted" id="recoveryText">0 of 9 tasks completed</small>
+    </div>
+</div>
+
+<div class="card mt-4 border-info">
+    <div class="card-header bg-dark text-info"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
+    <div class="card-body" id="quizSection">
+        <div class="mb-3">
+            <p class="fw-bold">1. What is the goal of the recovery phase?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="0"><label class="form-check-label">Catch the attacker</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="1"><label class="form-check-label">Restore normal operations safely</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="2"><label class="form-check-label">Delete old logs</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="3"><label class="form-check-label">Update firewall rules</label></div>
+        </div>
+        <div class="mb-3">
+            <p class="fw-bold">2. Why should passwords be rotated during recovery?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="0"><label class="form-check-label">It's standard procedure</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="1"><label class="form-check-label">Credentials may have been compromised</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="2"><label class="form-check-label">Management requires it</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="3"><label class="form-check-label">To test the helpdesk</label></div>
+        </div>
+        <div id="quizFeedback" class="mb-3"></div>
+        <button class="btn btn-info text-dark" onclick="submitQuiz(5)">Submit & Continue</button>
+    </div>
+</div>
+<script>
+function submitQuiz(step) {
+    const answers = []; const total = 2;
+    let allAnswered = true;
+    for (let i = 0; i < total; i++) {
+        const s = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!s) { allAnswered = false; break; }
+        answers.push(parseInt(s.value));
+    }
+    if (!allAnswered) { document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>'; return; }
+    fetch('/quiz/' + step, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers: answers}) })
+    .then(r => r.json()).then(d => {
+        const fb = document.getElementById('quizFeedback');
+        if (d.passed) { fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>'; setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800); }
+        else { fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>'; }
+    });
+}
+</script>
+{% endblock %}
+{% block scripts %}
+<script>
+function updateRecovery() {
+    const checks = document.querySelectorAll('.recovery-check');
+    const done = Array.from(checks).filter(c => c.checked).length;
+    const pct = Math.round(done / checks.length * 100);
+    document.getElementById('recoveryBar').style.width = pct + '%';
+    document.getElementById('recoveryBar').textContent = pct + '%';
+    document.getElementById('recoveryText').textContent = done + ' of ' + checks.length + ' tasks completed';
+}
+</script>
+{% endblock %}

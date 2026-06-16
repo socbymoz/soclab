@@ -22,18 +22,22 @@
             <button class="btn btn-sm text-light" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
         </div>
         <hr class="text-secondary">
-        <a href="/" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a href="/logs/windows" class="sidebar-item"><i class="bi bi-windows"></i> Windows Events</a>
-        <a href="/logs/web" class="sidebar-item"><i class="bi bi-globe"></i> Web Server</a>
-        <a href="/logs/firewall" class="sidebar-item"><i class="bi bi-shield"></i> Firewall</a>
-        <a href="/logs/ssh" class="sidebar-item"><i class="bi bi-terminal"></i> SSH Auth</a>
-        <a href="/logs/sysmon" class="sidebar-item"><i class="bi bi-cpu"></i> Sysmon</a>
-        <a href="/learning" class="sidebar-item"><i class="bi bi-book"></i> Learn</a>
-        <a href="/exercises" class="sidebar-item"><i class="bi bi-puzzle"></i> Quizzes</a>
+        <a href="/" class="sidebar-item"><i class="bi bi-house-door"></i> Home</a>
+        <div class="sidebar-section-label px-3 pt-2 pb-1"><small class="text-secondary">SOC FLOW</small></div>
+        {% for i in range(8) %}
+        {% set locked = i > soc_progress %}
+        {% set current = i == soc_progress %}
+        <a href="{{ SOC_ROUTES[i] }}" class="sidebar-item {% if locked %}text-secondary{% elif current %}text-primary fw-bold{% endif %}">
+            {% if locked %}<i class="bi bi-lock"></i>
+            {% elif current %}<i class="bi bi-arrow-right-circle-fill text-primary"></i>
+            {% else %}<i class="bi bi-check-circle-fill text-success"></i>{% endif %}
+            {{ SOC_SECTIONS[i] }}
+        </a>
+        {% endfor %}
         <hr class="text-secondary">
         <div class="sidebar-footer text-secondary small px-3">
-            SOC Log Lab v1.0<br>
-            All data simulated
+            {% if user_name %}<i class="bi bi-person-circle"></i> {{ user_name }}<br>{% endif %}
+            <a href="/logout" class="text-secondary text-decoration-none"><i class="bi bi-box-arrow-right"></i> Sign Out</a>
         </div>
     </div>
 

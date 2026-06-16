@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Response{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-success">
+            <div class="card-body d-flex align-items-center">
+                <i class="bi bi-shield-check fs-1 text-success me-3"></i>
+                <div>
+                    <h3 class="mb-0">Incident Response</h3>
+                    <small class="text-muted">Execute containment, eradication, and recovery actions</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-shield-fill"></i> Containment</div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r1" onchange="updateProgress()">
+                    <label class="form-check-label" for="r1">Isolate affected systems (websrv-01, CORP-WS-01) from network</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r2" onchange="updateProgress()">
+                    <label class="form-check-label" for="r2">Block attacker IPs at firewall (45.33.32.156, 34.253.159.159, 185.220.101.1)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r3" onchange="updateProgress()">
+                    <label class="form-check-label" for="r3">Disable compromised accounts (backup_admin, stansimon)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r4" onchange="updateProgress()">
+                    <label class="form-check-label" for="r4">Block outbound C2 traffic on ports 4444, 9999, 9050</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r5" onchange="updateProgress()">
+                    <label class="form-check-label" for="r5">Remove webshell at /uploads/shell.php</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-trash"></i> Eradication</div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e1" onchange="updateProgress()">
+                    <label class="form-check-label" for="e1">Remove malware files (malware.vbs, reflective.dll, exfil_data.zip)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e2" onchange="updateProgress()">
+                    <label class="form-check-label" for="e2">Remove registry persistence key (MaliciousBackdoor)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e3" onchange="updateProgress()">
+                    <label class="form-check-label" for="e3">Kill malicious processes (powershell.exe, wscript.exe, rundll32.exe)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e4" onchange="updateProgress()">
+                    <label class="form-check-label" for="e4">Rotate all passwords for affected accounts</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e5" onchange="updateProgress()">
+                    <label class="form-check-label" for="e5">Patch web application file upload vulnerability</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body text-center">
+        <h4>Response Progress</h4>
+        <div class="progress mb-2" style="height: 25px;">
+            <div class="progress-bar bg-success" id="progressBar" role="progressbar" style="width:0%">0%</div>
+        </div>
+        <small class="text-muted" id="progressText">0 of 10 actions completed</small>
+    </div>
+</div>
+
+<div class="card mt-4 border-success">
+    <div class="card-header bg-dark text-success"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
+    <div class="card-body" id="quizSection">
+        <div class="mb-3">
+            <p class="fw-bold">1. What is the first priority in incident response?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="0"><label class="form-check-label">Find the attacker</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="1"><label class="form-check-label">Contain the breach</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="2"><label class="form-check-label">Delete malicious files</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="3"><label class="form-check-label">Reset all passwords</label></div>
+        </div>
+        <div class="mb-3">
+            <p class="fw-bold">2. Which action is part of eradication?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="0"><label class="form-check-label">Isolate the system</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="1"><label class="form-check-label">Remove malware from affected systems</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="2"><label class="form-check-label">Restore from backup</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="3"><label class="form-check-label">Generate report</label></div>
+        </div>
+        <div id="quizFeedback" class="mb-3"></div>
+        <button class="btn btn-success" onclick="submitQuiz(4)">Submit & Continue</button>
+    </div>
+</div>
+<script>
+function submitQuiz(step) {
+    const answers = []; const total = 2;
+    let allAnswered = true;
+    for (let i = 0; i < total; i++) {
+        const s = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!s) { allAnswered = false; break; }
+        answers.push(parseInt(s.value));
+    }
+    if (!allAnswered) { document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>'; return; }
+    fetch('/quiz/' + step, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers: answers}) })
+    .then(r => r.json()).then(d => {
+        const fb = document.getElementById('quizFeedback');
+        if (d.passed) { fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>'; setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800); }
+        else { fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>'; }
+    });
+}
+</script>
+{% endblock %}
+{% block scripts %}
+<script>
+function updateProgress() {
+    const checks = document.querySelectorAll('.response-check');
+    const done = Array.from(checks).filter(c => c.checked).length;
+    const pct = Math.round(done / checks.length * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressBar').textContent = pct + '%';
+    document.getElementById('progressText').textContent = done + ' of ' + checks.length + ' actions completed';
+}
+</script>
+{% endblock %}

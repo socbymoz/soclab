@@ -5,11 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect
 import json
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "fallback-dev-key-change-in-production")
+
+# SOC process flow sections
+SOC_SECTIONS = ["Logs", "Alert", "Triage", "Investigation", "Response", "Recovery", "Report", "Improve"]
+SOC_ROUTES = ["/logs", "/alert", "/triage", "/investigation", "/response", "/recovery", "/report", "/improve"]
 
 # Production config from environment
 app.config['SESSION_COOKIE_SECURE'] = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
@@ -26,6 +30,14 @@ if not is_vercel:
 else:
     logging.basicConfig(level=log_level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", handlers=[logging.StreamHandler()])
 logger = logging.getLogger("soclab")
+
+@app.before_request
+def check_login():
+    PROTECTED = ['/logs', '/alert', '/triage', '/investigation', '/response', '/recovery', '/report', '/improve', '/complete_section', '/reset_progress']
+    path = request.path
+    if any(path.startswith(p) for p in PROTECTED):
+        if 'user_name' not in session:
+            return redirect('/')
 
 SAMPLE_DATA = {
     "windows_events": [
@@ -196,8 +208,89 @@ def get_log_stats():
                 stats["by_type"][log_type]["critical"] += 1
     return stats
 
-@app.route('/')
+# Section quizzes — 2 questions per section, must answer correctly to proceed
+SECTION_QUIZZES = {
+    0: [  # Logs
+        {"q": "Which log source would you check for authentication failures?", "options": ["Firewall logs", "Windows Security logs", "Web server logs", "Sysmon logs"], "answer": 1},
+        {"q": "What is the first step when reviewing logs in a SOC?", "options": ["Delete irrelevant logs", "Look for known-bad patterns and anomalies", "Backup all logs", "Report to management"], "answer": 1},
+    ],
+    1: [  # Alert
+        {"q": "What makes an event an 'alert' in a SOC?", "options": ["It appears in the log file", "It matches a suspicious pattern or rule", "An analyst manually flags it", "It has a timestamp"], "answer": 1},
+        {"q": "Which severity level requires immediate attention?", "options": ["Info", "Warning", "High", "Critical"], "answer": 3},
+    ],
+    2: [  # Triage
+        {"q": "What does 'True Positive' (TP) mean in triage?", "options": ["The alert is a real security threat", "The alert is a false alarm", "The alert needs more investigation", "The alert was ignored"], "answer": 0},
+        {"q": "What is the purpose of triage?", "options": ["To fix the vulnerability", "To prioritize and classify alerts quickly", "To generate a report", "To delete false positives"], "answer": 1},
+    ],
+    3: [  # Investigation
+        {"q": "What is an IOC (Indicator of Compromise)?", "options": ["A security control", "Evidence of a potential breach", "A type of firewall rule", "A log format"], "answer": 1},
+        {"q": "Why is timeline correlation important in investigation?", "options": ["It makes logs look organized", "It connects events across sources to build the attack story", "It reduces false positives", "It automatically blocks attackers"], "answer": 1},
+    ],
+    4: [  # Response
+        {"q": "What is the first priority in incident response?", "options": ["Find the attacker", "Contain the breach", "Delete malicious files", "Reset all passwords"], "answer": 1},
+        {"q": "Which action is part of eradication?", "options": ["Isolate the system", "Remove malware from affected systems", "Restore from backup", "Generate report"], "answer": 1},
+    ],
+    5: [  # Recovery
+        {"q": "What is the goal of the recovery phase?", "options": ["Catch the attacker", "Restore normal operations safely", "Delete old logs", "Update firewall rules"], "answer": 1},
+        {"q": "Why should passwords be rotated during recovery?", "options": ["It's standard procedure", "Credentials may have been compromised", "Management requires it", "To test the helpdesk"], "answer": 1},
+    ],
+    6: [  # Report
+        {"q": "What should an incident report include?", "options": ["Only the attacker's IP", "Timeline, findings, actions taken, and recommendations", "A list of all log entries", "Personal opinions"], "answer": 1},
+        {"q": "Who is the primary audience for an incident report?", "options": ["The attacker", "Stakeholders and management", "Only the SOC team", "External media"], "answer": 1},
+    ],
+    7: [  # Improve
+        {"q": "What is the purpose of the 'Improve' phase?", "options": ["To blame someone for the incident", "To identify gaps and implement better defenses", "To close the case", "To reward the SOC team"], "answer": 1},
+        {"q": "What should be done with lessons learned?", "options": ["File them away", "Implement changes to prevent recurrence", "Share them with other attackers", "Ignore them"], "answer": 1},
+    ],
+}
+
+def get_section_score(step):
+    """Get number of correct answers for a section quiz."""
+    scores = session.get('quiz_scores', {})
+    return scores.get(str(step), 0)
+
+@app.route('/quiz/<int:step>', methods=['POST'])
+def check_quiz(step):
+    data = request.json
+    answers = data.get('answers', [])
+    quiz = SECTION_QUIZZES.get(step, [])
+    correct = 0
+    total = len(quiz)
+    for i, ans in enumerate(answers):
+        if i < len(quiz) and ans == quiz[i]['answer']:
+            correct += 1
+    scores = session.get('quiz_scores', {})
+    scores[str(step)] = correct
+    session['quiz_scores'] = scores
+    return jsonify({"correct": correct, "total": total, "passed": correct == total})
+    return session.get('soc_progress', 0)
+
+def require_progress(step):
+    """Redirect if user hasn't completed the prerequisite step."""
+    prog = get_progress()
+    if prog < step:
+        return True  # needs redirect
+    return False
+
+@app.context_processor
+def inject_soc_progress():
+    prog = get_progress()
+    user = session.get('user_name', '')
+    return dict(soc_progress=prog, soc_sections=SOC_SECTIONS, soc_routes=SOC_ROUTES, now=datetime.now, user_name=user)
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        if name:
+            session['user_name'] = name
+            session['soc_progress'] = 0
+            return redirect('/')
+
+    # Guest access: if not logged in, show login form
+    if 'user_name' not in session:
+        return render_template('login.html')
+
     stats = get_log_stats()
     hour = datetime.now().hour
     if hour < 12:
@@ -212,7 +305,90 @@ def index():
     else:
         greeting = "Good Night"
         icon = "bi-moon"
-    return render_template('index.html', stats=stats, greeting=greeting, icon=icon)
+    return render_template('index.html', stats=stats, greeting=greeting, icon=icon, user_name=session['user_name'])
+
+def get_all_events():
+    all_events = []
+    for key, label in [("windows_events", "Windows"), ("web_logs", "Web"), ("firewall_logs", "Firewall"), ("ssh_logs", "SSH"), ("sysmon_logs", "Sysmon")]:
+        for e in SAMPLE_DATA[key]:
+            e["source"] = label
+            all_events.append(e)
+    all_events.sort(key=lambda x: x.get("time", ""))
+    return all_events
+
+@app.route('/logs')
+def logs_page():
+    events = get_all_events()
+    return render_template('logs_page.html', events=events, section_idx=0)
+
+@app.route('/alert')
+def alert_page():
+    if require_progress(1):
+        return render_template('locked.html', current_progress=get_progress(), section_name="Alert", needed_step=1)
+    events = [e for e in get_all_events() if e.get("suspicious")]
+    events.sort(key=lambda x: x.get("severity", ""))
+    return render_template('alert.html', alerts=events, section_idx=1)
+
+@app.route('/triage')
+def triage_page():
+    if require_progress(2):
+        return render_template('locked.html', current_progress=get_progress(), section_name="Triage", needed_step=2)
+    events = [e for e in get_all_events() if e.get("suspicious")]
+    return render_template('triage.html', alerts=events, section_idx=2)
+
+@app.route('/investigation')
+def investigation_page():
+    if require_progress(3):
+        return render_template('locked.html', current_progress=get_progress(), section_name="Investigation", needed_step=3)
+    return render_template('investigation.html', section_idx=3)
+
+@app.route('/response')
+def response_page():
+    if require_progress(4):
+        return render_template('locked.html', current_progress=get_progress(), section_name="Response", needed_step=4)
+    return render_template('response.html', section_idx=4)
+
+@app.route('/recovery')
+def recovery_page():
+    if require_progress(5):
+        return render_template('locked.html', current_progress=get_progress(), section_name="Recovery", needed_step=5)
+    return render_template('recovery.html', section_idx=5)
+
+@app.route('/report')
+def report_page():
+    if require_progress(6):
+        return render_template('locked.html', current_progress=get_progress(), section_name="Report", needed_step=6)
+    events = get_all_events()
+    suspicious = [e for e in events if e.get("suspicious")]
+    stats = get_log_stats()
+    return render_template('report.html', events=events, suspicious=suspicious, stats=stats, section_idx=6)
+
+@app.route('/improve')
+def improve_page():
+    if require_progress(7):
+        return render_template('locked.html', current_progress=get_progress(), section_name="Improve", needed_step=7)
+    return render_template('improve.html', section_idx=7, user_name=session.get('user_name', 'Analyst'))
+
+@app.route('/complete_section/<int:step>')
+def complete_section(step):
+    if step == get_progress() and step < len(SOC_SECTIONS):
+        score = get_section_score(step)
+        total = len(SECTION_QUIZZES.get(step, []))
+        if score >= total or step == len(SOC_SECTIONS) - 1:
+            session['soc_progress'] = step + 1
+            next_idx = min(step + 1, len(SOC_SECTIONS) - 1)
+            return redirect(SOC_ROUTES[next_idx])
+    return redirect(SOC_ROUTES[min(step, len(SOC_SECTIONS) - 1)])
+
+@app.route('/reset_progress')
+def reset_progress():
+    session['soc_progress'] = 0
+    return redirect('/logs')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 @app.route('/logs/<log_type>')
 def logs(log_type):

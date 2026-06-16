@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Improve{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-success">
+            <div class="card-body d-flex align-items-center">
+                <i class="bi bi-graph-up-arrow fs-1 text-success me-3"></i>
+                <div>
+                    <h3 class="mb-0">Improve — Lessons Learned</h3>
+                    <small class="text-muted">Post-incident recommendations to strengthen security posture</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100 border-danger">
+            <div class="card-header bg-dark text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Critical Gaps Found</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush bg-transparent">
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-x-circle text-danger me-2"></i>No account lockout policy — brute force succeeded</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-x-circle text-danger me-2"></i>File upload vulnerability unpatched</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-x-circle text-danger me-2"></i>No MFA on privileged accounts</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-x-circle text-danger me-2"></i>Outbound traffic not restricted (C2 allowed)</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-x-circle text-danger me-2"></i>No EDR/AV on workstations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card h-100 border-success">
+            <div class="card-header bg-dark text-success"><i class="bi bi-check-circle-fill"></i> Recommendations</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush bg-transparent">
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-shield-check text-success me-2"></i>Implement account lockout after 5 failed attempts</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-shield-check text-success me-2"></i>Patch file upload validation immediately</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-shield-check text-success me-2"></i>Require MFA for all administrative access</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-shield-check text-success me-2"></i>Deploy next-gen firewall with outbound filtering</li>
+                    <li class="list-group-item bg-transparent text-light"><i class="bi bi-shield-check text-success me-2"></i>Install EDR on all endpoints (CrowdStrike, SentinelOne)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-eye"></i> Detection Improvements</div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><span class="badge bg-info me-1">NEW</span> Alert on &gt;5 failed SSH logins/min</li>
+                    <li class="mb-2"><span class="badge bg-info me-1">NEW</span> Monitor new admin account creation</li>
+                    <li class="mb-2"><span class="badge bg-info me-1">NEW</span> Alert on powershell.exe network connections</li>
+                    <li class="mb-2"><span class="badge bg-info me-1">NEW</span> Detect registry Run key modifications</li>
+                    <li class="mb-2"><span class="badge bg-info me-1">NEW</span> Monitor audit log clearing events</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-people"></i> Process Improvements</div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><span class="badge bg-warning text-dark">WIP</span> Formal incident response plan</li>
+                    <li class="mb-2"><span class="badge bg-warning text-dark">WIP</span> Weekly log review cadence</li>
+                    <li class="mb-2"><span class="badge bg-success">DONE</span> SOC team roles defined</li>
+                    <li class="mb-2"><span class="badge bg-warning text-dark">WIP</span> Quarterly tabletop exercises</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-tools"></i> Tooling Roadmap</div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><span class="badge bg-success">DONE</span> Centralized log collection (SIEM)</li>
+                    <li class="mb-2"><span class="badge bg-warning text-dark">Q3</span> SOAR automation</li>
+                    <li class="mb-2"><span class="badge bg-warning text-dark">Q3</span> Threat intelligence feed integration</li>
+                    <li class="mb-2"><span class="badge bg-warning text-dark">Q4</span> User behavior analytics (UEBA)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4 border-success">
+    <div class="card-header bg-dark text-success"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
+    <div class="card-body" id="quizSection">
+        <div class="mb-3">
+            <p class="fw-bold">1. What is the purpose of the "Improve" phase?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="0"><label class="form-check-label">To blame someone for the incident</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="1"><label class="form-check-label">To identify gaps and implement better defenses</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="2"><label class="form-check-label">To close the case</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="3"><label class="form-check-label">To reward the SOC team</label></div>
+        </div>
+        <div class="mb-3">
+            <p class="fw-bold">2. What should be done with lessons learned?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="0"><label class="form-check-label">File them away</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="1"><label class="form-check-label">Implement changes to prevent recurrence</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="2"><label class="form-check-label">Share them with other attackers</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="3"><label class="form-check-label">Ignore them</label></div>
+        </div>
+        <div id="quizFeedback" class="mb-3"></div>
+        <button class="btn btn-success" onclick="submitQuiz(7)">Submit & Get Certificate</button>
+    </div>
+</div>
+
+<div id="certificateSection" style="display:none;">
+    <div class="card border-warning mb-3" style="border: 3px solid #ffc107;">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-award-fill display-1 text-warning mb-3"></i>
+            <h1 class="display-5 fw-bold text-white">Certificate of Completion</h1>
+            <p class="lead text-muted">This certifies that</p>
+            <h2 class="display-6 fw-bold text-primary mb-3">{{ user_name }}</h2>
+            <p class="lead text-muted">has successfully completed the</p>
+            <h3 class="text-info">SOC Incident Response Process</h3>
+            <p class="text-secondary mt-3">Logs → Alert → Triage → Investigation → Response → Recovery → Report → Improve</p>
+            <hr class="w-50 mx-auto">
+            <p class="text-muted small">Completed on {{ now().strftime('%B %d, %Y') }}</p>
+            <div class="mt-4">
+                <a href="/reset_progress" class="btn btn-outline-secondary me-2">Start Again</a>
+                <button class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitQuiz(step) {
+    const answers = []; const total = 2;
+    let allAnswered = true;
+    for (let i = 0; i < total; i++) {
+        const s = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!s) { allAnswered = false; break; }
+        answers.push(parseInt(s.value));
+    }
+    if (!allAnswered) { document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>'; return; }
+    fetch('/quiz/' + step, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers: answers}) })
+    .then(r => r.json()).then(d => {
+        const fb = document.getElementById('quizFeedback');
+        if (d.passed) {
+            fb.innerHTML = '<div class="alert alert-success">All correct! 🎉 Generating your certificate...</div>';
+            document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('certificateSection').style.display = 'block';
+        } else {
+            fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>';
+        }
+    });
+}
+</script>
+{% endblock %}

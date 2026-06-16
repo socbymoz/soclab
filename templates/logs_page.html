@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Logs{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-primary">
+            <div class="card-body d-flex align-items-center">
+                <i class="bi bi-journal-text fs-1 text-primary me-3"></i>
+                <div>
+                    <h3 class="mb-0">Log Collection</h3>
+                    <small class="text-muted">Unified view of all {{ events|length }} log events across all sources</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" class="form-control" id="searchInput" placeholder="Search logs..." onkeyup="filterLogs()">
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" id="sourceFilter" onchange="filterLogs()">
+            <option value="">All Sources</option>
+            <option value="Windows">Windows</option>
+            <option value="Web">Web</option>
+            <option value="Firewall">Firewall</option>
+            <option value="SSH">SSH</option>
+            <option value="Sysmon">Sysmon</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" id="severityFilter" onchange="filterLogs()">
+            <option value="">All Severity</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <div class="form-check form-switch mt-2">
+            <input class="form-check-input" type="checkbox" id="suspiciousToggle" onchange="filterLogs()">
+            <label class="form-check-label" for="suspiciousToggle">Suspicious only</label>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 65vh;">
+                    <table class="table table-dark table-hover mb-0">
+                        <thead class="sticky-top">
+                            <tr>
+                                <th>Time</th>
+                                <th>Source</th>
+                                <th>Severity</th>
+                                <th>Event</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            {% for e in events %}
+                            <tr class="log-row {% if e.get('suspicious') %}table-danger{% endif %}" data-source="{{ e.source }}" data-severity="{{ e.severity }}" data-suspicious="{{ 'true' if e.get('suspicious') else 'false' }}">
+                                <td><small>{{ e.time }}</small></td>
+                                <td><span class="badge bg-secondary">{{ e.source }}</span></td>
+                                <td>
+                                    {% set sev = e.severity %}
+                                    {% if sev == 'critical' %}<span class="badge bg-danger">Critical</span>
+                                    {% elif sev == 'high' %}<span class="badge bg-warning text-dark">High</span>
+                                    {% elif sev == 'warning' %}<span class="badge bg-info text-dark">Warning</span>
+                                    {% else %}<span class="badge bg-secondary">Info</span>{% endif %}
+                                </td>
+                                <td>{{ e.event }}</td>
+                                <td class="details-cell" title="{{ e.details }}"><small>{{ e.details }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4 border-primary">
+    <div class="card-header bg-dark text-primary"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
+    <div class="card-body" id="quizSection">
+        <div class="mb-3">
+            <p class="fw-bold">1. Which log source would you check for authentication failures?</p>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q0" value="0"><label class="form-check-label">Firewall logs</label></div>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q0" value="1"><label class="form-check-label">Windows Security logs</label></div>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q0" value="2"><label class="form-check-label">Web server logs</label></div>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q0" value="3"><label class="form-check-label">Sysmon logs</label></div>
+        </div>
+        <div class="mb-3">
+            <p class="fw-bold">2. What is the first step when reviewing logs in a SOC?</p>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q1" value="0"><label class="form-check-label">Delete irrelevant logs</label></div>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q1" value="1"><label class="form-check-label">Look for known-bad patterns and anomalies</label></div>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q1" value="2"><label class="form-check-label">Backup all logs</label></div>
+            <div class="form-check"><input class="form-check-input quiz-0" type="radio" name="q1" value="3"><label class="form-check-label">Report to management</label></div>
+        </div>
+        <div id="quizFeedback" class="mb-3"></div>
+        <button class="btn btn-primary" onclick="submitQuiz(0)">Submit & Continue</button>
+    </div>
+</div>
+
+<script>
+function filterLogs() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const source = document.getElementById('sourceFilter').value;
+    const severity = document.getElementById('severityFilter').value;
+    const suspiciousOnly = document.getElementById('suspiciousToggle').checked;
+    document.querySelectorAll('.log-row').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        let show = true;
+        if (search && !text.includes(search)) show = false;
+        if (source && row.dataset.source !== source) show = false;
+        if (severity && row.dataset.severity !== severity) show = false;
+        if (suspiciousOnly && row.dataset.suspicious !== 'true') show = false;
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function submitQuiz(step) {
+    const answers = [];
+    const total = 2;
+    let allAnswered = true;
+    for (let i = 0; i < total; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!selected) { allAnswered = false; break; }
+        answers.push(parseInt(selected.value));
+    }
+    if (!allAnswered) {
+        document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>';
+        return;
+    }
+    fetch('/quiz/' + step, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({answers: answers})
+    })
+    .then(r => r.json())
+    .then(data => {
+        const fb = document.getElementById('quizFeedback');
+        if (data.passed) {
+            fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>';
+            setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800);
+        } else {
+            let msg = '<div class="alert alert-danger">' + data.correct + '/' + data.total + ' correct. Try again.</div>';
+            fb.innerHTML = msg;
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Triage{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-warning">
+            <div class="card-body d-flex align-items-center">
+                <i class="bi bi-funnel fs-1 text-warning me-3"></i>
+                <div>
+                    <h3 class="mb-0">Alert Triage</h3>
+                    <small class="text-muted">Classify each alert as True Positive (TP), False Positive (FP), or Needs Investigation</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <span class="badge bg-success me-2 fs-6" id="tpCount">TP: 0</span>
+                <span class="badge bg-secondary me-2 fs-6" id="fpCount">FP: 0</span>
+                <span class="badge bg-warning text-dark me-2 fs-6" id="invCount">Investigate: 0</span>
+                <span class="badge bg-info fs-6" id="pendCount">Pending: {{ alerts|length }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for a in alerts %}
+<div class="card mb-2 triage-card border-{% if a.severity == 'critical' %}danger{% elif a.severity == 'high' %}warning{% else %}info{% endif %}" data-idx="{{ loop.index0 }}">
+    <div class="card-body py-2 d-flex justify-content-between align-items-center">
+        <div class="flex-grow-1 me-3">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-{% if a.severity == 'critical' %}danger{% elif a.severity == 'high' %}warning text-dark{% else %}info text-dark{% endif %}">{{ a.severity|upper }}</span>
+                <small class="text-secondary">{{ a.source }}</small>
+                <small class="text-muted">{{ a.time }}</small>
+            </div>
+            <strong>{{ a.event }}</strong>
+            <p class="mb-0 small text-muted">{{ a.details }}</p>
+        </div>
+        <div class="btn-group btn-group-sm triage-btns">
+            <button class="btn btn-outline-success" onclick="classify(this, 'TP')">TP</button>
+            <button class="btn btn-outline-secondary" onclick="classify(this, 'FP')">FP</button>
+            <button class="btn btn-outline-warning" onclick="classify(this, 'Investigate')">Investigate</button>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="card mt-4 border-warning">
+    <div class="card-header bg-dark text-warning"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
+    <div class="card-body" id="quizSection">
+        <div class="mb-3">
+            <p class="fw-bold">1. What does "True Positive" (TP) mean in triage?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="0"><label class="form-check-label">The alert is a real security threat</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="1"><label class="form-check-label">The alert is a false alarm</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="2"><label class="form-check-label">The alert needs more investigation</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="3"><label class="form-check-label">The alert was ignored</label></div>
+        </div>
+        <div class="mb-3">
+            <p class="fw-bold">2. What is the purpose of triage?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="0"><label class="form-check-label">To fix the vulnerability</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="1"><label class="form-check-label">To prioritize and classify alerts quickly</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="2"><label class="form-check-label">To generate a report</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="3"><label class="form-check-label">To delete false positives</label></div>
+        </div>
+        <div id="quizFeedback" class="mb-3"></div>
+        <button class="btn btn-warning text-dark" onclick="submitQuiz(2)">Submit & Continue</button>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let counts = { TP: 0, FP: 0, Investigate: 0, Pending: {{ alerts|length }} };
+function classify(btn, label) {
+    const card = btn.closest('.triage-card');
+    const btns = card.querySelectorAll('.triage-btns button');
+    btns.forEach(b => { b.disabled = true; b.classList.remove('active'); });
+    btn.classList.add('active');
+    card.style.opacity = '0.6';
+    counts[label]++;
+    counts.Pending--;
+    document.getElementById('tpCount').textContent = 'TP: ' + counts.TP;
+    document.getElementById('fpCount').textContent = 'FP: ' + counts.FP;
+    document.getElementById('invCount').textContent = 'Investigate: ' + counts.Investigate;
+    document.getElementById('pendCount').textContent = 'Pending: ' + counts.Pending;
+}
+function submitQuiz(step) {
+    const answers = []; const total = 2;
+    let allAnswered = true;
+    for (let i = 0; i < total; i++) {
+        const s = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!s) { allAnswered = false; break; }
+        answers.push(parseInt(s.value));
+    }
+    if (!allAnswered) { document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>'; return; }
+    fetch('/quiz/' + step, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers: answers}) })
+    .then(r => r.json()).then(d => {
+        const fb = document.getElementById('quizFeedback');
+        if (d.passed) { fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>'; setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800); }
+        else { fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>'; }
+    });
+}
+</script>
+{% endblock %}

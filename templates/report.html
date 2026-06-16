@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Report{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-body d-flex align-items-center">
+                <i class="bi bi-file-earmark-text fs-1 text-secondary me-3"></i>
+                <div>
+                    <h3 class="mb-0">Incident Report</h3>
+                    <small class="text-muted">Summary of the SOC investigation and response actions</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark">Incident Overview</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><td class="text-secondary">Incident ID</td><td>INC-2026-0615-001</td></tr>
+                    <tr><td class="text-secondary">Status</td><td><span class="badge bg-success">Contained</span></td></tr>
+                    <tr><td class="text-secondary">Severity</td><td><span class="badge bg-danger">Critical</span></td></tr>
+                    <tr><td class="text-secondary">Total Events</td><td>{{ stats.total_events }}</td></tr>
+                    <tr><td class="text-secondary">Suspicious Events</td><td>{{ stats.suspicious }}</td></tr>
+                    <tr><td class="text-secondary">Critical Alerts</td><td><span class="badge bg-danger">{{ stats.by_severity.critical }}</span></td></tr>
+                    <tr><td class="text-secondary">Attack Type</td><td>Brute Force + Web Exploitation + C2</td></tr>
+                    <tr><td class="text-secondary">Affected Systems</td><td>websrv-01, CORP-WS-01</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark">Event Breakdown by Source</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>Source</th><th>Total</th><th>Suspicious</th><th>Critical</th></tr></thead>
+                    <tbody>
+                        {% for name, info in stats.by_type.items() %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td>{{ info.count }}</td>
+                            <td><span class="badge bg-warning">{{ info.suspicious }}</span></td>
+                            <td><span class="badge bg-danger">{{ info.critical }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-dark"><i class="bi bi-list-check"></i> Key Findings</div>
+    <div class="card-body">
+        <ul>
+            <li>SSH brute force attack from 45.33.32.156 — 12 failed attempts, 1 successful login as 'stansimon'</li>
+            <li>Web reconnaissance and SQL injection attempts from 192.168.1.50 and 45.33.32.156</li>
+            <li>Webshell uploaded via file upload vulnerability at /uploads/shell.php</li>
+            <li>Privilege escalation via 'backup_admin' account added to Administrators group</li>
+            <li>Malware downloaded from malicious.site — malware.vbs, reflective.dll</li>
+            <li>C2 beaconing to 34.253.159.159:4444 and Tor network connection to 185.220.101.1:9050</li>
+            <li>Data exfiltration of exfil_data.zip to 34.253.159.159</li>
+            <li>Audit log cleared to cover tracks (Event ID 1102)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-dark"><i class="bi bi-check-circle"></i> Actions Taken</div>
+    <div class="card-body">
+        <ul>
+            <li>Systems isolated, attacker IPs blocked at firewall</li>
+            <li>Compromised accounts disabled, webshell removed</li>
+            <li>Malware removed, registry persistence key deleted</li>
+            <li>All account passwords rotated, MFA enabled</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mt-4 border-secondary">
+    <div class="card-header bg-dark text-secondary"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
+    <div class="card-body" id="quizSection">
+        <div class="mb-3">
+            <p class="fw-bold">1. What should an incident report include?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="0"><label class="form-check-label">Only the attacker's IP</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="1"><label class="form-check-label">Timeline, findings, actions taken, and recommendations</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="2"><label class="form-check-label">A list of all log entries</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q0" value="3"><label class="form-check-label">Personal opinions</label></div>
+        </div>
+        <div class="mb-3">
+            <p class="fw-bold">2. Who is the primary audience for an incident report?</p>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="0"><label class="form-check-label">The attacker</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="1"><label class="form-check-label">Stakeholders and management</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="2"><label class="form-check-label">Only the SOC team</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="q1" value="3"><label class="form-check-label">External media</label></div>
+        </div>
+        <div id="quizFeedback" class="mb-3"></div>
+        <button class="btn btn-secondary" onclick="submitQuiz(6)">Submit & Continue</button>
+    </div>
+</div>
+<script>
+function submitQuiz(step) {
+    const answers = []; const total = 2;
+    let allAnswered = true;
+    for (let i = 0; i < total; i++) {
+        const s = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!s) { allAnswered = false; break; }
+        answers.push(parseInt(s.value));
+    }
+    if (!allAnswered) { document.getElementById('quizFeedback').innerHTML = '<div class="alert alert-warning">Please answer all questions first.</div>'; return; }
+    fetch('/quiz/' + step, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers: answers}) })
+    .then(r => r.json()).then(d => {
+        const fb = document.getElementById('quizFeedback');
+        if (d.passed) { fb.innerHTML = '<div class="alert alert-success">All correct! Proceeding...</div>'; setTimeout(() => { window.location.href = '/complete_section/' + step; }, 800); }
+        else { fb.innerHTML = '<div class="alert alert-danger">' + d.correct + '/' + d.total + ' correct. Try again.</div>'; }
+    });
+}
+</script>
+{% endblock %}
