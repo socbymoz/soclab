@@ -24,10 +24,10 @@ body {
     left: 0;
     width: 100%;
     font-family: 'Courier New', monospace;
-    font-size: 11px;
-    color: rgba(0, 255, 65, 0.06);
+    font-size: 13px;
+    color: rgba(0, 255, 65, 0.35);
     white-space: nowrap;
-    animation: scrollLog 80s linear infinite;
+    animation: scrollLog 60s linear infinite;
 }
 
 @keyframes scrollLog {
@@ -46,12 +46,12 @@ body {
     background: #0d6efd;
     color: white;
     border: none;
-    border-radius: 0 8px 8px 0;
-    padding: 12px 6px;
+    border-radius: 0 12px 12px 0;
+    padding: 18px 8px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 22px;
     transition: 0.3s;
-    box-shadow: 2px 0 10px rgba(13, 110, 253, 0.3);
+    box-shadow: 2px 0 15px rgba(13, 110, 253, 0.5);
 }
 
 #sidebarToggle:hover {

@@ -40,7 +40,7 @@ function initLogBackground() {
         line.style.left = (Math.random() * 40) + '%';
         line.style.animationDelay = (i * 2.5) + 's';
         line.style.animationDuration = (60 + Math.random() * 40) + 's';
-        line.style.opacity = 0.03 + Math.random() * 0.04;
+        line.style.opacity = 0.15 + Math.random() * 0.2;
         bg.appendChild(line);
     }
 }
