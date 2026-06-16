@@ -263,6 +263,8 @@ def check_quiz(step):
     scores[str(step)] = correct
     session['quiz_scores'] = scores
     return jsonify({"correct": correct, "total": total, "passed": correct == total})
+
+def get_progress():
     return session.get('soc_progress', 0)
 
 def require_progress(step):
@@ -276,7 +278,7 @@ def require_progress(step):
 def inject_soc_progress():
     prog = get_progress()
     user = session.get('user_name', '')
-    return dict(soc_progress=prog, soc_sections=SOC_SECTIONS, soc_routes=SOC_ROUTES, now=datetime.now, user_name=user)
+    return dict(soc_progress=prog, SOC_SECTIONS=SOC_SECTIONS, SOC_ROUTES=SOC_ROUTES, now=datetime.now, user_name=user)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
