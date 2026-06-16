@@ -2,6 +2,50 @@ let correctCount = 0;
 let attemptedCount = 0;
 
 document.addEventListener('DOMContentLoaded', function () {
+    initLogBackground();
+    initCharts();
+    updateFlaggedList();
+});
+
+function initLogBackground() {
+    const bg = document.getElementById('logBackground');
+    if (!bg) return;
+    const sampleLogs = [
+        "192.168.1.50 - - [15/Jun/2026:08:15:22] \"POST /wp-login.php\" 200 345",
+        "45.33.32.156 - - [15/Jun/2026:08:10:03] \"GET /index.php?id=1' OR '1'='1\" 200 8901",
+        "EventID:4625 | User: unknown | Failed Logon | Source: 192.168.1.50",
+        "EventID:4720 | User: Administrator | User Created: backup_admin",
+        "SRC:10.10.10.50:49152 -> DST:34.253.159.159:4444 | TCP ALLOW",
+        "sshd[2837]: Failed password for root from 45.33.32.156 port 54321",
+        "sshd[2837]: Failed password for stansimon from 45.33.32.156 port 54322",
+        "EventID:4688 | Process: powershell.exe | Cmd: Invoke-Expression(...)",
+        "EventID:1102 | Audit Log Cleared by backup_admin",
+        "powershell.exe (PID:2345) connected to 34.253.159.159:4444",
+        "cmd.exe -> net localgroup Administrators hacker /add",
+        "SRC:10.10.10.50 -> DST:185.220.101.1:9050 | Tor Connection",
+        "File Created: C:\\Users\\Public\\exfil_data.zip",
+        "EventID:4657 | Registry: HKLM\\...\\Run\\MaliciousBackdoor",
+        "GET /shell.php?cmd=cat%20/etc/shadow 200 2345",
+        "POST /upload.php 200 234 - File upload detected",
+        "WARNING: 92.168.1.50 - Directory brute force detected",
+        "CRITICAL: Data exfiltration to 34.253.159.159:80",
+        "sshd[2840]: Accepted password for stansimon from 45.33.32.156",
+        "EventID:4732 | backup_admin added to Administrators group",
+    ];
+
+    for (let i = 0; i < 30; i++) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.textContent = sampleLogs[i % sampleLogs.length];
+        line.style.left = (Math.random() * 40) + '%';
+        line.style.animationDelay = (i * 2.5) + 's';
+        line.style.animationDuration = (60 + Math.random() * 40) + 's';
+        line.style.opacity = 0.03 + Math.random() * 0.04;
+        bg.appendChild(line);
+    }
+}
+
+function initCharts() {
     const severityChart = document.getElementById('severityChart');
     if (severityChart) {
         fetch('/api/stats')
@@ -72,9 +116,21 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+}
 
-    updateFlaggedList();
-});
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar.classList.contains('closed')) {
+        sidebar.classList.remove('closed');
+        sidebar.classList.add('open');
+        overlay.classList.add('show');
+    } else {
+        sidebar.classList.remove('open');
+        sidebar.classList.add('closed');
+        overlay.classList.remove('show');
+    }
+}
 
 function searchLogs() {
     const input = document.getElementById('searchInput').value.toLowerCase();

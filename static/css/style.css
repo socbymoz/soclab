@@ -1,20 +1,161 @@
 body {
-    background-color: #1a1d23;
+    background-color: #0a0e14;
     color: #e0e0e0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+}
+
+#logBackground {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 50%, #0d1b2a 0%, #0a0e14 70%);
+}
+
+.log-line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: rgba(0, 255, 65, 0.06);
+    white-space: nowrap;
+    animation: scrollLog 80s linear infinite;
+}
+
+@keyframes scrollLog {
+    0% { transform: translateY(100vh); opacity: 0; }
+    5% { opacity: 1; }
+    95% { opacity: 1; }
+    100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+#sidebarToggle {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 1001;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 6px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: 0.3s;
+    box-shadow: 2px 0 10px rgba(13, 110, 253, 0.3);
+}
+
+#sidebarToggle:hover {
+    background: #0b5ed7;
+    padding-left: 10px;
+}
+
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100vh;
+    background: #111827;
+    border-right: 1px solid #1f2937;
+    z-index: 1002;
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding-top: 20px;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+}
+
+#sidebar.closed {
+    transform: translateX(-260px);
+}
+
+#sidebar.open {
+    transform: translateX(0);
+}
+
+#sidebarOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1001;
+    display: none;
+}
+
+#sidebarOverlay.show {
+    display: block;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px 10px;
+    color: #0d6efd;
+}
+
+.sidebar-item {
+    display: block;
+    padding: 10px 20px;
+    color: #d1d5db;
+    text-decoration: none;
+    transition: 0.2s;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+}
+
+.sidebar-item:hover {
+    background: #1f2937;
+    color: white;
+    border-left-color: #0d6efd;
+}
+
+.sidebar-item i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+    color: #0d6efd;
+}
+
+.sidebar-footer {
+    position: absolute;
+    bottom: 20px;
+    font-size: 11px;
+}
+
+.main-content {
+    position: relative;
+    z-index: 1;
+    padding: 20px 30px;
+    min-height: calc(100vh - 80px);
 }
 
 .card {
-    background-color: #2d323b;
+    background-color: rgba(45, 50, 59, 0.9);
+    backdrop-filter: blur(10px);
     border-color: #3a4049;
     color: #e0e0e0;
     margin-bottom: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 .card-header {
-    background-color: #1f2329;
+    background-color: rgba(31, 35, 41, 0.95);
     border-bottom: 2px solid #0d6efd;
     font-weight: 600;
+    border-radius: 12px 12px 0 0 !important;
 }
 
 .navbar {
@@ -23,7 +164,7 @@ body {
 }
 
 .breadcrumb {
-    background-color: #2d323b;
+    background-color: rgba(45, 50, 59, 0.9);
     padding: 0.75rem 1rem;
     border-radius: 0.375rem;
 }
@@ -89,7 +230,7 @@ body {
 }
 
 .timeline-content {
-    background-color: #2d323b;
+    background-color: rgba(45, 50, 59, 0.9);
     padding: 10px 15px;
     border-radius: 6px;
     border: 1px solid #3a4049;
@@ -101,7 +242,7 @@ body {
 }
 
 .accordion-item {
-    background-color: #2d323b;
+    background-color: rgba(45, 50, 59, 0.9);
     border-color: #3a4049;
 }
 
@@ -116,7 +257,7 @@ body {
 }
 
 .accordion-body {
-    background-color: #2d323b;
+    background-color: rgba(45, 50, 59, 0.9);
     color: #e0e0e0;
 }
 
@@ -155,7 +296,7 @@ code {
 }
 
 .list-group-item {
-    background-color: #2d323b;
+    background-color: rgba(45, 50, 59, 0.9);
     border-color: #3a4049;
     color: #e0e0e0;
 }
@@ -180,6 +321,8 @@ code {
 
 .footer {
     border-top: 2px solid #0d6efd;
+    position: relative;
+    z-index: 1;
 }
 
 .quiz-card {

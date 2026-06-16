@@ -9,37 +9,37 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-shield-shaded"></i> SOC Log Lab
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-journal-text"></i> Log Viewers
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/logs/windows"><i class="bi bi-windows"></i> Windows Events</a></li>
-                            <li><a class="dropdown-item" href="/logs/web"><i class="bi bi-globe"></i> Web Server</a></li>
-                            <li><a class="dropdown-item" href="/logs/firewall"><i class="bi bi-shield"></i> Firewall</a></li>
-                            <li><a class="dropdown-item" href="/logs/ssh"><i class="bi bi-terminal"></i> SSH Auth</a></li>
-                            <li><a class="dropdown-item" href="/logs/sysmon"><i class="bi bi-cpu"></i> Sysmon</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="/learning"><i class="bi bi-book"></i> Learn</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/exercises"><i class="bi bi-puzzle"></i> Quizzes</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container-fluid mt-3">
+    <div id="logBackground"></div>
+
+    <button id="sidebarToggle" onclick="toggleSidebar()">
+        <i class="bi bi-three-dots-vertical"></i>
+    </button>
+
+    <div id="sidebar" class="closed">
+        <div class="sidebar-header">
+            <h5><i class="bi bi-shield-shaded"></i> SOC Lab</h5>
+            <button class="btn btn-sm text-light" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <hr class="text-secondary">
+        <a href="/" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="/logs/windows" class="sidebar-item"><i class="bi bi-windows"></i> Windows Events</a>
+        <a href="/logs/web" class="sidebar-item"><i class="bi bi-globe"></i> Web Server</a>
+        <a href="/logs/firewall" class="sidebar-item"><i class="bi bi-shield"></i> Firewall</a>
+        <a href="/logs/ssh" class="sidebar-item"><i class="bi bi-terminal"></i> SSH Auth</a>
+        <a href="/logs/sysmon" class="sidebar-item"><i class="bi bi-cpu"></i> Sysmon</a>
+        <a href="/learning" class="sidebar-item"><i class="bi bi-book"></i> Learn</a>
+        <a href="/exercises" class="sidebar-item"><i class="bi bi-puzzle"></i> Quizzes</a>
+        <hr class="text-secondary">
+        <div class="sidebar-footer text-secondary small px-3">
+            SOC Log Lab v1.0<br>
+            All data simulated
+        </div>
+    </div>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="main-content">
         {% block content %}{% endblock %}
     </div>
 
