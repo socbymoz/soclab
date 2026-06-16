@@ -1,5 +1,7 @@
 # User data files
 users/
+# Database
+soclab.db
 # Log files
 logs/
 # Environment

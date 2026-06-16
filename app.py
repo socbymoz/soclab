@@ -1,6 +1,7 @@
 import os
 import logging
 import hashlib
+import sqlite3
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -12,31 +13,78 @@ import json
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "fallback-dev-key-change-in-production")
 
-# User data storage
-USERS_DIR = os.path.join(os.path.dirname(__file__), 'users')
+# Database setup
+DB_PATH = os.path.join(os.path.dirname(__file__), 'soclab.db')
 is_vercel = os.environ.get('VERCEL', '') == '1'
-if not is_vercel:
-    os.makedirs(USERS_DIR, exist_ok=True)
 
-def get_user_path(username):
-    safe = ''.join(c for c in username.lower() if c.isalnum() or c in '._-')
-    return os.path.join(USERS_DIR, f'{safe}.json')
-
-def load_user(username):
+def get_db():
     if is_vercel:
         return None
-    path = get_user_path(username)
-    if os.path.exists(path):
-        with open(path) as f:
-            return json.load(f)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    if is_vercel:
+        return
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            name TEXT NOT NULL,
+            age INTEGER NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            soc_progress INTEGER DEFAULT 0,
+            quiz_scores TEXT DEFAULT '{}',
+            flagged TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def load_user(username):
+    conn = get_db()
+    if not conn:
+        return None
+    row = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    conn.close()
+    if row:
+        return dict(row)
     return None
 
 def save_user(username, data):
-    if is_vercel:
+    conn = get_db()
+    if not conn:
         return
-    path = get_user_path(username)
-    with open(path, 'w') as f:
-        json.dump(data, f)
+    conn.execute('''
+        UPDATE users SET soc_progress = ?, quiz_scores = ?, flagged = ?
+        WHERE username = ?
+    ''', (data.get('soc_progress', 0), json.dumps(data.get('quiz_scores', {})),
+          json.dumps(data.get('flagged', [])), username))
+    conn.commit()
+    conn.close()
+
+def create_user(username, password_hash, name, age, email, phone):
+    conn = get_db()
+    if not conn:
+        return False
+    try:
+        conn.execute('''
+            INSERT INTO users (username, password_hash, name, age, email, phone)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (username, password_hash, name, age, email, phone))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        conn.close()
+        return False
 
 def hash_password(pw):
     return hashlib.sha256(pw.encode()).hexdigest()
@@ -46,8 +94,8 @@ def load_session_from_user(username):
     if data:
         session['user_name'] = username
         session['soc_progress'] = data.get('soc_progress', 0)
-        session['quiz_scores'] = data.get('quiz_scores', {})
-        session['flagged'] = data.get('flagged', [])
+        session['quiz_scores'] = json.loads(data.get('quiz_scores', '{}'))
+        session['flagged'] = json.loads(data.get('flagged', '[]'))
     return data
 
 def save_session_to_user(username):
@@ -341,25 +389,43 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip().lower()
         password = request.form.get('password', '')
-        action = request.form.get('action', 'login')
         if not username or not password:
             error = 'Please fill in all fields.'
         else:
             user = load_user(username)
-            if action == 'login':
-                if user and user.get('password') == hash_password(password):
-                    load_session_from_user(username)
-                    return redirect('/logs')
-                else:
-                    error = 'Invalid username or password.'
-            else:  # register
-                if user:
-                    error = 'Username already exists. Please log in.'
-                else:
-                    save_user(username, {'password': hash_password(password), 'soc_progress': 0, 'quiz_scores': {}, 'flagged': []})
-                    load_session_from_user(username)
-                    return redirect('/logs')
+            if user and user.get('password_hash') == hash_password(password):
+                load_session_from_user(username)
+                return redirect('/logs')
+            else:
+                error = 'Invalid username or password.'
     return render_template('login.html', error=error)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'user_name' in session:
+        return redirect('/logs')
+    error = ''
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip().lower()
+        password = request.form.get('password', '')
+        name = request.form.get('name', '').strip()
+        age = request.form.get('age', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        if not username or not password or not name or not age or not email or not phone:
+            error = 'All fields are required.'
+        elif not age.isdigit() or int(age) < 1 or int(age) > 150:
+            error = 'Please enter a valid age.'
+        elif '@' not in email or '.' not in email:
+            error = 'Please enter a valid email address.'
+        else:
+            created = create_user(username, hash_password(password), name, int(age), email, phone)
+            if created:
+                load_session_from_user(username)
+                return redirect('/logs')
+            else:
+                error = 'Username already exists. Please choose another.'
+    return render_template('register.html', error=error)
 
 def get_all_events():
     all_events = []
