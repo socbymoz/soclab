@@ -4,19 +4,24 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card bg-dark text-light border-primary">
-            <div class="card-body text-center">
-                <h1><i class="bi bi-shield-shaded"></i> SOC Log Analysis Lab</h1>
-                <p class="lead">A beginner-friendly platform to study Security Operations Center (SOC) log analysis</p>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi {{ icon }} fs-1 text-primary me-3"></i>
+                    <div>
+                        <h2 class="mb-0">{{ greeting }}, Analyst</h2>
+                        <small class="text-muted">SOC Log Analysis Lab · {{ stats.total_events }} events loaded</small>
+                    </div>
+                </div>
                 <hr>
                 <div class="row">
                     <div class="col-md-4">
-                        <div class="alert alert-info">5 Log Types</div>
+                        <div class="alert alert-info mb-0 py-2">5 Log Types</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="alert alert-warning">Real-World Attack Scenarios</div>
+                        <div class="alert alert-warning mb-0 py-2">Real-World Attack Scenarios</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="alert alert-success">Interactive Quizzes</div>
+                        <div class="alert alert-success mb-0 py-2">Interactive Quizzes</div>
                     </div>
                 </div>
             </div>

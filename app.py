@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -198,7 +199,20 @@ def get_log_stats():
 @app.route('/')
 def index():
     stats = get_log_stats()
-    return render_template('index.html', stats=stats)
+    hour = datetime.now().hour
+    if hour < 12:
+        greeting = "Good Morning"
+        icon = "bi-sunrise"
+    elif hour < 17:
+        greeting = "Good Afternoon"
+        icon = "bi-sun"
+    elif hour < 21:
+        greeting = "Good Evening"
+        icon = "bi-moon-stars"
+    else:
+        greeting = "Good Night"
+        icon = "bi-moon"
+    return render_template('index.html', stats=stats, greeting=greeting, icon=icon)
 
 @app.route('/logs/<log_type>')
 def logs(log_type):
