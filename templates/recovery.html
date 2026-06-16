@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Recovery{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4 mt-3">
+    <div class="bg-info bg-opacity-10 rounded-3 p-3"><i class="bi bi-arrow-clockwise fs-3 text-info"></i></div>
+    <div><h4 class="mb-0">Step 6: Recovery</h4><small class="text-secondary">Safe restoration of normal operations</small></div>
+</div>
+
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+    <h5 class="text-info">What is Recovery?</h5>
+    <p><strong>Recovery</strong> is restoring affected systems safely after the threat is removed. It's not just restoring from backup — it's verifying the system is clean, patching vulnerabilities, and monitoring for re-infection.</p>
+    <h6 class="text-info mt-3">Recovery Checklist</h6>
+    <pre class="bg-dark text-light p-3 rounded small" style="border:1px solid #333;overflow-x:auto;">═══ DAY 1 ═══
+✓ Restored from pre-incident backup (clean)
+✓ Reset all local admin passwords
+✓ Rotated domain admin credentials
+✓ Updated EDR signatures, full scan clean
+
+═══ DAY 2 ═══
+✓ Patched SSH vulnerability (initial access vector)
+✓ Implemented AppLocker (block Office → PowerShell)
+✓ Verified logs forwarding to SIEM
+
+═══ DAY 3 ═══
+✓ 24-hour enhanced monitoring — no anomalies
+✓ System returned to production</pre>
+    <div class="alert alert-info mt-3 py-2 mb-0"><i class="bi bi-lightbulb me-2"></i><strong>Don't rush.</strong> A clean backup is worthless if you restore the same vulnerability. Fix the root cause first.</div>
+</div>
+{% endblock %}

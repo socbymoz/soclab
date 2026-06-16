@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Improve{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4 mt-3">
+    <div class="bg-success bg-opacity-10 rounded-3 p-3"><i class="bi bi-graph-up-arrow fs-3 text-success"></i></div>
+    <div><h4 class="mb-0">Step 8: Improve</h4><small class="text-secondary">Learn and prevent the next incident</small></div>
+</div>
+
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+    <h5 class="text-success">What is the Improve Phase?</h5>
+    <p><strong>Improve</strong> is the final phase — identify gaps, implement lessons learned, and strengthen defenses. Every incident should make you stronger. If you don't improve, you'll get compromised the same way again.</p>
+    <h6 class="text-success mt-3">Lessons Learned from This Breach</h6>
+    <pre class="bg-dark text-light p-3 rounded small" style="border:1px solid #333;overflow-x:auto;">GAP FOUND                    → REMEDIATION
+──────────────────────────────────────────────
+SSH password auth enabled    → Key-only + MFA
+No failed login alerting     → Threshold alert (5/min)
+No network segmentation      → VLANs for DMZ/Prod
+No EDR on servers            → Deploy EDR to all servers
+Weak password policy         → 16-char minimum + complexity
+No IR playbook               → Create and test playbook
+
+PRIORITY ACTIONS (Next 30 Days):
+[Week 1] Deploy EDR to all servers
+[Week 1] Disable SSH password auth
+[Week 2] Implement network segmentation
+[Week 2] Deploy MFA for all admins
+[Week 4] Create and test IR playbook</pre>
+    <div class="alert alert-success mt-3 py-2 mb-0"><i class="bi bi-lightbulb me-2"></i><strong>Key mindset:</strong> The goal isn't just to fix this incident — it's to prevent the next one. Every gap you close makes your organization harder to breach.</div>
+</div>
+{% endblock %}

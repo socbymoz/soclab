@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Report{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4 mt-3">
+    <div class="bg-success bg-opacity-10 rounded-3 p-3"><i class="bi bi-file-earmark-text fs-3 text-success"></i></div>
+    <div><h4 class="mb-0">Step 7: Report</h4><small class="text-secondary">Document everything</small></div>
+</div>
+
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+    <h5 class="text-success">What is Incident Reporting?</h5>
+    <p><strong>Reporting</strong> is documenting what happened, what you did, and what needs to improve. If it wasn't documented, it didn't happen. Reports serve two audiences: executives (business impact) and technical teams (investigation details).</p>
+    <h6 class="text-success mt-3">Incident Report Template</h6>
+    <pre class="bg-dark text-light p-3 rounded small" style="border:1px solid #333;overflow-x:auto;">═══════════════════════════════════════
+         INCIDENT REPORT #2026-0615
+═══════════════════════════════════════
+TITLE:    Multi-stage intrusion via SSH brute force
+SEVERITY: CRITICAL
+STATUS:   CONTAINED — Recovery in progress
+
+EXECUTIVE SUMMARY:
+External attacker gained SSH access to websrv-01 via
+brute force, pivoted to CORP-WS-01, created admin account,
+deployed C2 malware, exfiltrated ~50MB data.
+
+TIMELINE: 06:05 – 10:00 UTC (4 hours)
+AFFECTED: 2 systems, 1 user account
+DATA LOST: ~50MB
+
+ACTIONS TAKEN:
+• Contained — systems isolated, IPs blocked
+• Eradicated — malware removed, persistence deleted
+• Recovery — restoration from clean backup
+
+RECOMMENDATIONS:
+1. Disable SSH password auth (use key + MFA)
+2. Deploy failed login alerting
+3. Implement network segmentation</pre>
+    <div class="alert alert-success mt-3 py-2 mb-0"><i class="bi bi-lightbulb me-2"></i><strong>Two versions:</strong> Executive summary (business impact) + Technical report (IOCs, timeline, actions). Write for both readers.</div>
+</div>
+{% endblock %}

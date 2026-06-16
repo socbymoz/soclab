@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Response{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4 mt-3">
+    <div class="bg-danger bg-opacity-10 rounded-3 p-3"><i class="bi bi-shield-fill-check fs-3 text-danger"></i></div>
+    <div><h4 class="mb-0">Step 5: Response</h4><small class="text-secondary">Contain, eradicate, neutralize</small></div>
+</div>
+
+<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+    <h5 class="text-danger">What is Incident Response?</h5>
+    <p><strong>Response</strong> is the active phase where you stop the attack and remove the threat. Speed matters — every minute the attacker stays inside increases damage.</p>
+    <div class="d-flex gap-2 flex-wrap mb-3">
+        <span class="badge bg-danger">Contain = Stop the spread</span>
+        <span class="badge bg-warning text-dark">Eradicate = Remove malware</span>
+        <span class="badge bg-success">Verify = Confirm it's gone</span>
+    </div>
+    <h6 class="text-danger mt-3">Response Actions Taken for This Breach</h6>
+    <pre class="bg-dark text-light p-3 rounded small" style="border:1px solid #333;overflow-x:auto;">═══ CONTAIN ═══
+• Isolated CORP-WS-01 (VLAN quarantine)
+• Blocked 45.33.32.156 and 34.253.159.159 at firewall
+• Disabled back_up_admin account
+• Revoked all active sessions
+
+═══ ERADICATE ═══
+• Killed malicious processes (powershell, wscript)
+• Removed malware.vbs and reflective.dll
+• Deleted persistence registry keys
+• Full EDR scan
+
+═══ VERIFY ═══
+• No lateral movement detected
+• No other systems compromised</pre>
+    <div class="alert alert-danger mt-3 py-2 mb-0"><i class="bi bi-lightbulb me-2"></i><strong>Priority order:</strong> 1. Contain (stop the bleeding), 2. Eradicate (remove the threat), 3. Verify (confirm it's gone).</div>
+</div>
+{% endblock %}
