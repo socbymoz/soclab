@@ -18,15 +18,12 @@ app.config['SESSION_COOKIE_SAMESITE'] = os.getenv("SESSION_COOKIE_SAMESITE", "La
 # Logging
 log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
 log_dir = os.getenv("LOG_DIR", "logs")
-os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    level=log_level,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, "soclab.log")),
-        logging.StreamHandler()
-    ]
-)
+is_vercel = os.environ.get('VERCEL', '') == '1'
+if not is_vercel:
+    os.makedirs(log_dir, exist_ok=True)
+    logging.basicConfig(level=log_level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", handlers=[logging.FileHandler(os.path.join(log_dir, "soclab.log")), logging.StreamHandler()])
+else:
+    logging.basicConfig(level=log_level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", handlers=[logging.StreamHandler()])
 logger = logging.getLogger("soclab")
 
 SAMPLE_DATA = {
