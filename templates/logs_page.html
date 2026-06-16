@@ -150,6 +150,262 @@
 </div>
 
 <div class="card mt-4 border-primary">
+    <div class="card-header bg-dark text-primary" data-bs-toggle="collapse" data-bs-target="#detailedTraining" style="cursor:pointer;">
+        <i class="bi bi-book-fill"></i> Detailed Training Material <i class="bi bi-chevron-down float-end"></i>
+    </div>
+    <div class="collapse" id="detailedTraining">
+        <div class="card-body">
+            <div class="accordion" id="logsAccordion">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l1">1. Definition — What Are Logs?</button></h2>
+                    <div id="l1" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Log</strong> — A time-stamped record of an event occurring on a system, application, or network device. Logs are the foundational data source for all SOC operations.</p>
+                            <p>Every digital action leaves a trace. When a user logs in, a file is accessed, a network connection is made, or an application crashes — a log entry records it. In cybersecurity, logs are the "black box" of your IT environment.</p>
+                            <p><strong>Key log characteristics:</strong></p>
+                            <ul>
+                                <li><strong>Timestamp</strong> — When did the event occur? (Critical for timeline reconstruction)</li>
+                                <li><strong>Source</strong> — Which system generated the log? (IP address, hostname, device ID)</li>
+                                <li><strong>Event ID / Type</strong> — What kind of event? (Login, process start, connection, error)</li>
+                                <li><strong>User / Account</strong> — Who performed the action?</li>
+                                <li><strong>Details</strong> — Additional context (file path, IP address, command executed)</li>
+                                <li><strong>Severity</strong> — How important is this event? (Info, Warning, Error, Critical)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l2">2. Purpose & Objectives of Log Collection</button></h2>
+                    <div id="l2" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Purpose:</strong> To create a complete, tamper-evident record of all activity across the IT environment for security monitoring, incident investigation, and compliance.</p>
+                            <p><strong>Objectives:</strong></p>
+                            <ul>
+                                <li><strong>Detect</strong> — Identify malicious activity as early as possible</li>
+                                <li><strong>Investigate</strong> — Provide evidence to understand the scope and impact of incidents</li>
+                                <li><strong>Comply</strong> — Meet regulatory requirements (GDPR, HIPAA, PCI-DSS, SOX)</li>
+                                <li><strong>Audit</strong> — Track user activity and system changes for accountability</li>
+                                <li><strong>Improve</strong> — Analyze patterns to strengthen security controls</li>
+                                <li><strong>Forensic</strong> — Preserve evidence for legal and criminal proceedings</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l3">3. Key Activities in Log Management</button></h2>
+                    <div id="l3" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <ol>
+                                <li><strong>Generation</strong> — Systems and applications produce logs natively or via configured logging</li>
+                                <li><strong>Collection</strong> — Logs are forwarded to a centralized collector (syslog, WinRM, Beats, Fluentd)</li>
+                                <li><strong>Parsing & Normalization</strong> — Raw logs are parsed into structured fields (timestamp, source, event type, etc.)</li>
+                                <li><strong>Storage</strong> — Logs are stored in a searchable repository (SIEM, data lake, object storage)</li>
+                                <li><strong>Retention</strong> — Logs are kept for a defined period (90 days, 1 year, 7 years depending on regulation)</li>
+                                <li><strong>Monitoring & Alerting</strong> — Rules analyze logs in real-time and generate alerts for suspicious patterns</li>
+                                <li><strong>Archival</strong> — Older logs are compressed and moved to long-term storage for compliance</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l4">4. Inputs — Log Sources (Detailed)</button></h2>
+                    <div id="l4" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <h6 class="text-primary">Windows Event Logs</h6>
+                            <p>Event IDs 4624 (Logon), 4625 (Failed Logon), 4720 (User Created), 4688 (Process Created), 1102 (Log Cleared), 5156 (Connection). Stored in .evtx format. Forwarded via WinRM or Windows Event Forwarding.</p>
+                            <h6 class="text-primary">Linux Syslogs</h6>
+                            <p>/var/log/auth.log (SSH auth), /var/log/syslog (system events), /var/log/kern.log (kernel). Uses syslog protocol (UDP 514) or newer formats like JSON via rsyslog.</p>
+                            <h6 class="text-primary">Firewall Logs</h6>
+                            <p>Network connections: allowed/blocked/dropped. Key fields: src_ip, dst_ip, src_port, dst_port, protocol, action, rule. Example: Palo Alto, Fortinet, iptables.</p>
+                            <h6 class="text-primary">IDS/IPS Logs</h6>
+                            <p>Intrusion alerts from Snort, Suricata, Zeek. Signature ID, severity, payload inspection results. Key for detecting known attack patterns.</p>
+                            <h6 class="text-primary">DNS Logs</h6>
+                            <p>DNS query logs showing domain lookups. Critical for detecting C2 communication, DGA domains, and data exfiltration via DNS tunneling.</p>
+                            <h6 class="text-primary">VPN Logs</h6>
+                            <p>Remote access connections: user, source IP, connection time, bytes transferred. Used to track remote access and detect anomalous login locations.</p>
+                            <h6 class="text-primary">Web Server Logs</h6>
+                            <p>HTTP request logs: IP, method, URL, user-agent, status code, bytes. Attack indicators: SQLi (1=1, UNION), path traversal (../), webshell access.</p>
+                            <h6 class="text-primary">Endpoint Logs</h6>
+                            <p>Sysmon, EDR agents, AV logs. Deep visibility into process creation, network connections, file system changes, registry modifications.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l5">5. Outputs & Deliverables</button></h2>
+                    <div id="l5" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><strong>Normalized Log Feed</strong> — Structured, searchable log data in the SIEM</li>
+                                <li><strong>Dashboards</strong> — Real-time visualizations of log volume, sources, and anomalies</li>
+                                <li><strong>Alerts</strong> — Automated notifications triggered by detection rules</li>
+                                <li><strong>Compliance Reports</strong> — Evidence of log retention and review for auditors</li>
+                                <li><strong>Incident Timeline</strong> — Chronological event sequence extracted from logs</li>
+                                <li><strong>Threat Hunting Leads</strong> — Patterns and outliers that warrant deeper investigation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l6">6. Tools Used for Log Collection & Analysis</button></h2>
+                    <div id="l6" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-6"><ul>
+                                    <li><strong>SIEM:</strong> Splunk, Elastic SIEM, QRadar, ArcSight, LogRhythm</li>
+                                    <li><strong>Open Source:</strong> Wazuh, ELK Stack, Graylog, Fluentd</li>
+                                    <li><strong>Log Collectors:</strong> rsyslog, syslog-ng, Winlogbeat, Filebeat</li>
+                                    <li><strong>Cloud SIEM:</strong> Azure Sentinel, AWS Security Hub, Google Chronicle</li>
+                                </ul></div>
+                                <div class="col-md-6"><ul>
+                                    <li><strong>Endpoint:</strong> Sysmon, Osquery, Velociraptor</li>
+                                    <li><strong>Network:</strong> Wireshark, tcpdump, Zeek, Suricata</li>
+                                    <li><strong>Analysis:</strong> Jupyter Notebooks (Python/pandas for log analysis)</li>
+                                </ul></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l7">7. Real-World Example — Log Analysis</button></h2>
+                    <div id="l7" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Scenario:</strong> A SOC analyst sees a spike in failed logon events (Event ID 4625) from a single external IP address.</p>
+                            <p><strong>Log evidence:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded"><code>2026-06-15 08:15:22 EventID:4625 User: admin IP:45.33.32.156 Status: FAILED
+2026-06-15 08:15:45 EventID:4625 User: admin IP:45.33.32.156 Status: FAILED
+2026-06-15 08:16:10 EventID:4625 User: admin IP:45.33.32.156 Status: FAILED
+2026-06-15 08:16:33 EventID:4625 User: root IP:45.33.32.156 Status: FAILED
+2026-06-15 08:17:01 EventID:4625 User: admin IP:45.33.32.156 Status: FAILED</code></pre>
+                            <p><strong>Analysis:</strong> 5 failed attempts in 2 minutes from the same IP targeting common admin usernames = <span class="text-danger">brute force attack in progress</span>.</p>
+                            <p><strong>Action:</strong> Block IP 45.33.32.156 at the firewall, create alert rule for rapid failed logons, investigate if any succeeded.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l8">8. Best Practices for Log Management</button></h2>
+                    <div id="l8" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><strong>Enable logging everywhere</strong> — If it produces logs, collect them. You can't investigate what you don't have.</li>
+                                <li><strong>Set accurate time</strong> — All systems must use NTP with synchronized clocks. Timestamp drift breaks timeline analysis.</li>
+                                <li><strong>Protect log integrity</strong> — Use write-once storage or cryptographic signing. Attackers who clear logs are covering tracks.</li>
+                                <li><strong>Normalize early</strong> — Parse logs into a consistent schema at collection time, not during analysis.</li>
+                                <li><strong>Retain appropriately</strong> — Follow regulatory requirements (PCI-DSS: 1 year, HIPAA: 6 years, GDPR: based on processing)</li>
+                                <li><strong>Monitor log health</strong> — If your SIEM stops receiving logs from a critical system, that's an alert itself.</li>
+                                <li><strong>Prioritize log sources</strong> — Not all logs are equal. Authentication logs, network logs, and endpoint logs are highest priority.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l9">9. Common Mistakes in Log Management</button></h2>
+                    <div id="l9" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><strong>Too much, too little</strong> — Logging everything (petabytes of useless data) vs logging nothing (blind to attacks)</li>
+                                <li><strong>Ignoring log review</strong> — Collecting logs but never looking at them. A log that is never reviewed is a log that doesn't exist.</li>
+                                <li><strong>No log correlation</strong> — Reviewing each log source in isolation. Attackers cross systems; your analysis must too.</li>
+                                <li><strong>Trusting logs blindly</strong> — Logs can be spoofed, deleted, or modified. Always verify critical evidence from multiple sources.</li>
+                                <li><strong>Poor retention planning</strong> — Running out of storage and deleting old logs that are still needed for compliance or ongoing investigations.</li>
+                                <li><strong>Not testing log collection</strong> — SIEM shows "all systems reporting" but critical logs are misconfigured and never arrive.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l10">10. SOC Analyst Responsibilities — Logs</button></h2>
+                    <div id="l10" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><strong>L1 Analyst:</strong> Monitor log dashboards, identify anomalies, escalate suspicious patterns, ensure log sources are reporting</li>
+                                <li><strong>L2 Analyst:</strong> Deep log analysis across multiple sources, create custom searches and dashboards, tune log collection</li>
+                                <li><strong>L3 Analyst:</strong> Design logging strategy, build SIEM integration pipelines, develop advanced correlation rules</li>
+                            </ul>
+                            <p><strong>Key skills:</strong> Regex (for log parsing), SQL/Splunk SPL (for searching), understanding of log formats (syslog, JSON, EVTX, CSV), OS fundamentals (Windows Event Viewer, Linux /var/log)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l11">11. Workflow Diagram — Log to Alert</button></h2>
+                    <div id="l11" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <pre class="bg-dark text-light p-3 rounded"><code>System/App → Log Generation → Log Collection (Agent/Forwarder)
+       ↓
+    SIEM Ingestion → Parsing & Normalization
+       ↓
+    Storage (Hot/Warm/Cold)
+       ↓
+    Detection Rules → Match? → YES → Alert Generated
+                           ↓ NO
+                    Indexed for search/hunting</code></pre>
+                            <p>This flow shows how raw logs become actionable alerts. The key is the detection rules — they determine which log patterns get escalated.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l12">12. SIEM Integration — How Logs Enter the SIEM</button></h2>
+                    <div id="l12" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <p>A SIEM (Security Information and Event Management) system aggregates logs from hundreds of sources. Integration methods:</p>
+                            <ul>
+                                <li><strong>Agent-based:</strong> Install software on endpoints that forwards logs (Winlogbeat, Osquery, Splunk UF)</li>
+                                <li><strong>Agentless:</strong> Systems send logs directly via syslog, SNMP, or API (firewalls, routers, cloud services)</li>
+                                <li><strong>API/Connector:</strong> Cloud services push logs via REST API (Office 365, AWS CloudTrail, Azure AD)</li>
+                                <li><strong>Database:</strong> Some SIEMs can read directly from SQL databases or data lakes</li>
+                            </ul>
+                            <p>In this lab, all log sources are pre-loaded as sample data. In a real SOC, these would be live streams from actual systems.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l13">13. Interview Questions — Log Management</button></h2>
+                    <div id="l13" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <ol>
+                                <li><strong>Q:</strong> What is the difference between syslog and Windows Event Log? <br><em>A:</em> Syslog is a text-based protocol (UDP 514) used by Linux/Unix systems and network devices. Windows Event Log is a binary format (.evtx) using Event IDs and accessed via Windows Event Viewer or WinRM.</li>
+                                <li><strong>Q:</strong> How do you investigate a brute force attack using logs? <br><em>A:</em> Look for Event ID 4625 (failed logons) clustered by source IP, target username, and time window. Correlate with 4624 (successful logon) to see if any succeeded. Check multiple systems for the same IP.</li>
+                                <li><strong>Q:</strong> What log sources are most critical for a SOC? <br><em>A:</em> Authentication logs (AD, SSH, VPN), network logs (firewall, DNS, proxy), endpoint logs (EDR, Sysmon), and web server logs. These cover the most common attack vectors.</li>
+                                <li><strong>Q:</strong> How do you ensure log integrity? <br><em>A:</em> Use write-once storage (WORM), cryptographic hashing of log files, centralized logging so attackers can't delete local logs, and SIEM alerting when log forwarding stops.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l14">14. Quiz Questions — Log Concepts</button></h2>
+                    <div id="l14" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>Which Windows Event ID indicates a successful logon? <br><em>Answer: 4624</em></li>
+                                <li>What protocol does syslog typically use? <br><em>Answer: UDP (port 514)</em></li>
+                                <li>What does a 404 HTTP status code indicate in web logs? <br><em>Answer: Resource not found</em></li>
+                                <li>What log source is best for detecting C2 beaconing? <br><em>Answer: Firewall/proxy logs (outbound connections to unknown IPs)</em></li>
+                                <li>What Event ID indicates a Windows audit log was cleared? <br><em>Answer: 1102</em></li>
+                                <li>What is the first step in log analysis? <br><em>Answer: Establish a baseline of normal activity</em></li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4 border-primary">
     <div class="card-header bg-dark text-primary"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
     <div class="card-body" id="quizSection">
         <div class="mb-3">

@@ -124,6 +124,217 @@
 </div>
 
 <div class="card mt-4 border-success">
+    <div class="card-header bg-dark text-success" data-bs-toggle="collapse" data-bs-target="#detailedTraining" style="cursor:pointer;">
+        <i class="bi bi-book-fill"></i> Detailed Training Material <i class="bi bi-chevron-down float-end"></i>
+    </div>
+    <div class="collapse" id="detailedTraining">
+        <div class="card-body">
+            <div class="accordion" id="respAccordion">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r1" aria-expanded="false" aria-controls="r1">
+                            <strong>Definition — Incident Response</strong>
+                        </button>
+                    </h2>
+                    <div id="r1" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Organized approach to stop active threats and prevent further damage.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r2" aria-expanded="false" aria-controls="r2">
+                            <strong>Purpose &amp; Objectives</strong>
+                        </button>
+                    </h2>
+                    <div id="r2" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Contain the attack, prevent data loss, preserve evidence, restore normal operations.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r3" aria-expanded="false" aria-controls="r3">
+                            <strong>Key Activities</strong>
+                        </button>
+                    </h2>
+                    <div id="r3" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Containment (isolate, block, disable), eradication (remove malware, persistence), communication (stakeholder updates).
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r4" aria-expanded="false" aria-controls="r4">
+                            <strong>Inputs</strong>
+                        </button>
+                    </h2>
+                    <div id="r4" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Incident details (timeline, IOCs, affected systems), playbook, communication templates, containment tools.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r5" aria-expanded="false" aria-controls="r5">
+                            <strong>Outputs</strong>
+                        </button>
+                    </h2>
+                    <div id="r5" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Contained incident, eradicated threat, incident report, updated playbook.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r6" aria-expanded="false" aria-controls="r6">
+                            <strong>Tools</strong>
+                        </button>
+                    </h2>
+                    <div id="r6" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Firewalls (block IPs), EDR (kill processes, quarantine), IAM (disable accounts), SIEM/SOAR (automated response).
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r7" aria-expanded="false" aria-controls="r7">
+                            <strong>Real-World Example</strong>
+                        </button>
+                    </h2>
+                    <div id="r7" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Walk through: SSH brute force detected &rarr; isolate websrv-01 from network &rarr; block 45.33.32.156 at firewall &rarr; disable backup_admin account &rarr; remove webshell &rarr; kill malicious processes.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r8" aria-expanded="false" aria-controls="r8">
+                            <strong>Best Practices</strong>
+                        </button>
+                    </h2>
+                    <div id="r8" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Stop the bleeding first. Communicate clearly. Follow playbooks. Document every action.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r9" aria-expanded="false" aria-controls="r9">
+                            <strong>Common Mistakes</strong>
+                        </button>
+                    </h2>
+                    <div id="r9" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Acting without a plan, destroying evidence, incomplete containment (attacker returns), poor communication.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r10" aria-expanded="false" aria-controls="r10">
+                            <strong>SOC Analyst Responsibilities</strong>
+                        </button>
+                    </h2>
+                    <div id="r10" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            L1: Execute playbooks, escalate when stuck. L2: Lead response, coordinate teams. L3: Design response strategy and automation.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r11" aria-expanded="false" aria-controls="r11">
+                            <strong>Workflow Diagram</strong>
+                        </button>
+                    </h2>
+                    <div id="r11" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            Incident Confirmed &rarr; Assemble Team &rarr; Contain &rarr; Eradicate &rarr; Communicate &rarr; Document.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r12" aria-expanded="false" aria-controls="r12">
+                            <strong>Response Playbook Table</strong>
+                        </button>
+                    </h2>
+                    <div id="r12" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            <table class="table table-sm table-dark">
+                                <thead><tr><th>Attack Type</th><th>Containment</th><th>Eradication</th><th>Recovery</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Ransomware</td><td>Isolate host, block C2</td><td>Remove encryption binary</td><td>Restore from backup</td></tr>
+                                    <tr><td>Phishing</td><td>Block sender, disable account</td><td>Remove mailbox rule</td><td>Password reset</td></tr>
+                                    <tr><td>Insider Threat</td><td>Disable account, revoke access</td><td>Review audit logs</td><td>Policy update</td></tr>
+                                    <tr><td>DDoS</td><td>Rate-limit, blackhole</td><td>Filter traffic</td><td>Scale up infrastructure</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r13" aria-expanded="false" aria-controls="r13">
+                            <strong>Interview Questions</strong>
+                        </button>
+                    </h2>
+                    <div id="r13" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            <strong>Q:</strong> What's the difference between containment and eradication?<br>
+                            <strong>A:</strong> Containment stops the spread; eradication removes the threat.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r14" aria-expanded="false" aria-controls="r14">
+                            <strong>Quiz Questions</strong>
+                        </button>
+                    </h2>
+                    <div id="r14" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>What is the first priority in incident response? <strong>Contain the breach</strong></li>
+                                <li>Which action is part of eradication? <strong>Remove malware</strong></li>
+                                <li>What does containment mean? <strong>Stop the attack from spreading</strong></li>
+                                <li>Which tool is used to block attacker IPs? <strong>Firewall</strong></li>
+                                <li>What should you do before deleting files? <strong>Preserve evidence</strong></li>
+                                <li>What is the final phase of the NIST IR framework? <strong>Post-Incident</strong></li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4 border-success">
     <div class="card-header bg-dark text-success"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
     <div class="card-body" id="quizSection">
         <div class="mb-3">

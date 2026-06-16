@@ -151,6 +151,194 @@
 </div>
 
 <div class="card mt-4 border-info">
+    <div class="card-header bg-dark text-info" data-bs-toggle="collapse" data-bs-target="#detailedTraining" style="cursor:pointer;">
+        <i class="bi bi-book-fill"></i> Detailed Training Material <i class="bi bi-chevron-down float-end"></i>
+    </div>
+    <div class="collapse" id="detailedTraining">
+        <div class="card-body">
+            <div class="accordion" id="invAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i1">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i1">
+                            1. Definition
+                        </button>
+                    </h2>
+                    <div id="collapse-i1" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Deep dive into confirmed incidents to understand scope, impact, and root cause.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i2">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i2">
+                            2. Purpose &amp; Objectives
+                        </button>
+                    </h2>
+                    <div id="collapse-i2" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Determine full attack scope, collect evidence, identify root cause, produce actionable intelligence.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i3">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i3">
+                            3. Key Activities
+                        </button>
+                    </h2>
+                    <div id="collapse-i3" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Evidence collection (disk/memory/network), timeline reconstruction, log correlation, IOC extraction, root cause analysis.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i4">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i4">
+                            4. Inputs
+                        </button>
+                    </h2>
+                    <div id="collapse-i4" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Evidence types: forensic images (dd, FTK Imager), memory dumps (Volatility), PCAPs (tcpdump, Wireshark), log extracts, malware samples.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i5">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i5">
+                            5. Outputs
+                        </button>
+                    </h2>
+                    <div id="collapse-i5" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Incident timeline, IOC list, root cause report, evidence chain of custody, affected systems list.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i6">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i6">
+                            6. Tools
+                        </button>
+                    </h2>
+                    <div id="collapse-i6" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Wireshark, Volatility, Autopsy, Velociraptor, YARA, VirusTotal, Hybrid Analysis, ANY.RUN.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i7">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i7">
+                            7. Real-World Example
+                        </button>
+                    </h2>
+                    <div id="collapse-i7" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Walk through the full investigation from this lab's data: SSH brute force identified as initial vector, webshell uploaded, lateral movement via PowerShell, C2 established, data exfiltrated. Show how each log source contributed evidence.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i8">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i8">
+                            8. Best Practices
+                        </button>
+                    </h2>
+                    <div id="collapse-i8" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Follow the IOC pyramid: hash → IP → domain → network artifact → host artifact → TTP. Work methodically. Preserve evidence chain.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i9">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i9">
+                            9. Common Mistakes
+                        </button>
+                    </h2>
+                    <div id="collapse-i9" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Destroying evidence (rebooting before capture), confirmation bias (finding what you expect), missing lateral movement, incomplete timeline.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i10">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i10">
+                            10. SOC Analyst Responsibilities
+                        </button>
+                    </h2>
+                    <div id="collapse-i10" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            L2/L3: Lead investigations, perform forensics, write investigation reports, brief management.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i11">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i11">
+                            11. Workflow Diagram
+                        </button>
+                    </h2>
+                    <div id="collapse-i11" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            Incident Confirmed → Scope Definition → Evidence Collection → Timeline Analysis → Root Cause → IOC Extraction → Report.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i12">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i12">
+                            12. IOC Types Table
+                        </button>
+                    </h2>
+                    <div id="collapse-i12" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            <table class="table table-sm table-dark">
+                                <thead><tr><th>Type</th><th>Examples</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Network IOCs</td><td>IPs, domains, URLs</td></tr>
+                                    <tr><td>Host IOCs</td><td>File paths, registry keys, process names</td></tr>
+                                    <tr><td>Behavioral IOCs</td><td>TTPs, patterns</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i13">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i13">
+                            13. Interview Questions
+                        </button>
+                    </h2>
+                    <div id="collapse-i13" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            <strong>Q:</strong> How do you create a timeline?<br>
+                            <strong>A:</strong> Aggregate logs chronologically from all sources, identify key events, correlate timestamps.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-i14">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-i14">
+                            14. Quiz Questions
+                        </button>
+                    </h2>
+                    <div id="collapse-i14" class="accordion-collapse collapse" data-bs-parent="#invAccordion">
+                        <div class="accordion-body">
+                            6 questions with answers about investigation.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4 border-info">
     <div class="card-header bg-dark text-info"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
     <div class="card-body" id="quizSection">
         <div class="mb-3">

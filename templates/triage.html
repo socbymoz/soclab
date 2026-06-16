@@ -85,6 +85,179 @@
 {% endfor %}
 
 <div class="card mt-4 border-warning">
+    <div class="card-header bg-dark text-warning" data-bs-toggle="collapse" data-bs-target="#detailedTraining" style="cursor:pointer;">
+        <i class="bi bi-book-fill"></i> Detailed Training Material <i class="bi bi-chevron-down float-end"></i>
+    </div>
+    <div class="collapse" id="detailedTraining">
+        <div class="card-body">
+            <div class="accordion" id="triageAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h1">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t1" aria-expanded="false" aria-controls="t1">
+                            1. Definition — What Is Triage?
+                        </button>
+                    </h2>
+                    <div id="t1" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h1">
+                        <div class="accordion-body">Rapid evaluation of alerts to determine validity and priority. SOC's first line of defense against alert fatigue.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h2">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t2" aria-expanded="false" aria-controls="t2">
+                            2. Purpose &amp; Objectives
+                        </button>
+                    </h2>
+                    <div id="t2" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h2">
+                        <div class="accordion-body">Separate real threats from noise. Prioritize critical alerts. Reduce Mean Time to Detect (MTTD).</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h3">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t3" aria-expanded="false" aria-controls="t3">
+                            3. Key Activities
+                        </button>
+                    </h2>
+                    <div id="t3" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h3">
+                        <div class="accordion-body">Alert validation, severity classification, prioritization, escalation, documentation.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h4">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t4" aria-expanded="false" aria-controls="t4">
+                            4. Inputs
+                        </button>
+                    </h2>
+                    <div id="t4" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h4">
+                        <div class="accordion-body">Alert validation methods: check against threat intelligence, correlate with other sources, verify log integrity, check asset criticality.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h5">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t5" aria-expanded="false" aria-controls="t5">
+                            5. Outputs
+                        </button>
+                    </h2>
+                    <div id="t5" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h5">
+                        <div class="accordion-body">Classified alerts (TP/FP/Investigate), escalated incidents, updated tickets, metrics for SOC performance.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h6">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t6" aria-expanded="false" aria-controls="t6">
+                            6. Tools
+                        </button>
+                    </h2>
+                    <div id="t6" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h6">
+                        <div class="accordion-body">SIEM triage consoles, SOAR (automated triage), threat intel platforms (MISP, VirusTotal), ticket systems (Jira, ServiceNow).</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h7">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t7" aria-expanded="false" aria-controls="t7">
+                            7. Real-World Example
+                        </button>
+                    </h2>
+                    <div id="t7" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h7">
+                        <div class="accordion-body">SOC receives alert: "Outbound connection to known bad IP". Analyst checks firewall logs, confirms connection to 34.253.159.159 on port 4444. Checks VirusTotal → IP marked as C2. Classification: True Positive. Escalate immediately.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h8">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t8" aria-expanded="false" aria-controls="t8">
+                            8. Best Practices
+                        </button>
+                    </h2>
+                    <div id="t8" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h8">
+                        <div class="accordion-body">5-minute triage rule. Critical first. Correlate 3+ sources. Document everything.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h9">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t9" aria-expanded="false" aria-controls="t9">
+                            9. Common Mistakes
+                        </button>
+                    </h2>
+                    <div id="t9" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h9">
+                        <div class="accordion-body">Spending too long on one alert. Ignoring low-severity alerts that could be part of a larger pattern. Not documenting classification rationale.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h10">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t10" aria-expanded="false" aria-controls="t10">
+                            10. SOC Analyst Responsibilities
+                        </button>
+                    </h2>
+                    <div id="t10" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h10">
+                        <div class="accordion-body">L1: Triage all alerts, classify TP/FP, escalate critical. L2: Validate L1 classifications, identify patterns across alerts. L3: Design triage workflows and automation.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h11">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t11" aria-expanded="false" aria-controls="t11">
+                            11. Workflow Diagram
+                        </button>
+                    </h2>
+                    <div id="t11" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h11">
+                        <div class="accordion-body">Alert Received → Validate Source → Check Threat Intel → Correlate Logs → Classify (TP/FP/Investigate) → Escalate if TP → Document.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h12">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t12" aria-expanded="false" aria-controls="t12">
+                            12. Triage Matrix Table
+                        </button>
+                    </h2>
+                    <div id="t12" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h12">
+                        <div class="accordion-body">
+                            <table class="table table-dark table-striped mb-0">
+                                <thead><tr><th>Severity</th><th>Classification</th><th>Action</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Critical</td><td>TP</td><td>Immediate escalation</td></tr>
+                                    <tr><td>High</td><td>TP</td><td>Escalate within 1 hour</td></tr>
+                                    <tr><td>Medium</td><td>TP</td><td>Escalate within 4 hours</td></tr>
+                                    <tr><td>Low</td><td>TP</td><td>Escalate within 24 hours</td></tr>
+                                    <tr><td>Warning</td><td>FP</td><td>Document and close</td></tr>
+                                    <tr><td>Info</td><td>Investigate</td><td>Monitor and re-evaluate</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h13">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t13" aria-expanded="false" aria-controls="t13">
+                            13. Interview Questions
+                        </button>
+                    </h2>
+                    <div id="t13" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h13">
+                        <div class="accordion-body"><strong>Q:</strong> How do you distinguish TP from FP? <strong>A:</strong> Check multiple log sources, verify against threat intelligence, check asset context.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="h14">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#t14" aria-expanded="false" aria-controls="t14">
+                            14. Quiz Questions
+                        </button>
+                    </h2>
+                    <div id="t14" class="accordion-collapse collapse" data-bs-parent="#triageAccordion" aria-labelledby="h14">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>What does triage mean in SOC context? — Rapid evaluation of alerts</li>
+                                <li>What is the first step in triage? — Alert validation</li>
+                                <li>What does TP stand for? — True Positive</li>
+                                <li>Which severity requires immediate escalation? — Critical</li>
+                                <li>What is a FP? — False Positive (alert triggered but no actual threat)</li>
+                                <li>What is the 5-minute triage rule? — Spend no more than 5 minutes per alert during initial triage</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4 border-warning">
     <div class="card-header bg-dark text-warning"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
     <div class="card-body" id="quizSection">
         <div class="mb-3">
