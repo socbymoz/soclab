@@ -49,9 +49,10 @@ def init_db():
 init_db()
 
 def load_user(username):
+    if is_vercel:
+        users = session.get('_site_users', {})
+        return users.get(username)
     conn = get_db()
-    if not conn:
-        return None
     row = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
     conn.close()
     if row:
@@ -59,9 +60,13 @@ def load_user(username):
     return None
 
 def save_user(username, data):
-    conn = get_db()
-    if not conn:
+    if is_vercel:
+        users = session.get('_site_users', {})
+        if username in users:
+            users[username].update(data)
+            session['_site_users'] = users
         return
+    conn = get_db()
     conn.execute('''
         UPDATE users SET soc_progress = ?, quiz_scores = ?, flagged = ?
         WHERE username = ?
@@ -71,9 +76,24 @@ def save_user(username, data):
     conn.close()
 
 def create_user(username, password_hash, name, age, email, phone):
+    if is_vercel:
+        users = session.get('_site_users', {})
+        if username in users:
+            return False
+        users[username] = {
+            'username': username,
+            'password_hash': password_hash,
+            'name': name,
+            'age': age,
+            'email': email,
+            'phone': phone,
+            'soc_progress': 0,
+            'quiz_scores': '{}',
+            'flagged': '[]'
+        }
+        session['_site_users'] = users
+        return True
     conn = get_db()
-    if not conn:
-        return False
     try:
         conn.execute('''
             INSERT INTO users (username, password_hash, name, age, email, phone)
