@@ -1,12 +1,13 @@
+# User data files
+users/
+# Log files
+logs/
+# Environment
+.env
+# Python
 __pycache__/
 *.pyc
-*.pyo
-.env
-logs/
-backups/
-server_*.txt
-venv/
+.venv/
+# IDE
 .vscode/
 .idea/
-*.zip
-*.tar.gz

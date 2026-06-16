@@ -79,87 +79,17 @@
     </div>
 </div>
 
-<div class="row mb-3">
-    <div class="col-md-4">
-        <input type="text" class="form-control" id="searchInput" placeholder="Search logs..." onkeyup="filterLogs()">
-    </div>
-    <div class="col-md-2">
-        <select class="form-select" id="sourceFilter" onchange="filterLogs()">
-            <option value="">All Sources</option>
-            <option value="Windows">Windows</option>
-            <option value="Web">Web</option>
-            <option value="Firewall">Firewall</option>
-            <option value="SSH">SSH</option>
-            <option value="Sysmon">Sysmon</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <select class="form-select" id="severityFilter" onchange="filterLogs()">
-            <option value="">All Severity</option>
-            <option value="info">Info</option>
-            <option value="warning">Warning</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <div class="form-check form-switch mt-2">
-            <input class="form-check-input" type="checkbox" id="suspiciousToggle" onchange="filterLogs()">
-            <label class="form-check-label" for="suspiciousToggle">Suspicious only</label>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 50vh;">
-                    <table class="table table-dark table-hover mb-0">
-                        <thead class="sticky-top">
-                            <tr>
-                                <th>Time</th>
-                                <th>Source</th>
-                                <th>Severity</th>
-                                <th>Event</th>
-                                <th>Details</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logTableBody">
-                            {% for e in events %}
-                            <tr class="log-row {% if e.get('suspicious') %}table-danger{% endif %}" data-source="{{ e.source }}" data-severity="{{ e.severity }}" data-suspicious="{{ 'true' if e.get('suspicious') else 'false' }}">
-                                <td><small>{{ e.time }}</small></td>
-                                <td><span class="badge bg-secondary">{{ e.source }}</span></td>
-                                <td>
-                                    {% set sev = e.severity %}
-                                    {% if sev == 'critical' %}<span class="badge bg-danger">Critical</span>
-                                    {% elif sev == 'high' %}<span class="badge bg-warning text-dark">High</span>
-                                    {% elif sev == 'warning' %}<span class="badge bg-info text-dark">Warning</span>
-                                    {% else %}<span class="badge bg-secondary">Info</span>{% endif %}
-                                </td>
-                                <td>{{ e.event }}</td>
-                                <td class="details-cell" title="{{ e.details }}"><small>{{ e.details }}</small></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="card mt-4 border-primary">
-    <div class="card-header bg-dark text-primary" data-bs-toggle="collapse" data-bs-target="#detailedTraining" style="cursor:pointer;">
-        <i class="bi bi-book-fill"></i> Detailed Training Material <i class="bi bi-chevron-down float-end"></i>
+    <div class="card-header bg-dark text-primary">
+        <i class="bi bi-book-fill"></i> Training Material
     </div>
-    <div class="collapse" id="detailedTraining">
+    <div class="collapse show" id="detailedTraining">
         <div class="card-body">
             <div class="accordion" id="logsAccordion">
 
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l1">1. Definition — What Are Logs?</button></h2>
-                    <div id="l1" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#l1">1. Definition — What Are Logs?</button></h2>
+                    <div id="l1" class="accordion-collapse collapse show" data-bs-parent="#logsAccordion">
                         <div class="accordion-body">
                             <p><strong>Log</strong> — A time-stamped record of an event occurring on a system, application, or network device. Logs are the foundational data source for all SOC operations.</p>
                             <p>Every digital action leaves a trace. When a user logs in, a file is accessed, a network connection is made, or an application crashes — a log entry records it. In cybersecurity, logs are the "black box" of your IT environment.</p>
@@ -172,6 +102,44 @@
                                 <li><strong>Details</strong> — Additional context (file path, IP address, command executed)</li>
                                 <li><strong>Severity</strong> — How important is this event? (Info, Warning, Error, Critical)</li>
                             </ul>
+                            <h6 class="text-primary mt-3">Real Log Format Examples</h6>
+                            <div class="mb-2">
+                                <small class="text-info"><i class="bi bi-windows"></i> Windows Event (EVTX format):</small>
+                                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">Log Name:      Security
+Event ID:      4625
+Task Category: Logon
+User:          CORP\unknown
+Computer:      WS-01.corp.local
+Description:
+  Account For Logon:
+    Security ID:  S-1-0-0
+    Account Name: admin
+    Source IP:    192.168.1.50
+    Status:       0xC000006D (bad password)</pre>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-info"><i class="bi bi-globe"></i> Web Server (Apache Combined):</small>
+                                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">192.168.1.50 - - [15/Jun/2026:08:00:12 +0000] "POST /wp-login.php HTTP/1.1" 302 345 "-" "Mozilla/5.0"
+45.33.32.156 - - [15/Jun/2026:08:10:03 +0000] "GET /index.php?id=1%27%20OR%20%271%27%3D%271 HTTP/1.1" 200 8901 "-" "sqlmap/1.7"</pre>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-info"><i class="bi bi-shield"></i> Firewall (Syslog):</small>
+                                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">Jun 15 09:00:00 fw-01 %ASA-6-302013: Built outbound TCP connection 49157 from inside:10.10.10.50/49157 to outside:185.220.101.1/9050</pre>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-info"><i class="bi bi-terminal"></i> SSH Auth Log:</small>
+                                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">Jun 15 06:05:01 websrv-01 sshd[2345]: Failed password for admin from 45.33.32.156 port 54321 ssh2
+Jun 15 06:15:00 websrv-01 sshd[2345]: Accepted password for stansimon from 45.33.32.156 port 54321 ssh2</pre>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-info"><i class="bi bi-cpu"></i> Sysmon (XML):</small>
+                                <pre class="bg-dark text-light p-2 rounded" style="font-size:0.75rem; border:1px solid #333; overflow-x:auto;">Event ID: 1 (Process Creation)
+UtcTime: 2026-06-15 09:00:00
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+CommandLine: powershell -enc JABpAD0ATgBlAHcALQBPAGIAagBlAGM...
+User: CORP\backup_admin
+ParentImage: C:\Windows\System32\cmd.exe</pre>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -323,7 +291,7 @@
                 </div>
 
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l10">10. SOC Analyst Responsibilities — Logs</button></h2>
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#l10">10. SOC Analyst Responsibilities — Logs</button></h2>
                     <div id="l10" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
                         <div class="accordion-body">
                             <ul>
@@ -337,7 +305,7 @@
                 </div>
 
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l11">11. Workflow Diagram — Log to Alert</button></h2>
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#l11">11. Workflow Diagram — Log to Alert</button></h2>
                     <div id="l11" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
                         <div class="accordion-body">
                             <pre class="bg-dark text-light p-3 rounded"><code>System/App → Log Generation → Log Collection (Agent/Forwarder)
@@ -355,7 +323,7 @@
                 </div>
 
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l12">12. SIEM Integration — How Logs Enter the SIEM</button></h2>
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#l12">12. SIEM Integration — How Logs Enter the SIEM</button></h2>
                     <div id="l12" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
                         <div class="accordion-body">
                             <p>A SIEM (Security Information and Event Management) system aggregates logs from hundreds of sources. Integration methods:</p>
@@ -371,7 +339,7 @@
                 </div>
 
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l13">13. Interview Questions — Log Management</button></h2>
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#l13">13. Interview Questions — Log Management</button></h2>
                     <div id="l13" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
                         <div class="accordion-body">
                             <ol>
@@ -385,7 +353,7 @@
                 </div>
 
                 <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#l14">14. Quiz Questions — Log Concepts</button></h2>
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#l14">14. Quiz Questions — Log Concepts</button></h2>
                     <div id="l14" class="accordion-collapse collapse" data-bs-parent="#logsAccordion">
                         <div class="accordion-body">
                             <ol>
@@ -404,6 +372,82 @@
         </div>
     </div>
 </div>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" class="form-control" id="searchInput" placeholder="Search logs..." onkeyup="filterLogs()">
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" id="sourceFilter" onchange="filterLogs()">
+            <option value="">All Sources</option>
+            <option value="Windows">Windows</option>
+            <option value="Web">Web</option>
+            <option value="Firewall">Firewall</option>
+            <option value="SSH">SSH</option>
+            <option value="Sysmon">Sysmon</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" id="severityFilter" onchange="filterLogs()">
+            <option value="">All Severity</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <div class="form-check form-switch mt-2">
+            <input class="form-check-input" type="checkbox" id="suspiciousToggle" onchange="filterLogs()">
+            <label class="form-check-label" for="suspiciousToggle">Suspicious only</label>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 50vh;">
+                    <table class="table table-dark table-hover mb-0">
+                        <thead class="sticky-top">
+                            <tr>
+                                <th>Time</th>
+                                <th>Source</th>
+                                <th>Severity</th>
+                                <th>Event</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            {% for e in events %}
+                            <tr class="log-row {% if e.get('suspicious') %}table-danger{% endif %}" data-source="{{ e.source }}" data-severity="{{ e.severity }}" data-suspicious="{{ 'true' if e.get('suspicious') else 'false' }}">
+                                <td><small>{{ e.time }}</small></td>
+                                <td><span class="badge bg-secondary">{{ e.source }}</span></td>
+                                <td>
+                                    {% set sev = e.severity %}
+                                    {% if sev == 'critical' %}<span class="badge bg-danger">Critical</span>
+                                    {% elif sev == 'high' %}<span class="badge bg-warning text-dark">High</span>
+                                    {% elif sev == 'warning' %}<span class="badge bg-info text-dark">Warning</span>
+                                    {% else %}<span class="badge bg-secondary">Info</span>{% endif %}
+                                </td>
+                                <td>{{ e.event }}</td>
+                                <td class="details-cell" title="{{ e.details }}"><small>{{ e.details }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
 
 <div class="card mt-4 border-primary">
     <div class="card-header bg-dark text-primary"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>

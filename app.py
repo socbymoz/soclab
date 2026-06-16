@@ -1,5 +1,6 @@
 import os
 import logging
+import hashlib
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -10,6 +11,52 @@ import json
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "fallback-dev-key-change-in-production")
+
+# User data storage
+USERS_DIR = os.path.join(os.path.dirname(__file__), 'users')
+is_vercel = os.environ.get('VERCEL', '') == '1'
+if not is_vercel:
+    os.makedirs(USERS_DIR, exist_ok=True)
+
+def get_user_path(username):
+    safe = ''.join(c for c in username.lower() if c.isalnum() or c in '._-')
+    return os.path.join(USERS_DIR, f'{safe}.json')
+
+def load_user(username):
+    if is_vercel:
+        return None
+    path = get_user_path(username)
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    return None
+
+def save_user(username, data):
+    if is_vercel:
+        return
+    path = get_user_path(username)
+    with open(path, 'w') as f:
+        json.dump(data, f)
+
+def hash_password(pw):
+    return hashlib.sha256(pw.encode()).hexdigest()
+
+def load_session_from_user(username):
+    data = load_user(username)
+    if data:
+        session['user_name'] = username
+        session['soc_progress'] = data.get('soc_progress', 0)
+        session['quiz_scores'] = data.get('quiz_scores', {})
+        session['flagged'] = data.get('flagged', [])
+    return data
+
+def save_session_to_user(username):
+    data = {
+        'soc_progress': session.get('soc_progress', 0),
+        'quiz_scores': session.get('quiz_scores', {}),
+        'flagged': session.get('flagged', []),
+    }
+    save_user(username, data)
 
 # SOC process flow sections
 SOC_SECTIONS = ["Logs", "Alert", "Triage", "Investigation", "Response", "Recovery", "Report", "Improve"]
@@ -23,7 +70,6 @@ app.config['SESSION_COOKIE_SAMESITE'] = os.getenv("SESSION_COOKIE_SAMESITE", "La
 # Logging
 log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
 log_dir = os.getenv("LOG_DIR", "logs")
-is_vercel = os.environ.get('VERCEL', '') == '1'
 if not is_vercel:
     os.makedirs(log_dir, exist_ok=True)
     logging.basicConfig(level=log_level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", handlers=[logging.FileHandler(os.path.join(log_dir, "soclab.log")), logging.StreamHandler()])
@@ -37,7 +83,7 @@ def check_login():
     path = request.path
     if any(path.startswith(p) for p in PROTECTED):
         if 'user_name' not in session:
-            return redirect('/')
+            return redirect('/login')
 
 SAMPLE_DATA = {
     "windows_events": [
@@ -262,6 +308,7 @@ def check_quiz(step):
     scores = session.get('quiz_scores', {})
     scores[str(step)] = correct
     session['quiz_scores'] = scores
+    save_session_to_user(session.get('user_name', ''))
     return jsonify({"correct": correct, "total": total, "passed": correct == total})
 
 def get_progress():
@@ -280,34 +327,39 @@ def inject_soc_progress():
     user = session.get('user_name', '')
     return dict(soc_progress=prog, SOC_SECTIONS=SOC_SECTIONS, SOC_ROUTES=SOC_ROUTES, now=datetime.now, user_name=user)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
+    if 'user_name' in session:
+        return redirect('/logs')
+    return redirect('/login')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'user_name' in session:
+        return redirect('/logs')
+    error = ''
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        if name:
-            session['user_name'] = name
-            session['soc_progress'] = 0
-            return redirect('/')
-
-    # Guest access: if not logged in, show login form
-    if 'user_name' not in session:
-        return render_template('login.html')
-
-    stats = get_log_stats()
-    hour = datetime.now().hour
-    if hour < 12:
-        greeting = "Good Morning"
-        icon = "bi-sunrise"
-    elif hour < 17:
-        greeting = "Good Afternoon"
-        icon = "bi-sun"
-    elif hour < 21:
-        greeting = "Good Evening"
-        icon = "bi-moon-stars"
-    else:
-        greeting = "Good Night"
-        icon = "bi-moon"
-    return render_template('index.html', stats=stats, greeting=greeting, icon=icon, user_name=session['user_name'])
+        username = request.form.get('username', '').strip().lower()
+        password = request.form.get('password', '')
+        action = request.form.get('action', 'login')
+        if not username or not password:
+            error = 'Please fill in all fields.'
+        else:
+            user = load_user(username)
+            if action == 'login':
+                if user and user.get('password') == hash_password(password):
+                    load_session_from_user(username)
+                    return redirect('/logs')
+                else:
+                    error = 'Invalid username or password.'
+            else:  # register
+                if user:
+                    error = 'Username already exists. Please log in.'
+                else:
+                    save_user(username, {'password': hash_password(password), 'soc_progress': 0, 'quiz_scores': {}, 'flagged': []})
+                    load_session_from_user(username)
+                    return redirect('/logs')
+    return render_template('login.html', error=error)
 
 def get_all_events():
     all_events = []
@@ -378,6 +430,7 @@ def complete_section(step):
         total = len(SECTION_QUIZZES.get(step, []))
         if score >= total or step == len(SOC_SECTIONS) - 1:
             session['soc_progress'] = step + 1
+            save_session_to_user(session.get('user_name', ''))
             next_idx = min(step + 1, len(SOC_SECTIONS) - 1)
             return redirect(SOC_ROUTES[next_idx])
     return redirect(SOC_ROUTES[min(step, len(SOC_SECTIONS) - 1)])
@@ -385,12 +438,16 @@ def complete_section(step):
 @app.route('/reset_progress')
 def reset_progress():
     session['soc_progress'] = 0
+    session['quiz_scores'] = {}
+    session['flagged'] = []
+    save_session_to_user(session.get('user_name', ''))
     return redirect('/logs')
 
 @app.route('/logout')
 def logout():
+    save_session_to_user(session.get('user_name', ''))
     session.clear()
-    return redirect('/')
+    return redirect('/login')
 
 @app.route('/logs/<log_type>')
 def logs(log_type):
@@ -444,6 +501,7 @@ def flag():
     if data not in flagged:
         flagged.append(data)
         session['flagged'] = flagged
+        save_session_to_user(session.get('user_name', ''))
     return jsonify({"status": "flagged", "count": len(flagged)})
 
 @app.route('/api/flagged')

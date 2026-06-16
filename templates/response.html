@@ -56,88 +56,21 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-dark"><i class="bi bi-shield-fill"></i> Containment — Stop the Attack</div>
-            <div class="card-body">
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="r1" onchange="updateProgress()">
-                    <label class="form-check-label" for="r1">Isolate affected systems (websrv-01, CORP-WS-01) from network</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="r2" onchange="updateProgress()">
-                    <label class="form-check-label" for="r2">Block attacker IPs at firewall (45.33.32.156, 34.253.159.159, 185.220.101.1)</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="r3" onchange="updateProgress()">
-                    <label class="form-check-label" for="r3">Disable compromised accounts (backup_admin, stansimon)</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="r4" onchange="updateProgress()">
-                    <label class="form-check-label" for="r4">Block outbound C2 traffic on ports 4444, 9999, 9050</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="r5" onchange="updateProgress()">
-                    <label class="form-check-label" for="r5">Remove webshell at /uploads/shell.php</label>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-dark"><i class="bi bi-trash"></i> Eradication — Remove the Threat</div>
-            <div class="card-body">
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="e1" onchange="updateProgress()">
-                    <label class="form-check-label" for="e1">Remove malware files (malware.vbs, reflective.dll, exfil_data.zip)</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="e2" onchange="updateProgress()">
-                    <label class="form-check-label" for="e2">Remove registry persistence key (MaliciousBackdoor)</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="e3" onchange="updateProgress()">
-                    <label class="form-check-label" for="e3">Kill malicious processes (powershell.exe, wscript.exe, rundll32.exe)</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="e4" onchange="updateProgress()">
-                    <label class="form-check-label" for="e4">Rotate all passwords for affected accounts</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input response-check" type="checkbox" id="e5" onchange="updateProgress()">
-                    <label class="form-check-label" for="e5">Patch web application file upload vulnerability</label>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-4">
-    <div class="card-body text-center">
-        <h4>Response Progress</h4>
-        <div class="progress mb-2" style="height: 25px;">
-            <div class="progress-bar bg-success" id="progressBar" role="progressbar" style="width:0%">0%</div>
-        </div>
-        <small class="text-muted" id="progressText">0 of 10 actions completed</small>
-    </div>
-</div>
-
 <div class="card mt-4 border-success">
-    <div class="card-header bg-dark text-success" data-bs-toggle="collapse" data-bs-target="#detailedTraining" style="cursor:pointer;">
-        <i class="bi bi-book-fill"></i> Detailed Training Material <i class="bi bi-chevron-down float-end"></i>
+    <div class="card-header bg-dark text-success">
+        <i class="bi bi-book-fill"></i> Training Material
     </div>
-    <div class="collapse" id="detailedTraining">
+    <div class="collapse show" id="detailedTraining">
         <div class="card-body">
             <div class="accordion" id="respAccordion">
 
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r1" aria-expanded="false" aria-controls="r1">
+                        <button class="accordion-button bg-dark text-success" type="button" data-bs-toggle="collapse" data-bs-target="#r1" aria-expanded="false" aria-controls="r1">
                             <strong>Definition — Incident Response</strong>
                         </button>
                     </h2>
-                    <div id="r1" class="accordion-collapse collapse" data-bs-parent="#respAccordion">
+                    <div id="r1" class="accordion-collapse collapse show" data-bs-parent="#respAccordion">
                         <div class="accordion-body">
                             Organized approach to stop active threats and prevent further damage.
                         </div>
@@ -333,6 +266,79 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-shield-fill"></i> Containment — Stop the Attack</div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r1" onchange="updateProgress()">
+                    <label class="form-check-label" for="r1">Isolate affected systems (websrv-01, CORP-WS-01) from network</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r2" onchange="updateProgress()">
+                    <label class="form-check-label" for="r2">Block attacker IPs at firewall (45.33.32.156, 34.253.159.159, 185.220.101.1)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r3" onchange="updateProgress()">
+                    <label class="form-check-label" for="r3">Disable compromised accounts (backup_admin, stansimon)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r4" onchange="updateProgress()">
+                    <label class="form-check-label" for="r4">Block outbound C2 traffic on ports 4444, 9999, 9050</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="r5" onchange="updateProgress()">
+                    <label class="form-check-label" for="r5">Remove webshell at /uploads/shell.php</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark"><i class="bi bi-trash"></i> Eradication — Remove the Threat</div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e1" onchange="updateProgress()">
+                    <label class="form-check-label" for="e1">Remove malware files (malware.vbs, reflective.dll, exfil_data.zip)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e2" onchange="updateProgress()">
+                    <label class="form-check-label" for="e2">Remove registry persistence key (MaliciousBackdoor)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e3" onchange="updateProgress()">
+                    <label class="form-check-label" for="e3">Kill malicious processes (powershell.exe, wscript.exe, rundll32.exe)</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e4" onchange="updateProgress()">
+                    <label class="form-check-label" for="e4">Rotate all passwords for affected accounts</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input response-check" type="checkbox" id="e5" onchange="updateProgress()">
+                    <label class="form-check-label" for="e5">Patch web application file upload vulnerability</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body text-center">
+        <h4>Response Progress</h4>
+        <div class="progress mb-2" style="height: 25px;">
+            <div class="progress-bar bg-success" id="progressBar" role="progressbar" style="width:0%">0%</div>
+        </div>
+        <small class="text-muted" id="progressText">0 of 10 actions completed</small>
+    </div>
+</div>
+
+
+
+
+
+
 
 <div class="card mt-4 border-success">
     <div class="card-header bg-dark text-success"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>

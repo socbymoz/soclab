@@ -64,44 +64,54 @@
     </div>
 </div>
 
-<div class="row">
-    {% for a in alerts %}
-    <div class="col-md-6 col-lg-4 mb-3">
-        <div class="card h-100 border-{% if a.severity == 'critical' %}danger{% elif a.severity == 'high' %}warning{% else %}info{% endif %}">
-            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
-                <span class="badge bg-{% if a.severity == 'critical' %}danger{% elif a.severity == 'high' %}warning text-dark{% else %}info text-dark{% endif %}">{{ a.severity|upper }}</span>
-                <small class="text-muted">{{ a.source }}</small>
-            </div>
-            <div class="card-body">
-                <h6 class="card-title text-danger">{{ a.event }}</h6>
-                <p class="card-text small text-muted">{{ a.details }}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-secondary">{{ a.time }}</small>
-                    <span class="badge bg-secondary">{{ a.get('id', '') }}{{ a.get('ip', '') }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
 <div class="card mt-4 border-danger">
-    <div class="card-header bg-dark text-danger" data-bs-toggle="collapse" data-bs-target="#detailedTraining" style="cursor:pointer;">
-        <i class="bi bi-book-fill"></i> Detailed Training Material <i class="bi bi-chevron-down float-end"></i>
+    <div class="card-header bg-dark text-danger">
+        <i class="bi bi-book-fill"></i> Training Material
     </div>
-    <div class="collapse" id="detailedTraining">
+    <div class="collapse show" id="detailedTraining">
         <div class="card-body">
             <div class="accordion" id="alertAccordion">
                 <div class="accordion-item bg-dark text-light">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#a1">
+                        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#a1">
                             1. Definition — What Is an Alert?
                         </button>
                     </h2>
-                    <div class="accordion-collapse collapse" id="a1" data-bs-parent="#alertAccordion">
+                    <div class="accordion-collapse collapse show" id="a1" data-bs-parent="#alertAccordion">
                         <div class="accordion-body">
                             <p>An <strong>alert</strong> is a log that matches a known malicious or suspicious pattern. The key difference between a log and an alert is intent: a log is a passive record of an event (<em>"something happened"</em>), while an alert is an active notification (<em>"something requires attention"</em>).</p>
                             <p>An <strong>event</strong> is any observable occurrence in a system. A <strong>log</strong> is a recorded event. An <strong>alert</strong> is a log that triggers a rule or threshold. In short: all alerts are logs, but not all logs are alerts.</p>
+                            <h6 class="text-danger mt-3">Alert Rule Examples — How Logs Become Alerts</h6>
+                            <table class="table table-sm table-dark table-bordered">
+                                <thead><tr><th>Rule Name</th><th>Logic</th><th>Example Log Match</th></tr></thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge bg-danger">Brute-Force</span></td>
+                                        <td>10+ failed logins in 60s from same IP</td>
+                                        <td><code>4625 x 12 from 45.33.32.156 in 10 minutes</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-warning text-dark">Path Traversal</span></td>
+                                        <td>URL contains <code>../</code> or <code>etc/passwd</code></td>
+                                        <td><code>GET /../etc/passwd HTTP/1.1</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-warning text-dark">SQL Injection</span></td>
+                                        <td>URL contains <code>OR '1'='1</code> or <code>UNION SELECT</code></td>
+                                        <td><code>GET /index.php?id=1' OR '1'='1</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-danger">C2 Beacon</span></td>
+                                        <td>Outbound connection to known bad IP on unusual port</td>
+                                        <td><code>10.10.10.50 -> 34.253.159.159:4444</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-danger">Log Tampering</span></td>
+                                        <td>Event ID 1102 — Security log cleared</td>
+                                        <td><code>1102: Audit log cleared by backup_admin</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -328,6 +338,33 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    {% for a in alerts %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card h-100 border-{% if a.severity == 'critical' %}danger{% elif a.severity == 'high' %}warning{% else %}info{% endif %}">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <span class="badge bg-{% if a.severity == 'critical' %}danger{% elif a.severity == 'high' %}warning text-dark{% else %}info text-dark{% endif %}">{{ a.severity|upper }}</span>
+                <small class="text-muted">{{ a.source }}</small>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title text-danger">{{ a.event }}</h6>
+                <p class="card-text small text-muted">{{ a.details }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-secondary">{{ a.time }}</small>
+                    <span class="badge bg-secondary">{{ a.get('id', '') }}{{ a.get('ip', '') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+
+
+
+
 
 <div class="card mt-4 border-danger">
     <div class="card-header bg-dark text-danger"><i class="bi bi-question-circle"></i> Section Quiz — Answer to proceed</div>
