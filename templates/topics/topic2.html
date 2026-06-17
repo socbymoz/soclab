@@ -1,24 +1,84 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 2: SOC Team Internals</h6>
 
-<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>SOC L1 Alert Triage</b> — Prioritize and classify alerts (TP vs FP vs BP), use playbooks, and follow escalation paths.</li>
-  <li><b>SOC L1 Alert Reporting</b> — Document findings with structured reports, including timeline, IOCs, and actions taken.</li>
-  <li><b>SOC Workbooks and Lookups</b> — Use structured workbooks to track investigations and enrich data with lookup tables.</li>
-  <li><b>SOC Metrics and Objectives</b> — Measure SOC performance with KPIs like MTTR, alert volume, and detection rate.</li>
-  <li><b>SOC Simulator: Introduction to Phishing</b> — Simulated phishing triage scenarios to practice real-world workflows.</li>
-</ul>
+<p style="color:#c0d0e0;">This module covers the day-to-day workflows of a SOC L1 analyst: how to triage alerts, write reports, use workbooks, measure SOC performance, and respond to phishing simulations.</p>
 
+<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 SOC L1 Alert Triage</p>
+<p style="color:#c0d0e0;">Triage is the process of prioritizing and classifying alerts. Every alert falls into one of these categories:</p>
+<ul style="color:#c0d0e0;">
+  <li><b>True Positive (TP):</b> Real malicious activity correctly detected</li>
+  <li><b>False Positive (FP):</b> Benign activity incorrectly flagged as malicious</li>
+  <li><b>Benign Positive (BP):</b> Suspicious-looking but expected behavior (e.g., admin running scans)</li>
+  <li><b>True Negative (TN):</b> Benign activity correctly not flagged (not an alert — ideal state)</li>
+  <li><b>False Negative (FN):</b> Real attack that wasn't detected (worst case — missed detection)</li>
+</ul>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Workflow:</b> An L1 analyst receives a SIEM alert: "Suspicious PowerShell execution from WINWORD.EXE." The analyst checks the workbook, finds no prior incidents from this endpoint. They look up the process hash in VirusTotal — 0 detections (unknown file). They enrich with geo-IP: the C2 IP resolves to Russia. The analyst writes a report, classifies as TP (True Positive), and escalates to L2 with all evidence attached.
+<b>Triage Playbook Example:</b><br>
+<code>Alert: "Suspicious PowerShell -EncodedCommand from OUTLOOK.EXE"</code><br>
+Step 1: Is the source IP internal or external? → Internal (10.0.1.50)<br>
+Step 2: Check process tree: OUTLOOK.EXE → cmd.exe → powershell.exe → curl to 45.33.32.156<br>
+Step 3: Check VirusTotal hash of the PowerShell script → 12/70 detection as "Trojan.PS1.AgentTesla"<br>
+Step 4: Check user report → "I clicked a link in an invoice email"<br>
+Step 5: Classification: <b>TRUE POSITIVE</b> — phishing with AgentTesla info-stealer<br>
+Step 6: Action: Isolate endpoint, reset user credentials, escalate to L2
 </div>
 
-<h6 class="text-info mt-3">Key Skills Learned</h6>
+<p style="color:#00d4ff;font-weight:600;">🔹 SOC L1 Alert Reporting</p>
+<p style="color:#c0d0e0;">Every investigation must be documented in a structured report. A good report answers: What happened? When? Where? Who was affected? What was done?</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Report Template:</b><br>
+<code>Incident ID: INC-2026-0421<br>
+Date/Time: 2026-04-21 14:32 UTC<br>
+Severity: HIGH<br>
+Alert Type: Malware Infection (AgentTesla)<br>
+Source IP: 10.0.1.50 (FINANCE-PC-23)<br>
+External IP: 45.33.32.156:443 (C2 server, Russia)<br>
+IOCs: SHA256=a3f5b..., Domain=evil-update.com, IP=45.33.32.156<br>
+User: j.smith@company.com<br>
+Actions: Isolated endpoint, reset O365 password, blocked C2 IP at firewall<br>
+Escalation: L2 — pending memory forensics and full reimage<br>
+Status: Contained — L2 investigating
+</code>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 SOC Workbooks and Lookups</p>
+<p style="color:#c0d0e0;">Workbooks track the lifecycle of an incident from detection to closure. Lookups are reference data that enrich alerts (e.g., asset criticality, user department, external threat intel).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Lookup Table Example — Asset Criticality:</b><br>
+<code>hostname        | ip_address    | criticality | department<br>
+FINANCE-PC-23    | 10.0.1.50     | HIGH        | Finance<br>
+DC-01            | 10.0.0.10     | CRITICAL    | IT<br>
+DEV-SRV-05       | 10.0.3.50     | MEDIUM      | Engineering<br>
+GUEST-WIFI-PC    | 10.0.99.10    | LOW         | Guest</code><br>
+When an alert fires on a CRITICAL asset (like DC-01), the response time is 5 minutes vs 30 minutes for LOW assets.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 SOC Metrics and Objectives</p>
+<p style="color:#c0d0e0;">SOCs measure performance using Key Performance Indicators (KPIs):</p>
 <ul style="color:#c0d0e0;">
-  <li>Alert classification (TP, FP, BP)</li>
-  <li>Incident documentation and reporting</li>
-  <li>SOC metrics and performance measurement</li>
-  <li>Phishing triage workflows</li>
+  <li><b>MTTR (Mean Time to Respond):</b> Average time from alert → containment. Target: &lt; 1 hour for critical</li>
+  <li><b>MTTD (Mean Time to Detect):</b> Average time from compromise → detection. Target: &lt; 1 hour</li>
+  <li><b>Alert Volume:</b> Total alerts per day/week — helps identify tuning needs</li>
+  <li><b>FP Rate:</b> % of alerts that are false positives. Target: &lt; 30%</li>
+  <li><b>Escalation Rate:</b> % of L1 alerts escalated to L2. Target: 10-20%</li>
+  <li><b>Coverage:</b> % of MITRE ATT&CK techniques with detection coverage</li>
 </ul>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Monthly SOC Report Example:</b><br>
+Total Alerts: 14,823 | TPs: 892 (6%) | FPs: 12,456 (84%) | Escalated: 156 (1%) | MTTR: 47 min<br>
+Analysis: FP rate of 84% is too high. Need to tune the 12 rules generating 80% of FPs. New SIEM rules added: 5. Incidents closed: 845. Open investigations: 47.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 SOC Simulator: Introduction to Phishing</p>
+<p style="color:#c0d0e0;">Practice triaging phishing alerts in a realistic SOC environment. You'll analyze simulated phishing emails, determine if they're malicious, classify them, and follow proper procedures.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Phishing Simulator Scenario:</b><br>
+Alert: "Email reported as phishing — contains suspicious link"<br>
+Email Details: From "security@paypa1.com", Subject "Urgent: Account Suspended", Body: "Click here to verify your account"<br>
+Analysis: SPF=fail (IP 185.130.5.201 not authorized for paypal.com), DKIM=fail, DMARC=fail. Hovering over the link reveals hxxp://bit.ly/3xK9mN2 → redirects to 45.33.32.156/fake-login.html<br>
+Classification: TP — Phishing campaign targeting PayPal credentials<br>
+Action: Block bit.ly link at proxy, block IP at firewall, alert all employees
+</div>
 </div>

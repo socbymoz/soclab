@@ -2,22 +2,54 @@
 <h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Module 1: Blue Team Introduction</h6>
 
 <h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Junior Security Analyst Intro</b> — Learn the responsibilities of a junior SOC analyst: monitoring dashboards, triaging alerts, and following runbooks.</li>
-  <li><b>SOC Role in Blue Team</b> — Understand how the Blue Team defends organizations, the difference between blue and red teams, and SOC structure.</li>
-  <li><b>Humans as Attack Vectors</b> — Social engineering tactics: phishing, pretexting, baiting, tailgating, and how human error leads to breaches.</li>
-  <li><b>Systems as Attack Vectors</b> — Unpatched software, misconfigured services, default credentials, and vulnerable network services.</li>
-</ul>
 
+<p style="color:#00d4ff;font-weight:600;">🔹 Junior Security Analyst Intro</p>
+<p style="color:#c0d0e0;">A Junior SOC Analyst (L1) is the first line of defense. You monitor SIEM dashboards, triage incoming alerts, determine True Positives vs False Positives, and escalate confirmed incidents to L2.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Investigation:</b> A junior SOC analyst sees an alert: "Multiple failed logins from external IP 203.0.113.5 to RDP port 3389." The analyst checks the SIEM, finds 500 failed attempts (Event ID 4625) in 10 minutes targeting the admin account. This is a system attack vector — exposed RDP with weak credentials. The analyst isolates the server and escalates to L2.
+<b>Real Example:</b> You see an alert: "Suspicious outbound connection from 10.0.1.45 to 185.220.101.x:4444". You check the SIEM — the source is a finance department workstation. The user reports they didn't initiate any connection. You check the process tree: WINWORD.EXE → cmd.exe → powershell.exe → netcat connection to external IP. The process is unsigned and running from %TEMP%. <b>Conclusion:</b> True Positive — malware from a phishing doc. You isolate the host and escalate to L2.
 </div>
 
-<h6 class="text-primary mt-3">Key Skills Learned</h6>
+<p style="color:#00d4ff;font-weight:600;">🔹 SOC Role in Blue Team</p>
+<p style="color:#c0d0e0;">The Blue Team defends the organization. Unlike Red Team (offensive), Blue Team focuses on detection, prevention, and response. SOC analysts work in shifts, monitor security tools, investigate alerts, and maintain security hygiene.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Team Structure:</b><br>
+<b>L1 (Triage):</b> ~80% of alerts — known FPs, simple TPs, basic escalation.<br>
+<b>L2 (Investigator):</b> Deep-dive forensics, malware analysis, containment actions.<br>
+<b>L3 (Hunter):</b> Proactive threat hunting, reverse engineering, rule creation.<br>
+<b>SOC Manager:</b> Metrics reporting, resource planning, incident coordination.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Humans as Attack Vectors</p>
+<p style="color:#c0d0e0;">Attackers target humans because it's easier than hacking systems. Common social engineering attacks:</p>
 <ul style="color:#c0d0e0;">
-  <li>Understanding SOC tiers and analyst responsibilities</li>
-  <li>Recognizing human and system attack vectors</li>
-  <li>Basic alert triage and escalation procedures</li>
-  <li>CIA triad and security fundamentals</li>
+  <li><b>Phishing:</b> Fake emails tricking users to click malicious links or open attachments</li>
+  <li><b>Pretexting:</b> Attacker creates a fabricated scenario to steal information</li>
+  <li><b>Baiting:</b> Leaving infected USB drives in parking lots or office areas</li>
+  <li><b>Tailgating:</b> Following an employee through a secure door without badging</li>
+  <li><b>Vishing:</b> Voice phishing — fake calls pretending to be IT support or bank</li>
+  <li><b>Smishing:</b> SMS phishing — text messages with malicious links</li>
+</ul>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Real Breach Example — Twitter 2020:</b> Attackers used phone spear-phishing targeting Twitter employees. They called employees pretending to be IT, directed them to a fake VPN login page, stole credentials, and gained admin access to 130 high-profile accounts (Obama, Musk, Biden). They posted a Bitcoin scam tweet from these accounts and made $180,000 in one hour.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Systems as Attack Vectors</p>
+<p style="color:#c0d0e0;">System vulnerabilities occur when software, configurations, or network services have weaknesses that attackers exploit.</p>
+<ul style="color:#c0d0e0;">
+  <li><b>Unpatched Software:</b> Known vulnerabilities with available patches (e.g., EternalBlue, Log4j)</li>
+  <li><b>Misconfigured Services:</b> Default credentials, open SMB shares, exposed databases</li>
+  <li><b>Weak Passwords:</b> No password policy, no MFA, common passwords like "admin123"</li>
+  <li><b>Unnecessary Open Ports:</b> RDP (3389), SSH (22), Telnet (23) exposed to the internet</li>
+  <li><b>Outdated Protocols:</b> SMBv1, SSLv3, FTP — all have known vulnerabilities</li>
+</ul>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Real Breach Example — Colonial Pipeline 2021:</b> Attackers gained initial access through a compromised VPN password (no MFA). The VPN account was for an old, unused system that should have been decommissioned. They found the password in a leaked credentials dump on the dark web. Once inside, they moved laterally to the IT network, then to OT systems, and deployed ransomware that shut down 5,500 miles of pipeline supplying 45% of the East Coast's fuel. The company paid $4.4M ransom.
+</div>
+
+<h6 class="text-primary mt-3">Key Concepts</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>CIA Triad:</b> Confidentiality (encryption, access controls) — Integrity (hashing, audit logs) — Availability (redundancy, backups)</li>
+  <li><b>Least Privilege:</b> Users get only the permissions they need to do their job — nothing more</li>
+  <li><b>Defense in Depth:</b> Multiple layers of security (firewall → EDR → SIEM → training) so one failure doesn't compromise everything</li>
 </ul>
 </div>
