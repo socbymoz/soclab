@@ -1,12 +1,110 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<div class="text-center py-5">
-    <i class="bi bi-shield-shaded display-3 text-primary"></i>
-    <h1 class="mt-3 fw-bold"><span class="text-primary" id="greeting">{{ greeting }}</span></h1>
-    <p class="text-secondary" style="max-width:500px;margin:8px auto;">
-        Welcome to the <strong>SOC Lab</strong> — your hands-on guide to Security Operations Center analysis.
-    </p>
+<div class="py-4" style="max-width:1000px;margin:0 auto;">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="fw-bold mb-1" style="color:#e5e7eb;"><i class="bi bi-shield-shaded me-2" style="color:#00d4ff;"></i>SOC Lab</h2>
+            <p class="mb-0" style="color:#8098a8;font-size:0.9rem;">
+                <span class="text-primary" id="greeting">{{ greeting }}</span> — Security Operations Center training platform
+            </p>
+        </div>
+        <div class="text-end">
+            <div style="color:rgba(0,200,255,0.3);font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;">System Status</div>
+            <div style="color:#00d48a;font-size:0.85rem;"><i class="bi bi-check-circle-fill me-1" style="font-size:0.6rem;"></i>All Systems Nominal</div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 h-100" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-activity" style="color:#00d4ff;font-size:0.9rem;"></i>
+                    <small style="color:rgba(0,180,255,0.5);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;">Events Today</small>
+                </div>
+                <div style="font-size:1.8rem;font-weight:700;color:#e5e7eb;font-variant-numeric:tabular-nums;">
+                    <span id="eventCount">0</span>
+                </div>
+                <div style="color:rgba(0,180,255,0.3);font-size:0.65rem;">Last 24h</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 h-100" style="background:rgba(40,0,0,0.3);border:1px solid rgba(255,60,60,0.15);">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-exclamation-triangle-fill" style="color:#ff6060;font-size:0.9rem;"></i>
+                    <small style="color:rgba(255,80,80,0.5);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;">Critical Alerts</small>
+                </div>
+                <div style="font-size:1.8rem;font-weight:700;color:#ff6060;font-variant-numeric:tabular-nums;">
+                    <span id="alertCount">0</span>
+                </div>
+                <div style="color:rgba(255,80,80,0.3);font-size:0.65rem;">Requires immediate action</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 h-100" style="background:rgba(0,30,20,0.3);border:1px solid rgba(0,200,100,0.15);">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-search" style="color:#00d48a;font-size:0.9rem;"></i>
+                    <small style="color:rgba(0,200,100,0.5);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;">Investigations</small>
+                </div>
+                <div style="font-size:1.8rem;font-weight:700;color:#00d48a;font-variant-numeric:tabular-nums;">
+                    <span id="investigationCount">0</span>
+                </div>
+                <div style="color:rgba(0,200,100,0.3);font-size:0.65rem;">Active cases</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 h-100" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-shield-check" style="color:#00d4ff;font-size:0.9rem;"></i>
+                    <small style="color:rgba(0,180,255,0.5);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;">Training Progress</small>
+                </div>
+                <div style="font-size:1.8rem;font-weight:700;color:#00d4ff;font-variant-numeric:tabular-nums;">
+                    <span id="progressCount">0</span><span style="font-size:1rem;color:rgba(0,180,255,0.4);">/25</span>
+                </div>
+                <div style="color:rgba(0,180,255,0.3);font-size:0.65rem;">Topics completed</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rounded-3 p-4 mb-4" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="mb-0" style="color:#e5e7eb;"><i class="bi bi-bookmark-fill me-2" style="color:#00d4ff;font-size:0.9rem;"></i>Begin Your Training</h5>
+            <a href="/topic/1" class="btn btn-sm" style="background:rgba(0,180,255,0.15);color:#00d4ff;border:1px solid rgba(0,180,255,0.3);" onmouseover="this.style.background='rgba(0,180,255,0.25)';this.style.borderColor='#00d4ff'" onmouseout="this.style.background='rgba(0,180,255,0.15)';this.style.borderColor='rgba(0,180,255,0.3)'">
+                Start Learning <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <p style="color:#8098a8;font-size:0.9rem;">Master SOC analysis through 25 comprehensive topics — from fundamentals to advanced threat hunting. Each topic includes detailed notes, real-world examples, and a quiz to validate your knowledge.</p>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            {% for t in CURRICULUM[:6] %}
+            <a href="/topic/{{ t.id }}" class="text-decoration-none small px-3 py-2 rounded" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.1);color:#8098a8;transition:.3s;" onmouseover="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='#00d4ff';this.style.background='rgba(0,180,255,0.1)'" onmouseout="this.style.borderColor='rgba(0,180,255,0.1)';this.style.color='#8098a8';this.style.background='rgba(0,180,255,0.06)'">
+                <i class="{{ t.icon }} me-1 text-{{ t.color }}" style="font-size:0.65rem;"></i> {{ t.title }}
+            </a>
+            {% endfor %}
+            {% if CURRICULUM|length > 6 %}
+            <span style="color:rgba(0,180,255,0.3);font-size:0.8rem;align-self:center;">+{{ CURRICULUM|length - 6 }} more topics</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="rounded-3 p-4" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+        <h5 class="mb-3" style="color:#e5e7eb;"><i class="bi bi-shield-fill me-2" style="color:#00d4ff;font-size:0.9rem;"></i>Training Roadmap</h5>
+        <div class="row g-2">
+            {% for t in CURRICULUM[:5] %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="/topic/{{ t.id }}" class="text-decoration-none d-block p-3 rounded" style="background:rgba(0,180,255,0.04);border:1px solid rgba(0,180,255,0.08);transition:.3s;" onmouseover="this.style.borderColor='rgba(0,200,255,0.25)';this.style.background='rgba(0,180,255,0.08)'" onmouseout="this.style.borderColor='rgba(0,180,255,0.08)';this.style.background='rgba(0,180,255,0.04)'">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge rounded-circle" style="width:20px;height:20px;background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.65rem;display:flex;align-items:center;justify-content:center;">{{ t.id }}</span>
+                        <span style="color:#e5e7eb;font-size:0.85rem;">{{ t.title }}</span>
+                    </div>
+                    <small style="color:#8098a8;font-size:0.7rem;">{{ t.desc[:80] }}{% if t.desc|length > 80 %}...{% endif %}</small>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-3">
+            <small style="color:rgba(0,180,255,0.3);">Open the sidebar <i class="bi bi-three-dots-vertical mx-1"></i> to browse all 25 topics</small>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -18,6 +116,22 @@
     else if (h < 21) g = 'Good Evening';
     else g = 'Good Night';
     document.getElementById('greeting').textContent = g;
+
+    // Animated counters
+    function animateCounter(el, target, duration) {
+        const start = performance.now();
+        function update(now) {
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            el.textContent = Math.floor(eased * target).toLocaleString();
+            if (t < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    }
+    animateCounter(document.getElementById('eventCount'), 1247, 1500);
+    animateCounter(document.getElementById('alertCount'), 3, 1000);
+    animateCounter(document.getElementById('investigationCount'), 5, 1200);
+    animateCounter(document.getElementById('progressCount'), 0, 500);
 })();
 </script>
 {% endblock %}

@@ -2,32 +2,32 @@
 {% block title %}{{ topic.title }}{% endblock %}
 {% block content %}
 <div class="d-flex align-items-center gap-3 mb-4 mt-3">
-    <div class="bg-{{ topic.color }} bg-opacity-10 rounded-3 p-3"><i class="{{ topic.icon }} fs-3 text-{{ topic.color }}"></i></div>
+    <div class="rounded-3 p-3" style="background:rgba(0,180,255,0.1);"><i class="{{ topic.icon }} fs-3" style="color:#00d4ff;"></i></div>
     <div>
-        <h4 class="mb-0">Step {{ topic.id }}: {{ topic.title }}</h4>
-        <small class="text-secondary">{{ topic.desc }}</small>
+        <h4 class="mb-0" style="color:#e5e7eb;">Step {{ topic.id }}: {{ topic.title }}</h4>
+        <small style="color:#8098a8;">{{ topic.desc }}</small>
     </div>
 </div>
 
 {% set detail_file = "topics/topic" ~ topic.id ~ ".html" %}
 {% include detail_file ignore missing %}
 
-<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<div class="rounded-3 p-4 mb-4" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="text-{{ topic.color }} mb-0"><i class="bi bi-question-circle me-2"></i>Knowledge Check ({{ PASS_SCORE }}/10 to pass)</h6>
-        <div id="quizStatus" class="small text-secondary"></div>
+        <h6 class="mb-0" style="color:#00d4ff;"><i class="bi bi-question-circle me-2"></i>Knowledge Check ({{ PASS_SCORE }}/10 to pass)</h6>
+        <div id="quizStatus" class="small" style="color:#8098a8;"></div>
     </div>
     <div id="quizContainer"></div>
     <div id="quizResult" style="display:none;" class="text-center py-3"></div>
-    <button id="retryBtn" onclick="resetQuiz()" class="btn btn-outline-warning btn-sm mt-2" style="display:none;"><i class="bi bi-arrow-clockwise me-1"></i>Retry (Shuffled)</button>
+    <button id="retryBtn" onclick="resetQuiz()" class="btn btn-sm mt-2" style="display:none;border-color:rgba(255,200,0,0.4);color:#ffd700;background:rgba(255,200,0,0.06);" onmouseover="this.style.background='rgba(255,200,0,0.12)'" onmouseout="this.style.background='rgba(255,200,0,0.06)'"><i class="bi bi-arrow-clockwise me-1"></i>Retry (Shuffled)</button>
 </div>
 
 <div class="d-flex justify-content-between">
     {% if prev_topic %}
-    <a href="/topic/{{ prev_topic.id }}" class="btn btn-outline-secondary"><i class="bi bi-chevron-left me-1"></i>{{ prev_topic.title }}</a>
+    <a href="/topic/{{ prev_topic.id }}" class="btn" style="border-color:rgba(0,180,255,0.3);color:#8098a8;transition:.3s;background:rgba(0,20,40,0.4);" onmouseover="this.style.borderColor='rgba(0,200,255,0.5)';this.style.color='#00d4ff';this.style.background='rgba(0,180,255,0.1)'" onmouseout="this.style.borderColor='rgba(0,180,255,0.3)';this.style.color='#8098a8';this.style.background='rgba(0,20,40,0.4)'"><i class="bi bi-chevron-left me-1"></i>{{ prev_topic.title }}</a>
     {% else %}<div></div>{% endif %}
     {% if next_topic %}
-    <a id="nextTopicBtn" href="/topic/{{ next_topic.id }}" class="btn btn-outline-secondary disabled" style="pointer-events:none;">{{ next_topic.title }}<i class="bi bi-chevron-right ms-1"></i></a>
+    <a id="nextTopicBtn" href="/topic/{{ next_topic.id }}" class="btn disabled" style="pointer-events:none;border-color:rgba(0,180,255,0.15);color:rgba(100,120,150,0.4);background:rgba(0,20,40,0.3);">{{ next_topic.title }}<i class="bi bi-chevron-right ms-1"></i></a>
     {% else %}<div></div>{% endif %}
 </div>
 {% endblock %}
@@ -76,8 +76,8 @@ function renderQuestion() {
         <p class="fw-bold mb-2">Question ${currentQ + 1}/${shuffled.length}: ${q.q}</p>
         <div class="d-flex flex-column gap-2">
             ${q.options.map((opt, i) => `
-                <button class="btn btn-sm text-start quiz-btn rounded" style="background:rgba(31,41,55,0.8);border:1px solid #374151;color:#e5e7eb;" onclick="submitAnswer(${qIdx}, ${i})">
-                    <span class="badge bg-secondary me-2">${'ABCDEFGHIJ'[i]}</span>${opt}
+                <button class="btn btn-sm text-start quiz-btn rounded" style="background:rgba(0,20,40,0.6);border:1px solid rgba(0,180,255,0.2);color:#c0d0e0;transition:.3s;" onclick="submitAnswer(${qIdx}, ${i})" onmouseover="this.style.borderColor='rgba(0,200,255,0.5)';this.style.background='rgba(0,180,255,0.08)'" onmouseout="this.style.borderColor='rgba(0,180,255,0.2)';this.style.background='rgba(0,20,40,0.6)'">
+                    <span class="badge me-2" style="background:rgba(0,180,255,0.15);color:#00d4ff;">${'ABCDEFGHIJ'[i]}</span>${opt}
                 </button>
             `).join('')}
         </div>
