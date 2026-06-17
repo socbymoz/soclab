@@ -1,54 +1,25 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Module 9: Windows Security Monitoring</h6>
 
-<h6 class="text-danger mt-3">1. Static vs Dynamic Analysis</h6>
-<p>Static analysis examines the file without executing it — checking file metadata, strings, imports/exports, packers, and signatures. Dynamic analysis runs the file in a controlled sandbox to observe behavior — file system changes, registry modifications, network connections, and process injections.</p>
+<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Windows Logging for SOC</b> — Understand Windows Event Log channels (Security, System, Application), Event IDs, and log collection with Sysmon.</li>
+  <li><b>Windows Threat Detection 1</b> — Detect common threats: brute force attacks, account misuse, and privilege escalation via Event ID analysis.</li>
+  <li><b>Windows Threat Detection 2</b> — Advanced detection: process injection, DLL hijacking, and persistence mechanism identification.</li>
+  <li><b>Windows Threat Detection 3</b> — Investigate ransomware, credential dumping (Mimikatz), and lateral movement using Windows event logs.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Static):</b> A file <code>invoice_2026.exe</code> with SHA256 <code>a1b2c3...</code> is scanned with <code>file</code> command: <code>PE32 executable (GUI) Intel 80386, for MS Windows, UPX compressed</code>. <code>strings</code> reveals <code>http://evil-c2.com/beacon</code>, <code>CreateRemoteThread</code>, <code>VirtualAllocEx</code>. VirusTotal shows 38/70 detections labeled "Trojan.CobaltStrike."<br>
-<b>Example (Dynamic):</b> In an isolated sandbox, the analyst runs the file. <code>ProcMon</code> shows it writes to <code>HKCU\Software\Microsoft\Windows\CurrentVersion\Run\JavaUpdate</code> and spawns <code>rundll32.exe</code> as a child. <code>Wireshark</code> captures HTTP POST to <code>evil-c2.com/9j4k2/data</code> with base64-encoded hostname and username in the POST body.
+<b>Example Detection:</b> An EDR alert shows WINWORD.EXE spawning cmd.exe. The analyst checks Sysmon Event ID 1 (process creation):<br>
+<code>Parent: WINWORD.EXE, Child: cmd.exe /c powershell -enc SQBFAFgAIAAoAE4AZQB...</code><br>
+Sysmon Event ID 3 shows a network connection to 45.33.32.156:4444. Event ID 11 (file creation) shows a .ps1 file written to %TEMP%. The analyst also finds Event ID 13 (registry modification) adding a Run key for persistence. This is a classic phishing → macro malware → C2 attack chain on Windows.
 </div>
 
-<h6 class="text-danger mt-3">2. Hashes / VirusTotal</h6>
-<p>File hashes (MD5, SHA1, SHA256) serve as unique identifiers for malware samples. VirusTotal aggregates results from 70+ AV engines plus behavioral analysis, community comments, and graph relationships. Always check the "Community" tab for analyst notes and "Behaviour" tab for sandbox output.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The analyst submits hash <code>SHA256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</code> (zero-length hash — obvious tampering). The actual sample hash <code>a1b2c3d4e5f6...</code> on VT shows 45/70 detections. The "Details" tab shows compilation timestamp <code>2026-06-15 03:00:00 UTC</code>, the "Relations" tab shows connections to <code>evil-c2[.]com</code> (12 detections). Community comments from other analysts: "This is the JupiterLoader variant used in TA551 campaigns."
-</div>
-
-<h6 class="text-danger mt-3">3. PE Structure</h6>
-<p>Portable Executable (PE) format: DOS header, NT headers (File Header + Optional Header), Section Table (.text, .data, .rdata, .rsrc), and sections. Key analysis points: entry point, imported DLLs/functions, section characteristics (write+execute = suspicious), and overlay data.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> Using <code>pecheck</code> or <code>PEStudio</code>: The PE has imports for <code>kernel32.dll (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread)</code> indicating process injection capability. Section <code>.upx0</code> has <code>IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE</code> (0xE0000020) — signs of UPX packing. The entry point <code>0x12345</code> points to the <code>.upx1</code> section. The file has a digital signature but it's invalid (thumbprint doesn't match a trusted CA).
-</div>
-
-<h6 class="text-danger mt-3">4. YARA Rules</h6>
-<p>YARA is a pattern-matching tool for malware identification. Rules match file characteristics: strings, byte patterns, PE structures, math operations, and conditions. Rules can detect specific families, techniques, or IOCs.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example YARA Rule:</b><br>
-<code>rule CobaltStrike_Beacon {</code><br>
-<code>&nbsp;&nbsp;meta: description = "Detects Cobalt Strike beacon"</code><br>
-<code>&nbsp;&nbsp;strings:</code><br>
-<code>&nbsp;&nbsp;&nbsp;&nbsp;$s1 = "MZ" ascii</code><br>
-<code>&nbsp;&nbsp;&nbsp;&nbsp;$s2 = "This program cannot be run in DOS mode"</code><br>
-<code>&nbsp;&nbsp;&nbsp;&nbsp;$a1 = {FF E4 55 8B EC 83 EC 50 6A 00}</code> &nbsp;&nbsp;// JMP ESP, typical shellcode stub<br>
-<code>&nbsp;&nbsp;&nbsp;&nbsp;$c2 = "mscoree.dll" wide ascii</code><br>
-<code>&nbsp;&nbsp;condition:</code><br>
-<code>&nbsp;&nbsp;&nbsp;&nbsp;$s1 at 0 and $s2 and ($a1 or $c2)</code><br>
-<code>}</code><br>
-This YARA rule matches when the PE header is present, the typical DOS message appears, and either the shellcode stub or specific import is detected.
-</div>
-
-<h6 class="text-danger mt-3">5. IOC Extraction</h6>
-<p>Indicators of Compromise (IOCs) extracted from malware include: file hashes, C2 URLs/IPs, registry keys, filenames/paths, mutexes, named pipes, and SSL certificate fingerprints (JA3/JA3S). IOCs feed into detection rules, threat intel platforms, and blocking lists.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (IOCs from analysis):</b><br>
-- File: <code>SHA256: a1b2c3d4e5f6...</code><br>
-- C2: <code>evil-c2.ddns.net:443</code> (IP: <code>185.130.5.201</code>)<br>
-- Mutex: <code>Global\JupiterMutex_9k4J2</code><br>
-- Registry: <code>HKCU\...\Run\WindowsUpdate</code><br>
-- Path: <code>C:\Users\%USER%\AppData\Local\svchost.exe</code><br>
-- JA3: <code>6734f37431670b3ab4292b8f60f29984</code><br>
-- Pipe: <code>\\.\pipe\mojo_2345</code><br>
-The analyst creates a MISP event with all IOCs and generates a Sigma rule for SIEM detection.
-</div>
-
+<h6 class="text-primary mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Windows Event Log analysis (Event IDs 4624, 4625, 4688, etc.)</li>
+  <li>Sysmon event monitoring (Event IDs 1, 3, 11, 13, 22)</li>
+  <li>Process injection and persistence detection</li>
+  <li>Windows-based threat hunting</li>
+</ul>
 </div>

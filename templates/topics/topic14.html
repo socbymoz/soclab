@@ -1,32 +1,27 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Module 14: SOC Level 1 Capstone Challenges</h6>
 
-<h6 class="text-success mt-3">1. EDR — CrowdStrike / Microsoft Defender</h3>
-<p>Endpoint Detection and Response (EDR) provides real-time monitoring, threat detection, and automated response on endpoints. CrowdStrike Falcon uses cloud-native AI with indicators of attack (IOA) detection. Microsoft Defender for Endpoint integrates with the Microsoft security stack and offers ASR rules, tamper protection, and automated investigation.</p>
+<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Tempest</b> — Full incident investigation: correlate PCAP, SIEM data, and email artifacts to trace the attack from initial access to exfiltration.</li>
+  <li><b>Boogeyman 1</b> — Investigate a multi-stage attack involving phishing, malware, and lateral movement across the network.</li>
+  <li><b>Boogeyman 2</b> — Deep-dive forensics: analyze memory dumps, registry hives, and timeline reconstruction.</li>
+  <li><b>Boogeyman 3</b> — Final phase: identify the threat actor, attribute the attack, and recommend remediation measures.</li>
+  <li><b>Hidden Hooks</b> — Investigate a hidden persistence mechanism and trace the attacker's post-exploitation activities.</li>
+  <li><b>Open Door</b> — Analyze an open-source intelligence (OSINT) investigation tied to a data breach scenario.</li>
+  <li><b>Upload and Conquer</b> — Investigate a web application breach involving file upload abuse and web shell deployment.</li>
+  <li><b>BlackCat</b> — Investigate a BlackCat/ALPHV ransomware incident: identify initial access, propagation, and encryption scope.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (CrowdStrike):</b> Alert: "Process Injection — Remote Thread Created." Detection details: <code>malware.exe</code> injected into <code>lsass.exe</code>. CrowdStrike's IOA engine identifies <code>OpenProcess -> VirtualAllocEx -> WriteProcessMemory -> CreateRemoteThread</code> as a known attack pattern. Automated containment isolates the host. The analyst reviews the detection in the Falcon console, sees the MITRE mapping (T1055.001), and launches Fusion workflow to search for similar activity across all endpoints.<br>
-<b>Example (Defender):</b> Alert: "Suspicious PowerShell command line." ASR rule 9.3.1 blocks <code>powershell.exe -Enc ...</code> from <code>winword.exe</code>. Automated investigation runs a scan and checks for persistence changes. The analyst reviews the MDE timeline and sees the full attack chain: phishing email -> Word macro -> PowerShell -> Cobalt Strike.
+<b>Example:</b> In the "Tempest" challenge, the analyst receives three artifacts: a PCAP file, SIEM logs, and a phishing email. The email shows the initial access (phishing link), the PCAP shows C2 beaconing and data exfiltration (2.3GB to external IP), and the SIEM logs show lateral movement (pass-the-hash to 12 servers). The analyst builds a complete timeline, identifies the root cause (employee clicked phishing link), determines the scope (12 servers compromised, customer data exfiltrated), and writes a report with containment and recovery recommendations.
 </div>
 
-<h6 class="text-success mt-3">2. NGFW / IDS / IPS — Snort / Suricata</h3>
-<p>Next-Generation Firewalls (NGFW) perform deep packet inspection, application identification, and TLS decryption. IDS/IPS like Snort and Suricata use signature-based and anomaly-based detection rules to identify malicious network traffic in real-time.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Snort Rule):</b><br>
-<code>alert tcp $HOME_NET any -> $EXTERNAL_NET 80 (msg:"ET MALWARE Cobalt Strike Beacon"; content:"|00 00 00 08 00 00 00|"; offset:4; depth:3; content:"|05 00 00 00 00 00 00 00|"; distance:0; fast_pattern; within:8; classtype:trojan-activity; sid:21001234; rev:1;)</code><br>
-This rule detects default Cobalt Strike beacon HTTP headers. When a match occurs, Suricata logs the alert with metadata including <code>alert_type: trojan-activity</code> and <code>signature: ET MALWARE Cobalt Strike Beacon</code>. The analyst uses the alert to trace the infected host and block the C2 IP on the NGFW.
-</div>
-
-<h6 class="text-success mt-3">3. WAF — Cloudflare / ModSecurity</h3>
-<p>Web Application Firewalls (WAF) protect web apps from Layer 7 attacks. Cloudflare WAF offers managed rulesets (OWASP, Cloudflare Managed) with bot management and rate limiting. ModSecurity is an open-source WAF engine using the OWASP Core Rule Set (CRS) for detecting SQLi, XSS, LFI, and RCE.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (ModSecurity):</b> Log entry: <code>ModSecurity: Access denied with code 403 (phase 2). Pattern match "(?i:union.*select.*from)" at ARGS:id. [file "/etc/modsecurity/rules/942100.conf"] [msg "SQL Injection Attack Detected"]</code>. The analyst sees that the WAF blocked <code>?id=1' UNION SELECT 1,@@version,user(),4--</code>. The rule 942100 (OWASP CRS) triggered correctly. The attack came from IP 185.130.5.201 (proxied through Tor exit node). The analyst blocks the IP and adds geo-blocking for Tor exits at the CDN level.
-</div>
-
-<h6 class="text-success mt-3">4. DLP & SOAR</h3>
-<p>Data Loss Prevention (DLP) monitors and prevents unauthorized data exfiltration via email, web, USB, and cloud apps. SOAR (Security Orchestration, Automation and Response) like Splunk SOAR or Palo Alto XSOAR automates incident response workflows, integrating with EDR, SIEM, ticketing, and threat intel platforms.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (DLP):</b> Alert: "Sensitive Data Sent via Email." An outbound email from <code>employee@corp.com</code> to <code>gmail.com</code> contains <code>##CREDIT CARD##</code> regex match for 16-digit number patterns. The DLP rule blocks the email and auto-CCs the security team. Investigation shows the employee was forwarding customer PII for "personal use." HR is notified and USB ports are disabled on the endpoint.<br>
-<b>Example (SOAR):</b> A phishing alert triggers a SOAR playbook: (1) Enrich sender domain via VirusTotal. (2) Check if any other employees received the same email. (3) Delete the email from all inboxes via Graph API. (4) Create a Teams notification for the SOC team. (5) Create a ServiceNow ticket with all IOCs. (6) Block the sender domain on the email gateway. Total time: 45 seconds (manual would be 20 minutes).
-</div>
-
+<h6 class="text-danger mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Multi-source evidence correlation</li>
+  <li>Full attack chain reconstruction</li>
+  <li>Incident timeline creation</li>
+  <li>Remediation and reporting</li>
+</ul>
 </div>

@@ -1,34 +1,21 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Module 11: Malware Concepts for SOC</h6>
 
-<h6 class="text-info mt-3">1. Sandbox Setup</h3>
-<p>A malware analysis sandbox is an isolated environment with monitoring tools. Common setups: Cuckoo/CAPE sandbox (automated), manual VM with Flare VM (Windows analysis tools) and REMnux (Linux analysis tools). Use host-only networking or INetSim to simulate internet services safely.</p>
+<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Malware Analysis Fundamentals</b> — Static analysis (hashes, strings, metadata), dynamic analysis (sandbox execution), and YARA rule creation.</li>
+  <li><b>Malware Detection in SOC Context</b> — How to identify malware infections from SIEM alerts, EDR telemetry, and network traffic patterns.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The analyst configures a Windows 10 VM with Flare VM tools installed. Networking is set to "Host-Only." INetSim runs on the REMnux VM (192.168.56.2) to fake DNS, HTTP, SMTP, and other services. The malware is transferred via a shared folder on the host. The VM snapshot "clean_base" is restored between runs. ProcMon, Process Hacker, Wireshark, and RegShot are queued to auto-start.
+<b>Example Analysis:</b> A suspicious file "invoice.exe" is flagged by EDR. The analyst performs static analysis: checks the SHA256 hash on VirusTotal — 15/70 detections as "Trojan.Generic". Runs strings and finds URLs to evil.com/beacon and registry keys for persistence. The PE file is unsigned and compiled with MinGW (unusual for a legitimate document). Dynamic analysis in a sandbox shows the malware creates a scheduled task, modifies the Windows Registry Run key, and establishes C2 via HTTPS to 45.33.32.156.
 </div>
 
-<h6 class="text-info mt-3">2. Registry Monitoring (RegShot / ProcMon)</h3>
-<p>RegShot compares registry snapshots before and after malware execution to identify persistence mechanisms. ProcMon captures real-time registry, file system, process/thread, and network activity with full call stacks.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> RegShot shows the following new entries after malware execution:<br>
-<code>HKLM\SYSTEM\CurrentControlSet\Services\MalService\ImagePath -> C:\Windows\malware.exe</code><br>
-<code>HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsUpdate -> C:\Users\analyst\AppData\Local\temp\svchost.exe</code><br>
-ProcMon shows the malware process writing to <code>\Windows\System32\Tasks\WindowsUpdateTask</code> (scheduled task). Filtering ProcMon on the malware PID reveals <code>RegSetValue</code> calls writing to the Run key with stack trace pointing to <code>Advapi32.dll!RegSetValueExW</code> called from the malware's <code>.text</code> section.
-</div>
-
-<h6 class="text-info mt-3">3. Network Capture</h3>
-<p>Network analysis reveals C2 communication, data exfiltration, DNS queries, and protocol behavior. Use Wireshark/tcpdump to capture PCAP, then analyze for suspicious connections. INetSim provides fake services so malware actually resolves and connects to attacker-controlled infrastructure.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> Wireshark capture shows the malware (at 192.168.56.101) makes a DNS query for <code>evil-c2.ddns.net</code> resolved by INetSim to 192.168.56.2. Then HTTP POST <code>/gate.php</code> with User-Agent <code>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36</code>. POST body: <code>data=base64encoded</code>. Decoded: <code>{"computer":"ANALYST-PC","user":"analyst","os":"Windows 10","arch":"x64"}</code>. The server responds with <code>HTTP 200 OK</code> and body <code>{"status":"ok","task":"sleep 60"}</code>. Every 60 seconds, another beacon request.
-</div>
-
-<h6 class="text-info mt-3">4. Persistence Analysis</h3>
-<p>Persistence ensures malware survives reboots. Common mechanisms: Registry Run keys, Scheduled Tasks, Services, Startup folder, WMI Event Subscription, Bootkit, DLL Search-Order Hijacking, and COM hijacking.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The analyst discovers multiple persistence mechanisms from the same sample:<br>
-(1) Registry: <code>HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\SecurityHealth -> rundll32.exe C:\Windows\System32\security.dll,ServiceMain</code> — DLL side-loading via a legitimate Microsoft process name.<br>
-(2) Scheduled Task: <code>schtasks /create /tn "GoogleUpdateTask" /tr "mshta.exe javascript:...code..." /sc daily</code> — MSHTA executes JScript payload daily.<br>
-(3) WMI: <code>Select * from __InstanceModificationEvent within 60 Where TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'</code> — WMI event subscription to re-infect when AV removes the file.
-</div>
-
+<h6 class="text-danger mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Static malware analysis techniques</li>
+  <li>Dynamic analysis in sandbox environments</li>
+  <li>YARA rule writing for malware detection</li>
+  <li>IOC extraction and operationalization</li>
+</ul>
 </div>

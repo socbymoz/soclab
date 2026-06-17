@@ -155,15 +155,7 @@
     </div>
   </div>
 
-  <!-- Bottom Bar: Curriculum Quick Links -->
-  <div class="rounded-3 px-3 py-2 mt-2 d-flex align-items-center flex-shrink-0" style="background:rgba(0,12,30,0.5);border:1px solid rgba(0,180,255,0.06);overflow-x:auto;white-space:nowrap;">
-    <span style="color:rgba(0,200,255,0.3);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;margin-right:12px;flex-shrink:0;">Topics:</span>
-    {% for t in CURRICULUM[:12] %}
-    <a href="/topic/{{ t.id }}" class="text-decoration-none px-2 py-1 rounded small" style="color:#8098a8;font-size:0.7rem;transition:.2s;flex-shrink:0;" onmouseover="this.style.color='#00d4ff';this.style.background='rgba(0,180,255,0.1)'" onmouseout="this.style.color='#8098a8';this.style.background='transparent'">{{ t.title }}</a>
-    {% if not loop.last %}<span style="color:rgba(0,180,255,0.1);flex-shrink:0;">|</span>{% endif %}
-    {% endfor %}
-    <span style="color:rgba(0,180,255,0.2);font-size:0.65rem;flex-shrink:0;">+13 more</span>
-  </div>
+  <!-- Curriculum is accessible via the 3-dot sidebar menu only -->
 </div>
 
 <script>

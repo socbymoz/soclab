@@ -1,33 +1,27 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 7: Network Security Monitoring</h6>
 
-<h6 class="text-info mt-3">1. Correlating Web, Firewall, and WAF Logs</h6>
-<p>Correlation is essential — the web server access log shows the HTTP request, the WAF log shows which rules matched, and the firewall log shows the source/destination IPs and ports. Align timestamps (±1s) across sources to build a complete picture of an attack flow.</p>
+<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Snort Basics and Rules</b> — Write and deploy Snort rules to detect malicious network traffic patterns.</li>
+  <li><b>Network Monitoring Labs</b> — Hands-on practice with IDS/IPS tools, alert triage, and incident investigation.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> Web log: <code>192.168.1.5 - - [17/Jun/2026:10:15:30] "GET /shell.php?cmd=id" 200 45</code>. WAF log: <code>192.168.1.5 - RULE 933210 (PHP Injection) - Blocked - Action: LOG</code> (configured as monitor-only). Firewall log: <code>ALLOW TCP 192.168.1.5:4444 -> 10.0.0.10:443</code> (C2 beacon outbound). By correlating, the analyst confirms the WAF misconfiguration (detect-only mode) and the webshell access.
+<b>Example Snort Rule:</b><br>
+<code>alert tcp $HOME_NET any -> $EXTERNAL_NET 443 (<br>
+&nbsp;&nbsp;msg:"Possible C2 Beaconing";<br>
+&nbsp;&nbsp;flow:to_server;<br>
+&nbsp;&nbsp;detection_filter: track by_src, count 30, seconds 60;<br>
+&nbsp;&nbsp;sid:1000001; rev:1;)</code><br>
+This rule alerts when any internal host makes 30+ connections to port 443 within 60 seconds — indicative of C2 beaconing. The analyst would then investigate the destination IPs, check threat intel, and examine the endpoint for malware.
 </div>
 
-<h6 class="text-info mt-3">2. Finding the Initial Attack Vector</h6>
-<p>Determining how the attacker first gained access is critical for remediation. Look at earliest anomalous event — the first alert triggered, the first successful exploit attempt, or the first connection to an external IP at the time of the incident. Check web logs, VPN logs, and email gateway logs.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> The incident timeline shows the first alert at 09:00, but web logs reveal a SQLi attempt at 08:45: <code>GET /product?id=1'+UNION+SELECT+1,@@version,user(),4--</code> with response 200. At 08:47 the webshell upload: <code>POST /admin/upload.php (cmdshell.asp)</code>. At 08:50 the first C2 beacon to <code>evil-c2.ddns.net:8443</code>. The SQLi payload matched WAF rule 942100 in log-only mode — the initial vector was a SQL injection that allowed the attacker to upload a webshell.
-</div>
-
-<h6 class="text-info mt-3">3. Post-Compromise Actions</h6>
-<p>After initial access, the attacker typically performs discovery (whoami, net users), lateral movement (PsExec, WMI, RDP), privilege escalation, persistence, and data exfiltration. Each step leaves log artifacts in the SIEM, Sysmon, and AD logs.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (timeline):</b> 09:00 — <code>Event ID 1 (Sysmon): cmd.exe /c whoami</code><br>
-09:02 — <code>Event ID 3 (Sysmon): net use \\DC01\IPC$ /user:admin</code><br>
-09:05 — <code>Event ID 4688: wmic /node:DC01 process call create "cmd.exe"</code><br>
-09:10 — <code>Event ID 4624: LogonType 3 (admin account from WEB01 to DC01)</code><br>
-09:15 — <code>Event ID 4663: Access to \\DC01\C$\Users\*\Desktop\passwords.txt</code><br>
-09:30 — <code>Firewall: 500MB outbound from DC01 to 203.0.113.4:443 (rclone)</code>
-</div>
-
-<h6 class="text-info mt-3">4. Data Exposure Scope & Root Cause Analysis</h6>
-<p>Scope assessment determines the blast radius: which systems, accounts, and data were accessed. Root cause analysis identifies the underlying vulnerability (missing patch, misconfiguration, weak password) to prevent recurrence. Document findings for the PIR.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Scope):</b> 3 servers compromised (WEB01, DB01, DC01), 12 user accounts stolen including 2 domain admins, 5 customer databases (50K PII records) accessed, 200GB data exfiltrated. Root cause: Apache Struts CVE-2023-34362 on WEB01 (unpatched since April 2023). WAF rule for Struts OGNL injection was in monitor-only mode. Recommendation: patch all Struts instances, enable WAF in blocking mode, deploy EDR on all servers.
-</div>
-
+<h6 class="text-info mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Writing and deploying Snort/Suricata rules</li>
+  <li>Understanding IDS vs IPS deployment</li>
+  <li>Network threat detection and alerting</li>
+  <li>Correlating network alerts with other telemetry</li>
+</ul>
 </div>

