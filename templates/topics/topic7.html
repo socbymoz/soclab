@@ -1,27 +1,82 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 7: Network Security Monitoring</h6>
 
-<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Snort Basics and Rules</b> — Write and deploy Snort rules to detect malicious network traffic patterns.</li>
-  <li><b>Network Monitoring Labs</b> — Hands-on practice with IDS/IPS tools, alert triage, and incident investigation.</li>
-</ul>
+<p style="color:#c0d0e0;">Network Security Monitoring (NSM) involves capturing and analyzing network traffic to detect intrusions, policy violations, and suspicious activity using IDS/IPS tools like Snort and Suricata.</p>
 
+<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Snort Basics and Rules</p>
+<p style="color:#c0d0e0;">Snort is the most widely used open-source Intrusion Detection/Prevention System (IDS/IPS). It uses rules to match patterns in network traffic.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Snort Rule:</b><br>
+<b>Snort Rule Structure:</b><br>
+<code>[action] [protocol] [source_ip] [source_port] -> [dest_ip] [dest_port] ([rule_options])</code><br><br>
+<b>Example Rules for SOC:</b><br><br>
+<b>1. Detect SQL Injection:</b><br>
+<code>alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (<br>
+  msg:"SQL Injection — UNION SELECT detected";<br>
+  content:"UNION"; nocase; content:"SELECT"; nocase; distance:0;<br>
+  flow:to_server,established;<br>
+  sid:1000001; rev:1;)</code><br>
+→ Flags any HTTP request containing both "UNION" and "SELECT" (SQLi indicator)<br><br>
+<b>2. Detect C2 Beaconing:</b><br>
 <code>alert tcp $HOME_NET any -> $EXTERNAL_NET 443 (<br>
-&nbsp;&nbsp;msg:"Possible C2 Beaconing";<br>
-&nbsp;&nbsp;flow:to_server;<br>
-&nbsp;&nbsp;detection_filter: track by_src, count 30, seconds 60;<br>
-&nbsp;&nbsp;sid:1000001; rev:1;)</code><br>
-This rule alerts when any internal host makes 30+ connections to port 443 within 60 seconds — indicative of C2 beaconing. The analyst would then investigate the destination IPs, check threat intel, and examine the endpoint for malware.
+  msg:"Possible C2 Beaconing — frequent HTTPS connections";<br>
+  flow:to_server;<br>
+  detection_filter: track by_src, count 30, seconds 60;<br>
+  sid:1000002; rev:1;)</code><br>
+→ Alerts when a host makes 30+ HTTPS connections in 60 seconds<br><br>
+<b>3. Detect DNS Tunneling:</b><br>
+<code>alert udp $HOME_NET any -> $DNS_SERVERS 53 (<br>
+  msg:"Possible DNS Tunneling — long subdomain";<br>
+  dsize:>100;<br>
+  content:"|00|"; within:5;<br>
+  sid:1000003; rev:1;)</code><br>
+→ DNS queries with payloads over 100 bytes could be tunneling data<br><br>
+<b>4. Detect SMB Exploit (EternalBlue):</b><br>
+<code>alert tcp $HOME_NET 445 -> $EXTERNAL_NET any (<br>
+  msg:"EternalBlue Exploit Attempt";<br>
+  content:"|00 00 00 31|"; offset:0; depth:4;<br>
+  content:"|ff 53 6d 62|"; within:5;<br>
+  sid:1000004; rev:1;)</code><br>
+→ Detects SMBv1 exploit pattern used by WannaCry and NotPetya
 </div>
 
-<h6 class="text-info mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Writing and deploying Snort/Suricata rules</li>
-  <li>Understanding IDS vs IPS deployment</li>
-  <li>Network threat detection and alerting</li>
-  <li>Correlating network alerts with other telemetry</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 Network Monitoring Labs</p>
+<p style="color:#c0d0e0;">Hands-on practice with real network traffic analysis using Snort, Suricata, and Security Onion.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Lab Scenario — Detecting a Port Scan:</b><br>
+You have Snort running on your network. You see this alert:<br><br>
+<code>05/21-14:32:15.123456 [**] [1:1000005:1] Port Scan Detected [**]<br>
+[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:22<br>
+05/21-14:32:15.123789 [**] [1:1000005:1] Port Scan Detected [**]<br>
+[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:80<br>
+05/21-14:32:15.124123 [**] [1:1000005:1] Port Scan Detected [**]<br>
+[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:443<br>
+05/21-14:32:15.124567 [**] [1:1000005:1] Port Scan Detected [**]<br>
+[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:3389</code><br><br>
+<b>Analysis:</b> Same source IP (45.33.32.156) scanning multiple ports on the same destination (10.0.1.50). This is reconnaissance — attacker checking for open services. The scan hit SSH (22), HTTP (80), HTTPS (443), and RDP (3389).<br><br>
+<b>Action:</b> Block source IP at firewall, check if any services are exposed unnecessarily, review firewall rules.<br><br>
+<b>Lab Scenario — Malware Traffic Detection:</b><br>
+Snort alerts on a host making HTTP requests with a suspicious User-Agent:<br><br>
+<code>alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (<br>
+  msg:"Suspicious User-Agent — possible malware";<br>
+  content:"Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20100101 Firefox/12.0";<br>
+  flow:to_server,established;<br>
+  sid:1000006; rev:1;)</code><br><br>
+<b>Why suspicious:</b> The User-Agent string is old (Firefox 12 from 2012) but the host is running Windows 10. Malware often uses hardcoded or outdated User-Agent strings because they don't update with the browser.
+</div>
+
+<h6 class="text-info mt-3">Snort vs Suricata vs Zeek</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+| Tool | Type | Key Feature | Best For |
+|------|------|-------------|----------|
+| Snort | IDS/IPS | Signature-based detection | Small to medium networks |
+| Suricata | IDS/IPS | Multi-threading, GPU acceleration | High-throughput networks |
+| Zeek | NSM Framework | Protocol analysis, logging, not blocking | Network visibility & forensics |
+
+<b>Deployment Architectures:</b><br>
+- <b>Inline (IPS):</b> Device sits directly in traffic path, can block malicious packets in real-time<br>
+- <b>Passive (IDS):</b> Device receives copy of traffic via SPAN port or TAP, alerts only (no blocking)<br>
+- <b>Hybrid:</b> Critical threats blocked inline, suspicious traffic alerted for analyst review
+</div>
 </div>

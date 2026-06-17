@@ -1,31 +1,117 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 13: SIEM Triage for SOC</h6>
 
-<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Log Analysis with SIEM</b> — Query and analyze logs across multiple sources: Windows events, firewall logs, web logs, and endpoint telemetry.</li>
-  <li><b>Alert Triage with Splunk</b> — Use SPL to investigate alerts, build dashboards, and create correlation rules in Splunk.</li>
-  <li><b>Alert Triage with Elastic</b> — Use Kibana and Elasticsearch for log analysis, detection rules, and alert investigation.</li>
-  <li><b>ItsyBitsy</b> — Challenge room: investigate a web attack using SIEM data to identify the attacker and compromised data.</li>
-  <li><b>Benign</b> — Challenge room: distinguish between benign and malicious activity using SIEM correlation.</li>
-  <li><b>Monday Monitor</b> — Challenge room: investigate suspicious activity detected during morning monitoring.</li>
-  <li><b>Friday Overtime</b> — Challenge room: late-night incident investigation using multiple log sources.</li>
-  <li><b>Retracted</b> — Challenge room: analyze a retracted alert that was initially dismissed but needs re-investigation.</li>
-</ul>
+<p style="color:#c0d0e0;">SIEM triage is the core SOC L1 skill. This module teaches you to investigate SIEM alerts, perform log analysis across multiple sources, and determine whether alerts are true or false positives through hands-on challenge rooms.</p>
 
+<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Log Analysis with SIEM</p>
+<p style="color:#c0d0e0;">Every investigation starts with log analysis. The key is knowing what logs to look at and how to correlate them.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Investigation:</b> The SIEM alerts: "Multiple failed logons followed by successful logon from foreign IP." The analyst queries Splunk:<br>
-<code>index=windows EventID=4625 | stats count by Account_Name, Source_IP</code> — finds 200 failed attempts on admin account from 45.33.32.156.<br>
-<code>index=windows EventID=4624 Account_Name=admin</code> — one successful logon from same IP.<br>
-<code>index=windows EventID=4688 Account_Name=admin</code> — attacker ran cmd.exe, then powershell.exe to download payload.<br>
-Conclusion: RDP brute force succeeded. Analyst isolates server, resets admin password, enables MFA.
+<b>Multi-Source Log Correlation — Example:</b><br>
+Alert: "Suspicious outbound connection from 10.0.1.50 to 45.33.32.156:4444"<br><br>
+<b>Step 1 — Firewall Log:</b><br>
+<code>May 21 14:32:15 firewall: ALLOW TCP 10.0.1.50:54321 → 45.33.32.156:4444 (OUTBOUND)</code><br>
+→ Connection was allowed — not blocked<br><br>
+<b>Step 2 — EDR Log:</b><br>
+<code>Process: powershell.exe (PID 1234) established connection to 45.33.32.156:4444<br>
+Parent: WINWORD.EXE (PID 1111)<br>
+User: j.smith@company.com</code><br>
+→ PowerShell was spawned by Microsoft Word — classic phishing infection chain<br><br>
+<b>Step 3 — Windows Event Log:</b><br>
+<code>EventID 4688: Process WINWORD.EXE created process powershell.exe<br>
+EventID 4698: Scheduled task "OneDriveUpdate" created by j.smith<br>
+Sysmon Event 1: powershell.exe -enc IQBFAFgAIAAoAE4AZQB3...</code><br>
+→ Confirmed: Word spawned PowerShell with encoded command<br><br>
+<b>Step 4 — Proxy Log:</b><br>
+<code>GET http://evil.com/payload.ps1 → 200 OK (2.3 KB downloaded)<br>
+Source: 10.0.1.50, Time: 14:31:45<br>
+User-Agent: Mozilla/5.0 (Windows NT 6.1) — outdated, suspicious</code><br>
+→ Before the C2 connection, PowerShell downloaded a payload from evil.com<br><br>
+<b>Step 5 — DNS Log:</b><br>
+<code>10.0.1.50 → evil.com → 45.33.32.156 (resolved at 14:31:44)</code><br>
+→ DNS resolution just before the download — confirming the attack chain<br><br>
+<b>Complete Timeline:</b><br>
+14:31:44 — DNS query for evil.com<br>
+14:31:45 — Download payload.ps1 from 45.33.32.156<br>
+14:32:10 — User opened phishing document in Word<br>
+14:32:12 — Word spawned PowerShell (macro execution)<br>
+14:32:15 — PowerShell connected to 45.33.32.156:4444 (C2 established)
 </div>
 
-<h6 class="text-info mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>SIEM query languages (SPL, EQL/KQL)</li>
-  <li>Multi-source log correlation</li>
-  <li>Alert triage methodology</li>
-  <li>Practical challenge room investigations</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 Alert Triage with Splunk</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Splunk Triage Queries for SOC:</b><br><br>
+<b>1. Investigate a Compromised Account:</b><br>
+<code>index=windows EventID=4625 Account_Name=j.smith<br>
+| timechart span=1h count by Source_IP</code><br>
+→ Show failed login attempts over time, grouped by source IP<br><br>
+<b>2. Find Lateral Movement:</b><br>
+<code>index=windows EventID=4624 Account_Name=j.smith LogonType=3<br>
+| stats values(Computer) by Account_Name</code><br>
+→ List all machines the account accessed (network logon = lateral movement)<br><br>
+<b>3. Detect Data Exfiltration:</b><br>
+<code>index=proxy src_ip=10.0.1.50 action=ALLOW<br>
+| stats sum(bytes) by url, dest_ip<br>
+| where sum(bytes) > 5000000</code><br>
+→ Show URLs with > 5MB uploaded from a specific host<br><br>
+<b>4. Threat Hunting — Suspicious Processes:</b><br>
+<code>index=windows EventID=4688<br>
+| search (ParentImage=*WINWORD* OR ParentImage=*EXCEL* OR ParentImage=*OUTLOOK*)<br>
+  AND (Image=*powershell* OR Image=*cmd.exe* OR Image=*wscript*)<br>
+| stats count by Computer, ParentImage, Image<br>
+| sort -count</code><br>
+→ Find Office apps spawning shell processes — classic malware indicator<br><br>
+<b>5. Brute Force Alert Investigation:</b><br>
+<code>index=windows EventID=4625 Source_IP=45.33.32.156<br>
+| stats count by Account_Name<br>
+| where count > 10<br>
+| eval threshold="PASSED"<br>
+| join type=left Account_Name [search index=windows EventID=4624 Source_IP=45.33.32.156 | stats values(Account_Name) as passed_accounts]</code><br>
+→ Shows which accounts had 10+ failed attempts AND eventual success
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Alert Triage with Elastic</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Elastic/Kibana Triage Queries:</b><br><br>
+<b>Same investigations in Elastic EQL:</b><br>
+<code>process where event.code == "1" and process.parent.name in ("WINWORD.EXE", "EXCEL.EXE", "OUTLOOK.EXE") and process.name in ("powershell.exe", "cmd.exe", "wscript.exe")</code><br>
+→ Office spawning shell processes (same as Splunk query above)<br><br>
+<b>Network connection after process creation:</b><br>
+<code>sequence by process.entity_id<br>
+  [process where event.code == "1" and process.name == "powershell.exe"]<br>
+  [network where process.name == "powershell.exe" and destination.port == 443]</code><br>
+→ PowerShell that makes an outbound HTTPS connection — classic C2 pattern<br><br>
+<b>Kibana Dashboard Creation:</b><br>
+Create a "SOC L1 Daily Triage" dashboard with:<br>
+1. Failed logins over time (line chart)<br>
+2. Top 10 source IPs by failed attempts (data table)<br>
+3. Suspicious process creation alerts (tag cloud)<br>
+4. Latest alerts (real-time table)<br>
+5. Geo-map of external connection destinations
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Challenge Rooms: ItsyBitsy, Benign, Monday Monitor, Friday Overtime, Retracted</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>ItsyBitsy Challenge:</b><br>
+Investigate a web application breach. Logs show SQL injection attempts, data extraction queries, and outbound data transfers. Your task: identify the attacker, determine what data was stolen, find the vulnerability, and recommend remediation.<br><br>
+<b>Benign Challenge:</b><br>
+Multiple alerts fire overnight. Some are false positives from legitimate IT maintenance, others are real threats. Your task: classify each alert (TP vs FP vs BP), document your reasoning, and escalate genuine incidents.<br><br>
+<b>Monday Monitor Challenge:</b><br>
+The Monday morning shift hands off 47 uninvestigated alerts from the weekend. Your task: triage all alerts within 4 hours. Prioritize by severity, investigate systematically, and document findings in the SOC workbook.<br><br>
+<b>Friday Overtime Challenge:</b><br>
+It's 4:55 PM on Friday. A critical alert fires — possible ransomware on the finance department server. Your task: quickly determine if it's real, contain the threat, and document before the weekend. Time pressure adds to the realism.<br><br>
+<b>Retracted Challenge:</b><br>
+An L1 analyst dismissed an alert as Benign Positive yesterday. Today, the user reports unusual system behavior. Your task: re-investigate the dismissed alert, determine if it was a False Negative (missed detection), find what additional evidence was missed, and correct the classification.
+</div>
+
+<h6 class="text-info mt-3">SIEM Triage Methodology</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>The 5-Step SIEM Triage Process:</b><br>
+1. <b>Initial Assessment (30 seconds):</b> Read the alert title/description. Is this a well-known FP? Does it match a known threat pattern?<br>
+2. <b>Quick Enrichment (2 minutes):</b> Check the source/destination IPs in threat intel. Check if the user has a history of incidents. Look at the asset criticality.<br>
+3. <b>Deep Investigation (5-15 minutes):</b> Query the SIEM for all related events in the past 24 hours. Build a timeline. Correlate with other data sources.<br>
+4. <b>Classification (1 minute):</b> TP — investigate further / escalate. FP — document why and close. BP — note the expected behavior and close.<br>
+5. <b>Documentation & Action (2 minutes):</b> Write the report with all evidence. Take containment actions if needed. Update the alert if it needs tuning.
+</div>
 </div>

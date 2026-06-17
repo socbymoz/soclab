@@ -1,23 +1,113 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Module 12: Threat Analysis Tools</h6>
 
-<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Intro to Cyber Threat Intel</b> — CTI types (strategic, tactical, operational, technical), threat feeds, and intelligence lifecycle.</li>
-  <li><b>File and Hash Threat Intel</b> — Use VirusTotal, MalwareBazaar, and Hybrid Analysis for file and hash reputation checks.</li>
-  <li><b>IP and Domain Threat Intel</b> — Check IP and domain reputation via AbuseIPDB, VirusTotal, URLScan.io, and passive DNS.</li>
-  <li><b>Invite Only</b> — Advanced threat intelligence tools used in professional SOC environments (requires invite).</li>
-</ul>
+<p style="color:#c0d0e0;">Cyber Threat Intelligence (CTI) helps SOC analysts understand the adversary. This module covers OSINT, VirusTotal, MISP, IP/Domain reputation, and threat intel lifecycle.</p>
 
+<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Intro to Cyber Threat Intel</p>
+<p style="color:#c0d0e0;">CTI is evidence-based knowledge about threats to inform defensive decisions. There are four types of CTI:</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> An analyst sees an alert with IP 45.33.32.156. They check VirusTotal: the IP is associated with 12 malware samples and 3 C2 domains. AbuseIPDB shows 45 reports of SSH brute force and port scanning. URLScan.io shows the IP hosted a phishing page targeting Microsoft credentials. Passive DNS reveals the IP hosted 15 other domains, all registered 2 days ago. The analyst blocks all 15 domains and the IP at the firewall.
+<b>The Four Types of Threat Intelligence:</b><br><br>
+<b>1. Strategic CTI (Executive Level):</b> High-level reports for CISOs and board members<br>
+Example: "Ransomware-as-a-Service groups increased 45% this year. LockBit is the most active, targeting manufacturing and healthcare. Recommend: increase offline backup frequency, implement network segmentation, deploy EDR on all endpoints."<br><br>
+<b>2. Tactical CTI (SOC Manager Level):</b> TTPs, tools, and techniques of specific adversaries<br>
+Example: "APT29 (Cozy Bear) uses T1566.001 (Spear-phishing), T1059.003 (PowerShell), T1003.001 (LSASS dumping). They're actively targeting vaccine researchers. Deploy detections for these specific techniques."<br><br>
+<b>3. Operational CTI (SOC Analyst Level):</b> Specific upcoming attacks, campaigns, and threat actor activity<br>
+Example: "A new phishing campaign using fake DocuSign emails is targeting your industry. Subject: 'Document Ready for Signature'. C2: docusign-verify[.]com (185.130.5.201). Update your email gateway rules to block."<br><br>
+<b>4. Technical CTI (Analysis Level):</b> IOCs — hashes, IPs, domains, YARA rules<br>
+Example: "Block these IOCs: SHA256 3f5b8c2a..., IP 45.33.32.156, domain evil-update.com"<br><br>
+<b>The CTI Lifecycle:</b><br>
+Direction (what to prioritize) → Collection (gather data) → Processing (analyze, extract IOCs) → Analysis (produce intelligence) → Dissemination (share with stakeholders) → Feedback (improve future collection)
 </div>
 
-<h6 class="text-warning mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>OSINT and threat intelligence gathering</li>
-  <li>VirusTotal advanced analysis techniques</li>
-  <li>IP and domain reputation checking</li>
-  <li>Passive DNS and relationship mapping</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 File and Hash Threat Intel</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>VirusTotal Deep Analysis:</b><br>
+When you submit a file to VirusTotal, you get:<br><br>
+<b>Detection Tab:</b> Shows which of 70+ AV engines detected the file as malicious<br>
+- <code>Microsoft: Trojan:Win32/AgentTesla.A!MTB</code><br>
+- <code>Kaspersky: Trojan-PSW.MSIL.AgentTesla.gen</code><br>
+- <code>CrowdStrike: malware_confidence_100%</code><br>
+→ 18/70 detections — highly likely malicious<br><br>
+<b>Details Tab:</b> File metadata<br>
+- File type: PE32 executable (GUI) Intel 80386, for MS Windows<br>
+- Size: 245,760 bytes<br>
+- First Submission: 2026-05-19 14:23:15<br>
+- Last Analysis: 2026-05-21 08:15:44<br>
+- Compile Time: 2026-05-15 03:14:00 (likely faked)<br>
+- Entropy: 7.8 (high — packed/encrypted)<br><br>
+<b>Relations Tab:</b> Connections to other data<br>
+- Contacted IPs: 45.33.32.156 (malicious), 185.130.5.201 (malicious)<br>
+- Contacted Domains: evil-update.com (registered 2 days ago)<br>
+- Dropped Files: outlookhelper.dll (detected as malicious)<br>
+- Similar Files: 5 files with similar behavior (variant detection)<br><br>
+<b>Behavior Tab:</b> Sandbox analysis results<br>
+- Created process svchost.exe (injected)<br>
+- Modified registry Run key<br>
+- Connected to SMTP server on port 587<br>
+- Captured browser credentials<br><br>
+<b>Community Tab:</b> Analyst comments<br>
+- "This is AgentTesla variant 3.2.1 — targets Chrome, Firefox, Outlook"<br>
+- "C2: mail.evil.com:587 — sends stolen data via SMTP"<br>
+- "Persistence: HKCU\...\Run\OutlookUpdate"
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 IP and Domain Threat Intel</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>IP Reputation Check — AbuseIPDB:</b><br>
+<code>IP: 45.33.32.156<br>
+Category: Scanning, Brute-Force, C2<br>
+Reports: 47 from 23 users<br>
+Confidence: 100%<br>
+Last Report: 2026-05-21 (2 hours ago)<br>
+ISP: M247 Ltd (Russia)<br>
+Usage Type: Hosting Provider</code><br><br>
+<b>Domain Reputation Check — VirusTotal:</b><br>
+<code>Domain: evil-update.com<br>
+Detections: 5/90 (malicious)<br>
+Categories: C2, Phishing, Malware<br>
+Registrar: Namecheap (privacy enabled)<br>
+Creation Date: 2026-05-19 (2 days ago)<br>
+IP History: 45.33.32.156, 185.130.5.201<br>
+Subdomains: mail.evil-update.com, update.evil-update.com</code><br><br>
+<b>Passive DNS (SecurityTrails):</b><br>
+<code>45.33.32.156 resolves to:<br>
+- evil-update.com (2 days)<br>
+- docusign-verify.com (3 days — phishing)<br>
+- secure-login.net (4 days — credential harvesting)<br>
+- update-msft.com (5 days — fake Microsoft update)</code><br>
+→ The same IP hosts 4 different malicious domains — all recently registered. This is a known malicious infrastructure cluster.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Invite Only — Advanced CTI Platforms</p>
+<p style="color:#c0d0e0;">Some advanced threat intelligence platforms require membership or sponsorship:</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Professional CTI Platforms:</b><br>
+- <b>MISP (Malware Information Sharing Platform):</b> Open-source platform for sharing, storing, and correlating IOCs within a trusted community<br>
+- <b>ThreatConnect:</b> Commercial SOAR-integrated TIP with case management<br>
+- <b>Anomali ThreatStream:</b> Enterprise threat intel platform with real-time feeds<br>
+- <b>Recorded Future:</b> AI-powered threat intel with predictive scoring<br>
+- <b>Intel471:</b> Focused on criminal underground forums and threat actor tracking<br><br>
+<b>MISP Example:</b><br>
+A partner organization shares an event via MISP:<br>
+<code>Event: APT29 Phishing Campaign Targeting NGOs<br>
+Date: 2026-05-20<br>
+TLP: Amber<br>
+IOCs: 12 hashes, 5 domains, 8 IPs, 3 YARA rules<br>
+Tags: apt29, spear-phishing, T1566.001<br>
+Galaxies: MITRE ATT&CK T1566.001, T1059.003</code><br>
+Your SOC automatically ingests these IOCs into your SIEM and firewall. Within 30 minutes, you detect matching traffic from 2 hosts in your environment — potential compromise.
+</div>
+
+<h6 class="text-warning mt-3">Threat Intel Integration with SOC</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>How to Operationalize Threat Intel:</b><br>
+1. <b>Ingest feeds:</b> Subscribe to threat intel feeds relevant to your industry (e.g., healthcare, finance)<br>
+2. <b>Automate enrichment:</b> Configure SOAR to automatically check IPs/domains/hashes against threat intel when alerts fire<br>
+3. <b>Block known bad:</b> Firewall rules for known malicious IP ranges, DNS sinkhole for known malicious domains<br>
+4. <b>Detection rules:</b> Create SIEM rules that match against known TTPs of threat actors targeting your industry<br>
+5. <b>Proactive hunting:</b> Use threat intel to proactively search for signs of specific threat actors in your environment<br>
+6. <b>Sharing:</b> Share your own IOCs with trusted partners via MISP or FS-ISAC
+</div>
 </div>

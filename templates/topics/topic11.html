@@ -1,21 +1,98 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Module 11: Malware Concepts for SOC</h6>
 
-<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Malware Analysis Fundamentals</b> — Static analysis (hashes, strings, metadata), dynamic analysis (sandbox execution), and YARA rule creation.</li>
-  <li><b>Malware Detection in SOC Context</b> — How to identify malware infections from SIEM alerts, EDR telemetry, and network traffic patterns.</li>
-</ul>
+<p style="color:#c0d0e0;">SOC analysts must understand malware — how it works, how to analyze it, and how to detect it. This module covers static and dynamic analysis, YARA rules, and IOC extraction.</p>
 
+<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Malware Analysis Fundamentals</p>
+<p style="color:#c0d0e0;">Malware analysis is the study of malicious software to understand its functionality, origin, and impact. There are two main approaches:</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Analysis:</b> A suspicious file "invoice.exe" is flagged by EDR. The analyst performs static analysis: checks the SHA256 hash on VirusTotal — 15/70 detections as "Trojan.Generic". Runs strings and finds URLs to evil.com/beacon and registry keys for persistence. The PE file is unsigned and compiled with MinGW (unusual for a legitimate document). Dynamic analysis in a sandbox shows the malware creates a scheduled task, modifies the Windows Registry Run key, and establishes C2 via HTTPS to 45.33.32.156.
+<b>Static Analysis (without executing):</b><br>
+- <b>Hash lookup:</b> Get SHA256, check VirusTotal → 15/70 detection as "Trojan.AgentTesla"<br>
+- <b>Strings analysis:</b> Extract readable text → finds URLs, IPs, registry keys, commands<br>
+- <b>PE analysis:</b> Check PE header, sections, imports/exports, compile time, digital signature<br>
+- <b>File type detection:</b> Use `file` command to verify — "invoice.pdf" might be a .exe<br><br>
+<b>Dynamic Analysis (execute in sandbox):</b><br>
+- <b>Process monitoring:</b> What processes are created? (ProcMon, Process Hacker)<br>
+- <b>Registry changes:</b> What registry keys are modified? (RegShot — before/after comparison)<br>
+- <b>File system changes:</b> What files are created/modified/deleted?<br>
+- <b>Network traffic:</b> What connections are made? (Wireshark, INetSim)<br>
+- <b>Memory analysis:</b> What's injected into other processes?<br><br>
+<b>Real Malware Analysis — AgentTesla InfoStealer:</b><br>
+<b>Static Analysis:</b><br>
+- SHA256: 3f5b8c2a1d9e4f7a6b0c3d8e1f2a5b7c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f<br>
+- VirusTotal: 18/70 detection, first seen 2 days ago<br>
+- Compile time: 2026-05-15 03:14 (likely faked — shows 3:14 AM which is unusual)<br>
+- Entropy: 7.8 (high — packed/encrypted)<br>
+- Sections: .text (compressed), .rdata (encrypted config), .rsrc (embedded DLL)<br>
+- Strings found: "SMTP", "mail.evil.com:587", "screenshot", "keylog", "C:\Users\victim\AppData\Roaming\<br><br>
+<b>Dynamic Analysis:</b><br>
+- <b>Process:</b> malware.exe → svchost.exe (process hollowing) → network connection<br>
+- <b>Registry:</b> HKCU\Software\Microsoft\Windows\CurrentVersion\Run\OutlookUpdate = malware.exe<br>
+- <b>Files created:</b> C:\Users\victim\AppData\Roaming\outlookhelper.dll<br>
+- <b>Network:</b> POST to mail.evil.com:587 (SMTP) — sending stolen credentials via email<br>
+- <b>Behavior:</b> Captured Chrome saved passwords, Outlook credentials, screenshots every 30 seconds<br><br>
+<b>IOCs Extracted:</b><br>
+- Hashes: 3f5b8c2a... (file), a1b2c3d4... (memory dump)<br>
+- Domains: mail.evil.com, update.evil.com<br>
+- IPs: 45.33.32.156:587, 45.33.32.157:443<br>
+- Registry: HKCU\...\Run\OutlookUpdate<br>
+- File paths: %AppData%\Roaming\outlookhelper.dll<br>
+- YARA rule created for future detection
 </div>
 
-<h6 class="text-danger mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Static malware analysis techniques</li>
-  <li>Dynamic analysis in sandbox environments</li>
-  <li>YARA rule writing for malware detection</li>
-  <li>IOC extraction and operationalization</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 Malware Detection in SOC Context</p>
+<p style="color:#c0d0e0;">How to identify malware infections from SIEM alerts, EDR telemetry, and network traffic patterns.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Common Malware Infection Indicators in SOC:</b><br><br>
+<b>1. Process Anomalies:</b><br>
+- Office apps spawning PowerShell/cmd (phishing → macro → malware)<br>
+- Unsigned binaries running from %TEMP%, %APPDATA%, or %USERPROFILE%<br>
+- Processes with no parent (run via WMI, scheduled tasks)<br>
+- Multiple instances of same process (possible bot)<br><br>
+<b>2. Network Anomalies:</b><br>
+- Regular connections to unknown external IPs (C2 beaconing — every 60 seconds)<br>
+- DNS queries to DGA domains (random-looking domains like jd83kf92.ddns.net)<br>
+- HTTP traffic to IPs instead of domains (no host header)<br>
+- User-Agent strings that don't match the browser version<br>
+- Unusual protocols on standard ports (DNS tunnel, HTTP on non-standard ports)<br><br>
+<b>3. File System Anomalies:</b><br>
+- Executables with hidden attributes<br>
+- Files in unusual locations (C:\Windows\SysWOW64\Tasks\svchost.exe)<br>
+- Recently modified system files<br>
+- Large numbers of files being encrypted or renamed<br><br>
+<b>4. Registry Anomalies (Windows):</b><br>
+- New Run keys pointing to Temp or AppData<br>
+- Service entries pointing to non-standard paths<br>
+- Image File Execution Options (IFEO) debugger keys<br>
+- AppInit_DLLs with malicious DLLs<br><br>
+<b>5. Behavioral Patterns:</b><br>
+- Beaconing (regular check-ins every 30-60 seconds)<br>
+- Reconnaissance commands (whoami, net user, ipconfig, systeminfo)<br>
+- Data staging (files collected in one folder before exfiltration)<br>
+- Defense evasion (disabling AV, deleting logs, stopping services)
+</div>
+
+<h6 class="text-danger mt-3">YARA Rule Writing</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>YARA Rule Example — Detect AgentTesla:</b><br>
+<code>rule AgentTesla_Detect {<br>
+  meta:<br>
+    description = "Detect AgentTesla InfoStealer"<br>
+    author = "SOC Analyst"<br>
+    date = "2026-05-21"<br>
+    hash = "3f5b8c2a..."<br>
+  strings:<br>
+    $smtp = "SMTP" nocase<br>
+    $mail_key = "mail.evil.com"<br>
+    $keylog = "keylog" nocase<br>
+    $screenshot = "screenshot" nocase<br>
+    $persistence = "CurrentVersion\\Run"<br>
+    $mz = "MZ"<br>
+  condition:<br>
+    $mz at 0 and 3 of ($smtp, $mail_key, $keylog, $screenshot, $persistence)<br>
+}</code><br>
+This rule matches any PE file (starts with MZ) that contains at least 3 of the 5 strings associated with AgentTesla.
+</div>
 </div>

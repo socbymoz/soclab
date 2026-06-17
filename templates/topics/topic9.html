@@ -1,25 +1,118 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
 <h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Module 9: Windows Security Monitoring</h6>
 
-<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
-<ul style="color:#c0d0e0;">
-  <li><b>Windows Logging for SOC</b> — Understand Windows Event Log channels (Security, System, Application), Event IDs, and log collection with Sysmon.</li>
-  <li><b>Windows Threat Detection 1</b> — Detect common threats: brute force attacks, account misuse, and privilege escalation via Event ID analysis.</li>
-  <li><b>Windows Threat Detection 2</b> — Advanced detection: process injection, DLL hijacking, and persistence mechanism identification.</li>
-  <li><b>Windows Threat Detection 3</b> — Investigate ransomware, credential dumping (Mimikatz), and lateral movement using Windows event logs.</li>
-</ul>
+<p style="color:#c0d0e0;">Windows is the most targeted OS in enterprise environments. SOC analysts must master Windows Event Logs and Sysmon to detect breaches, malware, and lateral movement.</p>
 
+<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Windows Logging for SOC</p>
+<p style="color:#c0d0e0;">Windows Event Log is the primary source of forensic data on Windows. There are three main log channels plus Sysmon for advanced monitoring.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Example Detection:</b> An EDR alert shows WINWORD.EXE spawning cmd.exe. The analyst checks Sysmon Event ID 1 (process creation):<br>
-<code>Parent: WINWORD.EXE, Child: cmd.exe /c powershell -enc SQBFAFgAIAAoAE4AZQB...</code><br>
-Sysmon Event ID 3 shows a network connection to 45.33.32.156:4444. Event ID 11 (file creation) shows a .ps1 file written to %TEMP%. The analyst also finds Event ID 13 (registry modification) adding a Run key for persistence. This is a classic phishing → macro malware → C2 attack chain on Windows.
+<b>Critical Windows Event IDs Every SOC Analyst Must Know:</b><br><br>
+| Event ID | Description | Why It Matters |
+|----------|-------------|----------------|
+| 4624 | Successful Logon | Correlate with failed attempts before it = brute force success |
+| 4625 | Failed Logon | Brute force attacks, password guessing |
+| 4634 | Logoff | Track session duration |
+| 4648 | Logon with Explicit Credentials | Runas or scheduled task — possible lateral movement |
+| 4672 | Admin Logon | Someone got admin rights |
+| 4688 | Process Creation | See every process launched |
+| 4698 | Scheduled Task Created | Persistence mechanism |
+| 4700 | Scheduled Task Enabled | Attacker activates backdoor |
+| 4720 | User Account Created | Possible backdoor account |
+| 4732 | User Added to Group | Privilege escalation (added to Admin) |
+| 4776 | Credential Validation | Domain authentication — track NTLM usage |
+| 5140 | SMB Share Accessed | Lateral movement via SMB |
+| 5156 | Windows Filtering Platform | Connection allowed — network whitelist enforcement |
+| 7045 | Service Installed | Backdoor installed as a service |
 </div>
 
-<h6 class="text-primary mt-3">Key Skills Learned</h6>
-<ul style="color:#c0d0e0;">
-  <li>Windows Event Log analysis (Event IDs 4624, 4625, 4688, etc.)</li>
-  <li>Sysmon event monitoring (Event IDs 1, 3, 11, 13, 22)</li>
-  <li>Process injection and persistence detection</li>
-  <li>Windows-based threat hunting</li>
-</ul>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Sysmon Event IDs:</b><br>
+| Event ID | Description | Detection Example |
+|----------|-------------|-------------------|
+| 1 | Process creation | Office spawning PowerShell |
+| 3 | Network connection | Malware connecting to C2 |
+| 7 | Image loaded | DLL loaded into process (potential DLL hijacking) |
+| 8 | CreateRemoteThread | Process injection detected |
+| 10 | Process access | LSASS access — potential credential dumping |
+| 11 | File create | Malware dropped to disk |
+| 12/13 | Registry modification | Persistence via Run key |
+| 15 | FileCreateStreamHash | Zone.Identifier — downloaded from internet |
+| 22 | DNS query | C2 domain resolution |
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Windows Threat Detection 1: Brute Force & Account Misuse</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Brute Force Detection:</b><br>
+<code>index=windows EventID=4625 | stats count by Account_Name, Source_IP | where count > 20 | sort -count</code><br>
+→ Find accounts with 20+ failed logins. If followed by EventID 4624 (success), the attacker cracked the password.<br><br>
+<b>Example — RDP Brute Force:</b><br>
+EventID 4625 × 500 on account "admin" from IP 45.33.32.156 over 5 minutes<br>
+Then EventID 4624 — successful login on same account from same IP<br>
+Then EventID 4688 — cmd.exe → powershell.exe → turned off Windows Defender<br>
+Then EventID 4698 — scheduled task created to run malware every hour<br>
+Then EventID 3 (Sysmon) — network connection to 45.33.32.156:4444<br><br>
+<b>Timeline of the attack:</b><br>
+14:32:00 — Start of brute force (500 attempts in 5 min)<br>
+14:37:15 — Successful login (password was "Admin@123")<br>
+14:37:30 — Disabled Windows Defender via PowerShell<br>
+14:38:00 — Downloaded Cobalt Strike beacon<br>
+14:38:30 — Created persistence (scheduled task)<br>
+14:39:00 — C2 beacon established
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Windows Threat Detection 2: Process Injection & Persistence</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Common Process Injection Detection:</b><br><br>
+<b>1. CreateRemoteThread (Sysmon Event 8):</b><br>
+<code>RuleName: technique_id=T1055.001, technique_name=Process Injection<br>
+UtcTime: 2026-05-21 14:45:12.345<br>
+SourceProcessGUID: {A1B2C3...}<br>
+SourceImage: C:\Users\victim\AppData\Local\Temp\malware.exe<br>
+TargetImage: C:\Windows\System32\svchost.exe<br>
+NewThreadId: 4567</code><br>
+→ Malware injected code into svchost.exe to hide its activity<br><br>
+<b>2. DLL Hijacking Detection:</b><br>
+Check Sysmon Event 7 (Image Loaded) for DLLs loaded from unusual paths:<br>
+<code>ImageLoaded: C:\Users\victim\AppData\Local\Temp\version.dll</code><br>
+→ Normally version.dll loads from C:\Windows\System32 — loading from Temp is abnormal<br><br>
+<b>3. Persistence Detection (Sysmon Event 12/13):</b><br>
+Registry Run Key modification:<br>
+<code>EventType: SetValue<br>
+TargetObject: HKLM\Software\Microsoft\Windows\CurrentVersion\Run\MalwareService<br>
+Details: C:\Users\victim\AppData\Local\Temp\malware.exe</code><br>
+→ Common persistence — malware adds itself to Run key to start on boot
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">🔹 Windows Threat Detection 3: Ransomware & Lateral Movement</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Ransomware Detection Indicators:</b><br>
+1. File creation events — massive number of .encrypted, .locked, .crypted files<br>
+2. Ransom note dropped — "README_TO_DECRYPT.txt" or similar in every directory<br>
+3. Volume Shadow Copy deletion — <code>vssadmin.exe delete shadows /all /quiet</code><br>
+4. Boot configuration modification — <code>bcdedit.exe /set {default} recoveryenabled No</code><br>
+5. Process tree: explorer.exe → cmd.exe → vssadmin.exe<br><br>
+<b>Lateral Movement Detection (Pass-the-Hash):</b><br>
+<code>EventID 4624 (Logon Type 3 — Network) from IP 10.0.1.50 to 10.0.1.100<br>
+Logon Process: NtLmSsp<br>
+Authentication Package: NTLM</code><br>
+When combined with Event 4776 and Event 4672 (admin logon), this indicates potential pass-the-hash attack — attacker captured a hash and reused it to authenticate to another server.<br><br>
+<b>Detection Query (Splunk):</b><br>
+<code>index=windows (EventID=4624 LogonType=3) OR (EventID=4776)<br>
+| stats count by Account_Name, Source_IP, dest_ip<br>
+| where count > 1 AND count < 10</code><br>
+→ Shows accounts that authenticated from one host to multiple destinations — lateral movement pattern
+</div>
+
+<h6 class="text-primary mt-3">Windows Security Checklist</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Daily Monitoring Queries for Windows SOC:</b><br>
+1. <b>Brute force:</b> EventID=4625 count > 10 in 5 min → alert<br>
+2. <b>Admin activity:</b> EventID=4672 during off-hours (22:00-06:00) → investigate<br>
+3. <b>Suspicious processes:</b> EventID=4688 where ParentImage contains WINWORD, EXCEL, OUTLOOK and Image contains powershell, cmd, wscript, cscript<br>
+4. <b>New accounts:</b> EventID=4720 → review for unauthorized account creation<br>
+5. <b>New services:</b> EventID=7045 → review for unauthorized service installation<br>
+6. <b>Group membership changes:</b> EventID=4732 where TargetUserName=Administrators → privilege escalation
+</div>
 </div>
