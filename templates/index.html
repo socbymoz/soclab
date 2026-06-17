@@ -3,21 +3,18 @@
 {% block content %}
 <style>
 @keyframes pulse-glow { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
-@keyframes scan-line { 0%{top:-10%;} 100%{top:110%;} }
 @keyframes log-scroll { 0%{transform:translateY(0);} 100%{transform:translateY(-50%);} }
-@keyframes flicker { 0%,100%{opacity:1;} 41%{opacity:1;} 42%{opacity:0.6;} 43%{opacity:1;} 45%{opacity:0.8;} 46%{opacity:1;} }
+@keyframes scan-line { 0%{top:-10%;} 100%{top:110%;} }
 .log-feed { animation:log-scroll 40s linear infinite; }
 .log-feed-wrap:hover .log-feed { animation-play-state:paused; }
-.glow-text { text-shadow:0 0 10px rgba(0,180,255,0.5); }
-.glow-red { text-shadow:0 0 10px rgba(255,60,60,0.5); }
-.glow-green { text-shadow:0 0 10px rgba(0,200,100,0.5); }
 .scan-line { animation:scan-line 4s linear infinite; }
+.glow-text { text-shadow:0 0 10px rgba(0,180,255,0.5); }
 </style>
 
 <div class="d-flex flex-column" style="min-height:calc(100vh - 32px);">
 
   <!-- Top Status Bar -->
-  <div class="d-flex align-items-center justify-content-between rounded-3 px-3 py-2 mb-2" style="background:rgba(0,12,30,0.7);border:1px solid rgba(0,180,255,0.1);backdrop-filter:blur(4px);">
+  <div class="d-flex align-items-center justify-content-between rounded-3 px-3 py-2 mb-2" style="background:rgba(0,12,30,0.7);border:1px solid rgba(0,180,255,0.1);backdrop-filter:blur(4px);flex-shrink:0;">
     <div class="d-flex align-items-center gap-3">
       <div style="font-weight:700;color:#00d4ff;font-size:0.9rem;letter-spacing:1px;">
         <i class="bi bi-shield-shaded me-1"></i>SOC LAB
@@ -42,120 +39,124 @@
     </div>
   </div>
 
-  <div class="row g-2 flex-grow-1">
-    <!-- LEFT: Live Threat Feed -->
+  <div class="row g-2 flex-grow-1" style="min-height:0;">
+
+    <!-- ===== LEFT: Active Logs (full height) ===== -->
     <div class="col-12 col-md-4 d-flex flex-column">
       <div class="rounded-3 flex-grow-1 d-flex flex-column" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);overflow:hidden;">
-        <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid rgba(0,180,255,0.08);">
-          <span style="color:rgba(0,200,255,0.5);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-activity me-1"></i>Live Threat Feed</span>
+        <div class="d-flex align-items-center justify-content-between px-3 py-2 flex-shrink-0" style="border-bottom:1px solid rgba(0,180,255,0.08);">
+          <span style="color:rgba(0,200,255,0.5);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-activity me-1"></i>Active Logs</span>
           <span style="color:rgba(0,200,255,0.3);font-size:0.6rem;"><span id="logCount">0</span> events</span>
         </div>
-        <div class="log-feed-wrap flex-grow-1 overflow-hidden position-relative" style="mask-image:linear-gradient(to bottom,transparent 0%,#000 5%,#000 95%,transparent 100%);">
+        <div class="flex-grow-1 overflow-hidden position-relative" style="mask-image:linear-gradient(to bottom,transparent 0%,#000 3%,#000 97%,transparent 100%);">
           <div class="log-feed p-2" id="logFeed"></div>
           <div class="log-feed p-2" id="logFeed2"></div>
         </div>
       </div>
     </div>
 
-    <!-- CENTER: SOC Overview + Training -->
+    <!-- ===== CENTER: World Map + Live Threat Feed ===== -->
+    <div class="col-12 col-md-4 d-flex flex-column">
+      <div class="rounded-3 flex-grow-1 d-flex flex-column" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);overflow:hidden;">
+        <!-- World Map area (transparent — globe shows through) -->
+        <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-center position-relative" style="min-height:120px;">
+          <div style="color:rgba(0,200,255,0.25);font-size:0.55rem;text-transform:uppercase;letter-spacing:2px;position:absolute;top:8px;left:12px;">Global Threat Map</div>
+          <div class="d-flex align-items-center gap-2">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00d48a;box-shadow:0 0 8px #00d48a;"></span>
+            <span style="color:rgba(0,200,255,0.3);font-size:0.65rem;letter-spacing:1px;">MONITORING ACTIVE</span>
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6060;box-shadow:0 0 8px #ff6060;"></span>
+          </div>
+          <div class="d-flex gap-3 mt-2">
+            <span style="color:rgba(0,200,255,0.2);font-size:0.55rem;"><i class="bi bi-dot" style="color:#00d4ff;"></i> 14 active nodes</span>
+            <span style="color:rgba(0,200,255,0.2);font-size:0.55rem;"><i class="bi bi-dot" style="color:#ff6060;"></i> 3 threats</span>
+            <span style="color:rgba(0,200,255,0.2);font-size:0.55rem;"><i class="bi bi-dot" style="color:#ffd700;"></i> 8 alerts</span>
+          </div>
+          <!-- Pulsing scan line overlay -->
+          <div class="scan-line" style="position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,180,255,0.15),transparent);"></div>
+        </div>
+        <!-- Live Threat Feed panel at bottom -->
+        <div class="flex-shrink-0 px-3 py-2" style="border-top:1px solid rgba(0,180,255,0.08);">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-broadcast me-1"></i>Live Threat Feed</span>
+          </div>
+          <div class="log-feed-wrap" style="max-height:120px;overflow:hidden;mask-image:linear-gradient(to bottom,transparent 0%,#000 8%,#000 92%,transparent 100%);">
+            <div class="log-feed" id="centerFeed"></div>
+            <div class="log-feed" id="centerFeed2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT: Stacked panels ===== -->
     <div class="col-12 col-md-4 d-flex flex-column gap-2">
-      <!-- Threat Level -->
-      <div class="rounded-3 p-3" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
+
+      <!-- 1) Threat Level -->
+      <div class="rounded-3 p-3 flex-shrink-0" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
         <div class="d-flex align-items-center justify-content-between mb-2">
-          <span style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Threat Level</span>
+          <span style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-shield-exclamation me-1"></i>Threat Level</span>
           <span id="threatLevelBadge" style="color:#ffd700;font-size:0.75rem;font-weight:600;">ELEVATED</span>
         </div>
         <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;">
           <div id="threatBar" style="height:100%;width:62%;border-radius:3px;background:linear-gradient(90deg,#ffd700,#ff8800);transition:width .5s;"></div>
         </div>
         <div class="d-flex justify-content-between mt-1">
-          <span style="color:rgba(0,180,255,0.2);font-size:0.55rem;">LOW</span>
-          <span style="color:rgba(255,200,0,0.3);font-size:0.55rem;">MODERATE</span>
-          <span style="color:rgba(255,60,60,0.3);font-size:0.55rem;">CRITICAL</span>
+          <span style="color:rgba(0,180,255,0.2);font-size:0.5rem;">LOW</span>
+          <span style="color:rgba(255,200,0,0.3);font-size:0.5rem;">MODERATE</span>
+          <span style="color:rgba(255,60,60,0.3);font-size:0.5rem;">HIGH</span>
+          <span style="color:rgba(255,60,60,0.3);font-size:0.5rem;">CRITICAL</span>
         </div>
       </div>
 
-      <!-- Security Tools Status -->
-      <div class="rounded-3 p-3" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
-        <div style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Security Stack</div>
+      <!-- 2) Top Attack Sources -->
+      <div class="rounded-3 p-3 flex-shrink-0" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
+        <div style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;"><i class="bi bi-globe me-1"></i>Top Attack Sources</div>
         <div class="d-flex flex-column gap-1">
-          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">SIEM</span><span style="color:#00d48a;font-size:0.6rem;">98%</span></div>
-          <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:98%;border-radius:2px;background:#00d48a;"></div></div>
-          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">EDR</span><span style="color:#00d48a;font-size:0.6rem;">92%</span></div>
-          <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:92%;border-radius:2px;background:#00d48a;"></div></div>
-          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">WAF</span><span style="color:#00d48a;font-size:0.6rem;">87%</span></div>
-          <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:87%;border-radius:2px;background:#00d48a;"></div></div>
-          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">IDS/IPS</span><span style="color:#ffd700;font-size:0.6rem;">76%</span></div>
-          <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:76%;border-radius:2px;background:#ffd700;"></div></div>
+          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">🇺🇸 United States</span><span style="color:#e5e7eb;font-size:0.65rem;">34%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:34%;border-radius:2px;background:#00d4ff;"></div></div></div>
+          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">🇷🇺 Russia</span><span style="color:#e5e7eb;font-size:0.65rem;">22%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:22%;border-radius:2px;background:#ff6060;"></div></div></div>
+          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">🇨🇳 China</span><span style="color:#e5e7eb;font-size:0.65rem;">18%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:18%;border-radius:2px;background:#ffd700;"></div></div></div>
+          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">🇰🇵 North Korea</span><span style="color:#e5e7eb;font-size:0.65rem;">11%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:11%;border-radius:2px;background:#ff6060;"></div></div></div>
+          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">🌍 Other</span><span style="color:#e5e7eb;font-size:0.65rem;">15%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:15%;border-radius:2px;background:rgba(0,180,255,0.3);"></div></div></div>
         </div>
       </div>
 
-      <!-- Attack Sources -->
-      <div class="rounded-3 p-3 flex-grow-1" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
-        <div style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Top Attack Sources</div>
+      <!-- 3) Events Over Time (mini bar chart) -->
+      <div class="rounded-3 p-3 flex-shrink-0" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
+        <div style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;"><i class="bi bi-graph-up me-1"></i>Events Over Time</div>
+        <div class="d-flex align-items-end justify-content-between gap-1" style="height:40px;">
+          {% set bars = [35, 52, 28, 68, 44, 72, 55, 38, 82, 61, 45, 90, 71, 48, 63, 77, 39, 56, 84, 50, 66, 43, 74, 58] %}
+          {% for b in bars %}
+          <div style="flex:1;height:{{ b }}%;border-radius:2px 2px 0 0;background:{% if b > 75 %}rgba(255,60,60,0.6){% elif b > 50 %}rgba(0,200,255,0.5){% else %}rgba(0,200,255,0.25){% endif %};transition:height .3s;" title="{{ b }} events"></div>
+          {% endfor %}
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <span style="color:rgba(0,180,255,0.2);font-size:0.5rem;">00:00</span>
+          <span style="color:rgba(0,180,255,0.2);font-size:0.5rem;">06:00</span>
+          <span style="color:rgba(0,180,255,0.2);font-size:0.5rem;">12:00</span>
+          <span style="color:rgba(0,180,255,0.2);font-size:0.5rem;">18:00</span>
+          <span style="color:rgba(0,180,255,0.2);font-size:0.5rem;">23:59</span>
+        </div>
+      </div>
+
+      <!-- 4) System Status -->
+      <div class="rounded-3 p-3 flex-grow-1 d-flex flex-column justify-content-center" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
+        <div style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;"><i class="bi bi-shield-check me-1"></i>System Status</div>
         <div class="d-flex flex-column gap-1">
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">🇺🇸 United States</span><span style="color:#e5e7eb;font-size:0.7rem;">34%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:34%;border-radius:2px;background:#00d4ff;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">🇷🇺 Russia</span><span style="color:#e5e7eb;font-size:0.7rem;">22%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:22%;border-radius:2px;background:#ff6060;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">🇨🇳 China</span><span style="color:#e5e7eb;font-size:0.7rem;">18%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:18%;border-radius:2px;background:#ffd700;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">🇰🇵 North Korea</span><span style="color:#e5e7eb;font-size:0.7rem;">11%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:11%;border-radius:2px;background:#ff6060;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;">🌍 Other</span><span style="color:#e5e7eb;font-size:0.7rem;">15%</span></div><div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:15%;border-radius:2px;background:rgba(0,180,255,0.3);"></div></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT: Key Metrics -->
-    <div class="col-12 col-md-4 d-flex flex-column gap-2">
-      <!-- Alerts + Events row -->
-      <div class="row g-2">
-        <div class="col-6">
-          <div class="rounded-3 p-3 text-center" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
-            <div style="color:rgba(0,200,255,0.3);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;">Events</div>
-            <div style="font-size:1.5rem;font-weight:700;color:#00d4ff;"><span id="eventCount">0</span></div>
-            <div style="color:rgba(0,200,255,0.2);font-size:0.55rem;">Last 24h</div>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="rounded-3 p-3 text-center" style="background:rgba(30,0,0,0.4);border:1px solid rgba(255,60,60,0.12);">
-            <div style="color:rgba(255,60,60,0.3);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;">Critical</div>
-            <div style="font-size:1.5rem;font-weight:700;color:#ff6060;"><span id="alertCount">0</span></div>
-            <div style="color:rgba(255,60,60,0.2);font-size:0.55rem;">Active alerts</div>
-          </div>
+          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">SIEM</span><span style="color:#00d48a;font-size:0.55rem;">98%</span></div>
+          <div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:98%;border-radius:2px;background:#00d48a;"></div></div>
+          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">EDR</span><span style="color:#00d48a;font-size:0.55rem;">92%</span></div>
+          <div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:92%;border-radius:2px;background:#00d48a;"></div></div>
+          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">WAF</span><span style="color:#00d48a;font-size:0.55rem;">87%</span></div>
+          <div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:87%;border-radius:2px;background:#00d48a;"></div></div>
+          <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.65rem;">IDS/IPS</span><span style="color:#ffd700;font-size:0.55rem;">76%</span></div>
+          <div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:76%;border-radius:2px;background:#ffd700;"></div></div>
         </div>
       </div>
 
-      <!-- Event breakdown -->
-      <div class="rounded-3 p-3" style="background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);">
-        <div style="color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Event Breakdown</div>
-        <div class="d-flex flex-column gap-1">
-          <div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;"><i class="bi bi-shield me-1" style="color:#00d4ff;"></i>SQL Injection</span><span style="color:#e5e7eb;font-size:0.7rem;">148</span></div>
-          <div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;"><i class="bi bi-code-slash me-1" style="color:#ffd700;"></i>XSS</span><span style="color:#e5e7eb;font-size:0.7rem;">93</span></div>
-          <div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;"><i class="bi bi-hdd-network me-1" style="color:#ff6060;"></i>Port Scan</span><span style="color:#e5e7eb;font-size:0.7rem;">312</span></div>
-          <div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;"><i class="bi bi-person-fill-lock me-1" style="color:#ff8800;"></i>Brute Force</span><span style="color:#e5e7eb;font-size:0.7rem;">87</span></div>
-          <div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.7rem;"><i class="bi bi-envelope me-1" style="color:#00d48a;"></i>Phishing</span><span style="color:#e5e7eb;font-size:0.7rem;">64</span></div>
-        </div>
-      </div>
-
-      <!-- Training CTA -->
-      <div class="rounded-3 p-3 flex-grow-1 d-flex flex-column justify-content-center" style="background:rgba(0,12,30,0.7);border:1px solid rgba(0,180,255,0.15);backdrop-filter:blur(4px);">
-        <div class="text-center">
-          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;letter-spacing:1px;margin-bottom:4px;"><i class="bi bi-shield-fill me-1"></i>SOC TRAINING</div>
-          <div style="color:#e5e7eb;font-size:0.85rem;margin-bottom:8px;">Complete <span style="color:#00d4ff;font-weight:600;">25</span> topics to master SOC analysis</div>
-          <div class="mb-2">
-            <span style="color:#8098a8;font-size:0.65rem;">Progress: <span id="progressCount">0</span>/25</span>
-            <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);margin-top:4px;max-width:200px;margin-left:auto;margin-right:auto;">
-              <div id="progressBar" style="height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,#00d4ff,#0080ff);transition:width .5s;"></div>
-            </div>
-          </div>
-          <a href="/topic/1" class="btn btn-sm d-inline-flex align-items-center gap-1" style="background:rgba(0,180,255,0.15);color:#00d4ff;border:1px solid rgba(0,180,255,0.3);" onmouseover="this.style.background='rgba(0,180,255,0.25)';this.style.borderColor='#00d4ff'" onmouseout="this.style.background='rgba(0,180,255,0.15)';this.style.borderColor='rgba(0,180,255,0.3)'">
-            Begin Training <i class="bi bi-arrow-right"></i>
-          </a>
-        </div>
-      </div>
     </div>
   </div>
 
   <!-- Bottom Bar: Curriculum Quick Links -->
-  <div class="rounded-3 px-3 py-2 mt-2 d-flex align-items-center" style="background:rgba(0,12,30,0.5);border:1px solid rgba(0,180,255,0.06);overflow-x:auto;white-space:nowrap;">
+  <div class="rounded-3 px-3 py-2 mt-2 d-flex align-items-center flex-shrink-0" style="background:rgba(0,12,30,0.5);border:1px solid rgba(0,180,255,0.06);overflow-x:auto;white-space:nowrap;">
     <span style="color:rgba(0,200,255,0.3);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;margin-right:12px;flex-shrink:0;">Topics:</span>
     {% for t in CURRICULUM[:12] %}
     <a href="/topic/{{ t.id }}" class="text-decoration-none px-2 py-1 rounded small" style="color:#8098a8;font-size:0.7rem;transition:.2s;flex-shrink:0;" onmouseover="this.style.color='#00d4ff';this.style.background='rgba(0,180,255,0.1)'" onmouseout="this.style.color='#8098a8';this.style.background='transparent'">{{ t.title }}</a>
@@ -167,7 +168,6 @@
 
 <script>
 (function() {
-  // Greeting
   const h = new Date().getHours();
   let g;
   if (h < 12) g = 'Good Morning';
@@ -181,38 +181,34 @@
     const s = performance.now();
     function u(now) {
       const t = Math.min((now - s) / dur, 1);
-      const e = 1 - Math.pow(1 - t, 3);
-      el.textContent = Math.floor(e * target).toLocaleString();
+      el.textContent = Math.floor((1 - Math.pow(1 - t, 3)) * target).toLocaleString();
       if (t < 1) requestAnimationFrame(u);
     }
     requestAnimationFrame(u);
   }
-  anim(document.getElementById('eventCount'), 1247, 1500);
-  anim(document.getElementById('alertCount'), 3, 1000);
-  anim(document.getElementById('progressCount'), 0, 500);
 
-  // Live log feed entries
+  // Log entries with different colors per severity
   const logTypes = [
-    { icon:'bi-shield-fill-check', txt:'SQL injection attempt blocked', severity:'alert', color:'#00d4ff' },
-    { icon:'bi-exclamation-triangle-fill', txt:'Port scan detected from 45.33.22.12', severity:'warn', color:'#ffd700' },
-    { icon:'bi-bug-fill', txt:'Malware binary detected: win32.exe', severity:'crit', color:'#ff6060' },
-    { icon:'bi-lock-fill', txt:'Brute force attack on SSH port 22', severity:'alert', color:'#ff8800' },
-    { icon:'bi-hdd-network', txt:'DNS tunneling attempt detected', severity:'warn', color:'#ffd700' },
-    { icon:'bi-envelope-exclamation-fill', txt:'Phishing campaign targeting HR dept', severity:'alert', color:'#00d48a' },
-    { icon:'bi-code-slash', txt:'XSS payload in /search endpoint', severity:'warn', color:'#ffd700' },
-    { icon:'bi-person-fill-lock', txt:'Credential stuffing detected on /login', severity:'crit', color:'#ff6060' },
+    { icon:'bi-shield-fill-check', txt:'SQL injection attempt blocked from 103.235.46.x', severity:'crit', color:'#ff6060' },
+    { icon:'bi-exclamation-triangle-fill', txt:'Port scan detected from 45.33.22.12 (284 ports)', severity:'warn', color:'#ffd700' },
+    { icon:'bi-bug-fill', txt:'Malware binary detected: win32.exe (Trojan)', severity:'crit', color:'#ff6060' },
+    { icon:'bi-lock-fill', txt:'Brute force attack on SSH port 22 from 78.146.32.x', severity:'warn', color:'#ff8800' },
+    { icon:'bi-hdd-network', txt:'DNS tunneling attempt detected via subdomain queries', severity:'warn', color:'#ffd700' },
+    { icon:'bi-envelope-exclamation-fill', txt:'Phishing campaign targeting HR dept (12 emails)', severity:'alert', color:'#00d4ff' },
+    { icon:'bi-code-slash', txt:'XSS payload detected in /search endpoint', severity:'warn', color:'#ffd700' },
+    { icon:'bi-person-fill-lock', txt:'Credential stuffing attack on /login (2,341 attempts)', severity:'crit', color:'#ff6060' },
     { icon:'bi-shield', txt:'IDS: Suspicious outbound connection to 185.220.101.x', severity:'alert', color:'#00d4ff' },
-    { icon:'bi-globe', txt:'C2 beaconing detected from internal host', severity:'crit', color:'#ff6060' },
-    { icon:'bi-hdd-stack', txt:'Unauthorized file access attempt on DB server', severity:'warn', color:'#ffd700' },
-    { icon:'bi-shield-fill', txt:'WAF blocked SQLi from 103.235.46.x', severity:'alert', color:'#00d4ff' },
-    { icon:'bi-diagram-3', txt:'Lateral movement detected: ADMIN-03 to DC-01', severity:'crit', color:'#ff6060' },
-    { icon:'bi-file-earmark-binary', txt:'Malicious macro detected in invoice.doc', severity:'warn', color:'#ffd700' },
-    { icon:'bi-shield-exclamation', txt:'Ransomware indicator detected on workstation', severity:'crit', color:'#ff6060' },
-    { icon:'bi-activity', txt:'Abnormal outbound data transfer 2.3GB to external IP', severity:'alert', color:'#ff8800' },
-    { icon:'bi-key-fill', txt:'Kerberoasting attack detected on domain controller', severity:'crit', color:'#ff6060' },
-    { icon:'bi-wifi', txt:'SSH brute force from 78.146.32.x - 284 attempts', severity:'alert', color:'#ff8800' },
-    { icon:'bi-box-arrow-up', txt:'Data exfiltration attempt to cloud storage', severity:'crit', color:'#ff6060' },
-    { icon:'bi-shield-check', txt:'EDR quarantined malicious process: powershell.exe', severity:'alert', color:'#00d48a' },
+    { icon:'bi-globe', txt:'C2 beaconing detected from internal host 10.0.12.45', severity:'crit', color:'#ff6060' },
+    { icon:'bi-hdd-stack', txt:'Unauthorized file access attempt on DB server (SMB)', severity:'warn', color:'#ffd700' },
+    { icon:'bi-shield-fill', txt:'WAF blocked SQLi from 103.235.46.x (UNION SELECT)', severity:'alert', color:'#00d4ff' },
+    { icon:'bi-diagram-3', txt:'Lateral movement: ADMIN-03 to DC-01 (PsExec)', severity:'crit', color:'#ff6060' },
+    { icon:'bi-file-earmark-binary', txt:'Malicious macro detected in invoice.doc (Dridex)', severity:'warn', color:'#ffd700' },
+    { icon:'bi-shield-exclamation', txt:'Ransomware indicator: file encryption on WS-045', severity:'crit', color:'#ff6060' },
+    { icon:'bi-activity', txt:'Abnormal outbound transfer: 2.3GB to external IP', severity:'warn', color:'#ff8800' },
+    { icon:'bi-key-fill', txt:'Kerberoasting attack detected on DC-01 (TGS reqs)', severity:'crit', color:'#ff6060' },
+    { icon:'bi-wifi', txt:'SSH brute force from 78.146.32.x - 284 attempts', severity:'warn', color:'#ff8800' },
+    { icon:'bi-box-arrow-up', txt:'Data exfiltration attempt to cloud storage (S3)', severity:'crit', color:'#ff6060' },
+    { icon:'bi-shield-check', txt:'EDR quarantined malicious process: powershell.exe', severity:'alert', color:'#00d4ff' },
   ];
 
   function pad2(n) { return n.toString().padStart(2, '0'); }
@@ -221,29 +217,47 @@
     return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
   }
 
+  function makeLogEntry(container, colors) {
+    const e = logTypes[Math.floor(Math.random() * logTypes.length)];
+    const sevColors = { crit:'#ff6060', warn:'#ffd700', alert:'#00d4ff' };
+    const c = sevColors[e.severity] || '#8098a8';
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:2px 4px;margin-bottom:1px;font-size:0.6rem;border-left:2px solid ' + c + ';padding-left:6px;border-bottom:1px solid rgba(0,180,255,0.04);';
+    div.innerHTML = '<span style="color:rgba(0,180,255,0.3);">' + timeStr() + '</span> <i class="' + e.icon + '" style="color:' + e.color + ';font-size:0.5rem;"></i> <span style="color:#8098a8;">' + e.txt + '</span>';
+    container.appendChild(div);
+    if (container.children.length > 60) container.removeChild(container.firstChild);
+  }
+
+  // LEFT panel: Active Logs
   const feed1 = document.getElementById('logFeed');
   const feed2 = document.getElementById('logFeed2');
   const logCount = document.getElementById('logCount');
   let entryCount = 0;
-
-  function addLogEntry(container) {
-    const e = logTypes[Math.floor(Math.random() * logTypes.length)];
-    const badge = e.severity === 'crit' ? '<span style="color:#ff6060;font-size:0.6rem;">CRIT</span>'
-      : e.severity === 'warn' ? '<span style="color:#ffd700;font-size:0.6rem;">WARN</span>'
-      : '<span style="color:#00d4ff;font-size:0.6rem;">ALRT</span>';
-    const div = document.createElement('div');
-    div.style.cssText = 'padding:3px 4px;margin-bottom:1px;font-size:0.6rem;border-bottom:1px solid rgba(0,180,255,0.04);';
-    div.innerHTML = `<span style="color:rgba(0,180,255,0.3);">${timeStr()}</span> ${badge} <i class="${e.icon}" style="color:${e.color};font-size:0.5rem;"></i> <span style="color:#8098a8;">${e.txt}</span>`;
-    container.appendChild(div);
+  function addLeftLog(container) {
+    makeLogEntry(container);
     entryCount++;
     logCount.textContent = entryCount;
-    if (container.children.length > 80) container.removeChild(container.firstChild);
   }
+  for (let i = 0; i < 35; i++) { addLeftLog(feed1); addLeftLog(feed2); }
+  setInterval(() => addLeftLog(feed1), 1500);
+  setInterval(() => addLeftLog(feed2), 1500);
 
-  // Fill initial entries
-  for (let i = 0; i < 30; i++) { addLogEntry(feed1); addLogEntry(feed2); }
-  setInterval(() => addLogEntry(feed1), 1200);
-  setInterval(() => addLogEntry(feed2), 1200);
+  // CENTER panel: Live Threat Feed (shorter entries)
+  const cFeed = document.getElementById('centerFeed');
+  const cFeed2 = document.getElementById('centerFeed2');
+  function addCenterLog(container) {
+    const e = logTypes[Math.floor(Math.random() * logTypes.length)];
+    const sevColors = { crit:'#ff6060', warn:'#ffd700', alert:'#00d4ff' };
+    const c = sevColors[e.severity] || '#8098a8';
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:1px 4px;font-size:0.55rem;border-left:2px solid ' + c + ';padding-left:4px;margin-bottom:1px;';
+    div.innerHTML = '<span style="color:rgba(0,180,255,0.25);">' + timeStr() + '</span> <span style="color:#8098a8;">' + e.txt + '</span>';
+    container.appendChild(div);
+    if (container.children.length > 40) container.removeChild(container.firstChild);
+  }
+  for (let i = 0; i < 20; i++) { addCenterLog(cFeed); addCenterLog(cFeed2); }
+  setInterval(() => addCenterLog(cFeed), 3000);
+  setInterval(() => addCenterLog(cFeed2), 3000);
 
   // Threat level oscillation
   const threatBar = document.getElementById('threatBar');
@@ -260,7 +274,7 @@
   setInterval(() => {
     li = (li + 1) % levels.length;
     threatBar.style.width = levels[li].w + '%';
-    threatBar.style.background = `linear-gradient(90deg, ${levels[li].c}, ${li > 2 ? '#ff4400' : '#ffd700'})`;
+    threatBar.style.background = 'linear-gradient(90deg, ' + levels[li].c + ', ' + (li > 2 ? '#ff4400' : '#ffd700') + ')';
     threatBadge.textContent = levels[li].l;
     threatBadge.style.color = levels[li].c;
   }, 5000);
