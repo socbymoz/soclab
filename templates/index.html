@@ -3,11 +3,21 @@
 {% block content %}
 <div class="text-center py-5">
     <i class="bi bi-shield-shaded display-3 text-primary"></i>
-    <h1 class="mt-3 fw-bold"><span class="text-primary">{{ greeting }}</span></h1>
+    <h1 class="mt-3 fw-bold"><span class="text-primary" id="greeting">{{ greeting }}</span></h1>
     <p class="text-secondary" style="max-width:500px;margin:8px auto;">
         Welcome to the <strong>SOC Lab</strong> — your hands-on guide to Security Operations Center analysis.
     </p>
 </div>
 
-
+<script>
+(function() {
+    const h = new Date().getHours();
+    let g;
+    if (h < 12) g = 'Good Morning';
+    else if (h < 17) g = 'Good Afternoon';
+    else if (h < 21) g = 'Good Evening';
+    else g = 'Good Night';
+    document.getElementById('greeting').textContent = g;
+})();
+</script>
 {% endblock %}

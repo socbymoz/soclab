@@ -330,12 +330,7 @@ def inject_globals():
 
 @app.route('/')
 def index():
-    hour = datetime.now().hour
-    if hour < 12: greeting, icon = "Good Morning", "bi-sunrise"
-    elif hour < 17: greeting, icon = "Good Afternoon", "bi-sun"
-    elif hour < 21: greeting, icon = "Good Evening", "bi-moon-stars"
-    else: greeting, icon = "Good Night", "bi-moon"
-    return render_template('index.html', greeting=greeting, icon=icon)
+    return render_template('index.html', greeting='Good Day')
 
 @app.route('/topic/<int:topic_id>')
 def topic_page(topic_id):
