@@ -156,7 +156,7 @@ A cybersecurity enthusiast focused on:
 ## Connect
 
 - GitHub: [github.com/socbymoz](https://github.com/socbymoz)
-- LinkedIn: [linkedin.com/in/socbymoz](https://linkedin.com/in/socbymoz)
+- LinkedIn: [linkedin.com/in/muhammed-m-a1924b403](https://www.linkedin.com/in/muhammed-m-a1924b403)
 
 ---
 
