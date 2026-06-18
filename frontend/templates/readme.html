@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}About SOC Learning Hub{% endblock %}
+{% block content %}
+<div class="py-3" style="max-width:900px;margin:0 auto;">
+  <div class="text-center mb-4">
+    <div class="rounded-3 d-inline-flex p-3 mb-2" style="background:rgba(0,180,255,0.1);">
+      <i class="bi bi-shield-shaded fs-1" style="color:#00d4ff;"></i>
+    </div>
+    <h3 style="color:#e5e7eb;">SOC Learning Hub</h3>
+    <p style="color:#8098a8;font-size:0.9rem;">A cybersecurity learning platform for aspiring SOC analysts</p>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-info-circle me-2"></i>Welcome</h5>
+    <p style="color:#c0d0e0;font-size:0.85rem;">
+      Welcome to <strong>SOC Learning Hub</strong>, a cybersecurity learning platform dedicated to helping aspiring Security Operations Center (SOC) analysts develop practical blue-team skills through structured learning, hands-on labs, real-world investigations, and industry-recognized frameworks.
+    </p>
+    <p style="color:#c0d0e0;font-size:0.85rem;">
+      This platform is designed for beginners, students, cybersecurity enthusiasts, and professionals who want to build a strong foundation in security monitoring, threat detection, incident response, threat hunting, digital forensics, and SOC operations.
+    </p>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-bullseye me-2"></i>Mission</h5>
+    <p style="color:#c0d0e0;font-size:0.85rem;">
+      Our mission is to provide a free and organized roadmap for learning Security Operations Center concepts and developing practical cybersecurity skills that align with real-world SOC analyst responsibilities.
+    </p>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-book me-2"></i>What You'll Learn</h5>
+    <div class="row g-2 mt-1">
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Networking</div>
+          <div style="color:#8098a8;font-size:0.7rem;">OSI Model, TCP/IP, DNS, DHCP, HTTP/HTTPS, SSL/TLS, VPN</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Linux</div>
+          <div style="color:#8098a8;font-size:0.7rem;">File System, Permissions, Processes, Log Analysis, Bash</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Windows</div>
+          <div style="color:#8098a8;font-size:0.7rem;">Registry, Event Viewer, PowerShell, Active Directory</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Log Analysis</div>
+          <div style="color:#8098a8;font-size:0.7rem;">Syslog, EVTX, Web Logs, Correlation</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">SIEM</div>
+          <div style="color:#8098a8;font-size:0.7rem;">Wazuh, Elastic, Correlation Rules, Dashboards</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">SOC Ops</div>
+          <div style="color:#8098a8;font-size:0.7rem;">Triage, IR, Reporting, Threat Intel</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Threat Detection</div>
+          <div style="color:#8098a8;font-size:0.7rem;">IOC, IOA, Sigma Rules, Detection Engineering</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">MITRE ATT&CK</div>
+          <div style="color:#8098a8;font-size:0.7rem;">Tactics, Techniques, Procedures, Mapping</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Incident Response</div>
+          <div style="color:#8098a8;font-size:0.7rem;">Preparation, Containment, Eradication, Recovery</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Threat Hunting</div>
+          <div style="color:#8098a8;font-size:0.7rem;">IOC Hunting, Behavioral, Log-Based</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="rounded-2 p-2" style="background:rgba(0,180,255,0.06);border:1px solid rgba(0,180,255,0.08);height:100%;">
+          <div style="color:#00d4ff;font-size:0.75rem;font-weight:600;margin-bottom:4px;">Digital Forensics</div>
+          <div style="color:#8098a8;font-size:0.7rem;">Disk/Memory Analysis, Timeline, Evidence Collection</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-grid-fill me-2"></i>Practical Learning Platforms</h5>
+    <p style="color:#c0d0e0;font-size:0.85rem;">This website integrates learning paths and resources from:</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="badge" style="background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.75rem;padding:4px 10px;">TryHackMe</span>
+      <span class="badge" style="background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.75rem;padding:4px 10px;">Hack The Box Academy</span>
+      <span class="badge" style="background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.75rem;padding:4px 10px;">LetsDefend</span>
+      <span class="badge" style="background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.75rem;padding:4px 10px;">CyberDefenders</span>
+      <span class="badge" style="background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.75rem;padding:4px 10px;">Blue Team Labs Online</span>
+      <span class="badge" style="background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.75rem;padding:4px 10px;">MITRE ATT&CK</span>
+      <span class="badge" style="background:rgba(0,180,255,0.15);color:#00d4ff;font-size:0.75rem;padding:4px 10px;">SigmaHQ</span>
+    </div>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-star me-2"></i>Features</h5>
+    <div class="row g-1">
+      {% for f in ['Structured SOC Roadmap','Interactive Learning Modules','Practical Lab Recommendations','Investigation Scenarios','Detection Engineering Content','Threat Hunting Exercises','Portfolio Project Ideas','Career Preparation Resources','Progress Tracking','Cybersecurity Knowledge Base'] %}
+      <div class="col-6 col-md-4">
+        <div style="color:#c0d0e0;font-size:0.8rem;padding:3px 0;"><i class="bi bi-check-circle me-1" style="color:#00d48a;font-size:0.65rem;"></i>{{ f }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-github me-2"></i>Recommended GitHub Resources</h5>
+    <div class="d-flex flex-wrap gap-1">
+      <a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.2);color:#8098a8;font-size:0.7rem;background:rgba(0,20,40,0.4);">Blue Team Roadmap</a>
+      <a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.2);color:#8098a8;font-size:0.7rem;background:rgba(0,20,40,0.4);">Awesome SOC</a>
+      <a href="https://github.com/SigmaHQ/sigma" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.2);color:#8098a8;font-size:0.7rem;background:rgba(0,20,40,0.4);">Sigma Rules</a>
+      <a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.2);color:#8098a8;font-size:0.7rem;background:rgba(0,20,40,0.4);">Atomic Red Team</a>
+      <a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.2);color:#8098a8;font-size:0.7rem;background:rgba(0,20,40,0.4);">Sysmon Config</a>
+      <a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.2);color:#8098a8;font-size:0.7rem;background:rgba(0,20,40,0.4);">Blue Team Home Labs</a>
+      <a href="https://github.com/InQuest/awesome-yara" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.2);color:#8098a8;font-size:0.7rem;background:rgba(0,20,40,0.4);">Awesome YARA</a>
+    </div>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-person-circle me-2"></i>About the Creator</h5>
+    <p style="color:#c0d0e0;font-size:0.85rem;">
+      <strong>SOC by Moz</strong> — A cybersecurity enthusiast focused on Security Operations Center (SOC), Blue Team Operations, Threat Detection, Incident Response, Threat Hunting, Detection Engineering, and Digital Forensics.
+    </p>
+  </div>
+
+  <div class="rounded-3 p-3 mb-2" style="background:rgba(0,20,40,0.5);border:1px solid rgba(0,180,255,0.12);">
+    <h5 style="color:#00d4ff;"><i class="bi bi-link-45deg me-2"></i>Connect</h5>
+    <div class="d-flex gap-2">
+      <a href="https://github.com/socbymoz" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.3);color:#00d4ff;background:rgba(0,180,255,0.06);"><i class="bi bi-github me-1"></i>github.com/socbymoz</a>
+      <a href="https://linkedin.com/in/socbymoz" target="_blank" class="btn btn-sm" style="border-color:rgba(0,180,255,0.3);color:#00d4ff;background:rgba(0,180,255,0.06);"><i class="bi bi-linkedin me-1"></i>linkedin.com/in/socbymoz</a>
+    </div>
+  </div>
+
+  <div class="rounded-3 p-3" style="background:rgba(255,200,0,0.04);border:1px solid rgba(255,200,0,0.12);">
+    <p style="color:#ffd080;font-size:0.8rem;text-align:center;margin:0;">
+      <i class="bi bi-info-circle me-1"></i> This platform is created for educational and learning purposes only. All content is intended to promote ethical cybersecurity practices, defensive security knowledge, and responsible use of security tools and techniques.
+    </p>
+    <p style="color:#8098a8;font-size:0.85rem;text-align:center;margin:8px 0 0 0;">
+      <em>Keep Learning. Keep Investigating. Keep Defending.</em>
+    </p>
+  </div>
+</div>
+{% endblock %}

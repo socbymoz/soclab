@@ -16,6 +16,10 @@ def topic_page(topic_id):
     next_topic = get_next_module(topic_id)
     return render_template('topic.html', topic=topic, topic_idx=topic_id - 1, prev_topic=prev_topic, next_topic=next_topic)
 
+@main_bp.route('/readme')
+def readme():
+    return render_template('readme.html')
+
 @main_bp.route('/check-quiz', methods=['POST'])
 def check_quiz():
     data = request.get_json()
