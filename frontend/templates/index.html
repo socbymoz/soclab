@@ -2,85 +2,82 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <style>
-@keyframes pulse-glow { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
-@keyframes log-scroll { 0%{transform:translateY(0);} 100%{transform:translateY(-50%);} }
-@keyframes scan-line { 0%{top:-10%;} 100%{top:110%;} }
-@keyframes threat-pulse { 0%,100%{box-shadow:0 0 8px rgba(255,200,0,0.2);} 50%{box-shadow:0 0 20px rgba(255,200,0,0.4);} }
-.log-feed { animation:log-scroll 40s linear infinite; }
-.log-feed-wrap:hover .log-feed { animation-play-state:paused; }
-.scan-line { animation:scan-line 4s linear infinite; }
-.glow-text { text-shadow:0 0 10px rgba(0,180,255,0.5); }
-.dash-panel { background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);border-radius:8px;overflow:hidden; }
-.dash-panel-header { border-bottom:1px solid rgba(0,180,255,0.08);padding:6px 12px;flex-shrink:0; }
-.dash-panel-header span { color:rgba(0,200,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px; }
-.stat-value { color:#e5e7eb;font-size:0.75rem;font-weight:600; }
-.stat-label { color:#8098a8;font-size:0.6rem; }
+*{box-sizing:border-box}
+html,body{overflow:hidden;margin:0;padding:0;height:100%;width:100%}
+.main-content{max-width:none!important;padding:0!important;width:100vw!important;height:100vh!important;margin:0!important}
+.canvas,.main-content,.main-content canvas{overflow:hidden}
+@keyframes pulse-glow{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes log-scroll{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
+@keyframes scan-line{0%{top:-10%}100%{top:110%}}
+@keyframes threat-pulse{0%,100%{box-shadow:0 0 8px rgba(255,200,0,0.2)}50%{box-shadow:0 0 20px rgba(255,200,0,0.4)}}
+.log-feed{animation:log-scroll 40s linear infinite}
+.log-feed-wrap:hover .log-feed{animation-play-state:paused}
+.scan-line{animation:scan-line 4s linear infinite}
+.glow-text{text-shadow:0 0 10px rgba(0,180,255,0.5)}
+.dash-panel{background:rgba(0,12,30,0.6);border:1px solid rgba(0,180,255,0.08);border-radius:6px;overflow:hidden}
+.dash-panel-header{border-bottom:1px solid rgba(0,180,255,0.08);padding:4px 10px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.dash-panel-header span{color:rgba(0,200,255,0.5);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px}
 </style>
 
-<div class="d-flex flex-column" style="min-height:calc(100vh - 32px);gap:4px;">
+<div class="d-flex flex-column" style="height:100%;padding:6px;gap:4px;overflow:hidden;">
 
-  <!-- Top Status Bar -->
-  <div class="d-flex align-items-center justify-content-between rounded-3 px-3 py-2" style="background:rgba(0,12,30,0.7);border:1px solid rgba(0,180,255,0.1);backdrop-filter:blur(4px);flex-shrink:0;">
+  <!-- Top Status Bar — ultra compact -->
+  <div class="d-flex align-items-center justify-content-between px-3" style="flex-shrink:0;height:32px;background:rgba(0,12,30,0.7);border:1px solid rgba(0,180,255,0.1);border-radius:6px;">
     <div class="d-flex align-items-center gap-3">
-      <div style="font-weight:700;color:#00d4ff;font-size:0.85rem;letter-spacing:1px;">
+      <div style="font-weight:700;color:#00d4ff;font-size:0.8rem;letter-spacing:1px;">
         <i class="bi bi-shield-shaded me-1"></i>SOC LAB
       </div>
-      <div class="d-none d-md-flex align-items-center gap-2">
-        <span style="color:rgba(0,200,255,0.4);font-size:0.6rem;letter-spacing:1px;">
-          <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#00d48a;box-shadow:0 0 6px #00d48a;margin-right:3px;"></span>ONLINE
-        </span>
-        <span style="color:rgba(0,200,255,0.3);font-size:0.6rem;"><i class="bi bi-database me-1"></i>SIEM: <span style="color:#00d48a;">98.4%</span></span>
-        <span style="color:rgba(0,200,255,0.3);font-size:0.6rem;"><i class="bi bi-shield me-1"></i>EDR: <span style="color:#00d48a;">OPTIMAL</span></span>
+      <div class="d-flex align-items-center gap-2">
+        <span style="color:rgba(0,200,255,0.4);font-size:0.55rem;"><span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#00d48a;box-shadow:0 0 4px #00d48a;margin-right:2px;"></span>ONLINE</span>
+        <span style="color:rgba(0,200,255,0.3);font-size:0.55rem;"><i class="bi bi-database me-1"></i>SIEM: <span style="color:#00d48a;">98.4%</span></span>
+        <span style="color:rgba(0,200,255,0.3);font-size:0.55rem;"><i class="bi bi-shield me-1"></i>EDR: <span style="color:#00d48a;">OPTIMAL</span></span>
       </div>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <span class="d-none d-sm-inline" style="color:#8098a8;font-size:0.7rem;"><span id="greeting2" class="glow-text" style="color:#00d4ff;"></span></span>
-      <span style="color:rgba(255,200,0,0.7);font-size:0.6rem;letter-spacing:1px;border:1px solid rgba(255,200,0,0.2);padding:2px 8px;border-radius:4px;">
-        <span style="animation:pulse-glow 2s infinite;">⚡</span> L3
-      </span>
+      <span style="color:#8098a8;font-size:0.65rem;"><span id="greeting2" class="glow-text" style="color:#00d4ff;"></span></span>
+      <span style="color:rgba(255,200,0,0.7);font-size:0.55rem;letter-spacing:1px;border:1px solid rgba(255,200,0,0.2);padding:1px 6px;border-radius:3px;"><span style="animation:pulse-glow 2s infinite;">⚡</span> L3</span>
     </div>
   </div>
 
-  <!-- Dashboard Grid — single viewport fit -->
-  <div class="row g-1 flex-grow-1" style="min-height:0;">
-
+  <!-- Dashboard Grid — exactly 4 columns filling remaining height -->
+  <div class="row g-1" style="flex:1;min-height:0;overflow:hidden;margin:0;">
     <!-- COL 1: Active Logs -->
-    <div class="col-6 col-lg-3 d-flex flex-column">
-      <div class="dash-panel d-flex flex-column flex-grow-1">
-        <div class="dash-panel-header d-flex align-items-center justify-content-between">
+    <div class="col-3 px-1" style="height:100%;padding:0;">
+      <div class="dash-panel d-flex flex-column" style="height:100%;">
+        <div class="dash-panel-header">
           <span><i class="bi bi-activity me-1"></i>Active Logs</span>
-          <span style="color:rgba(0,200,255,0.3);font-size:0.55rem;"><span id="logCount">0</span> events</span>
+          <span style="color:rgba(0,200,255,0.3);font-size:0.5rem;"><span id="logCount">0</span></span>
         </div>
-        <div class="flex-grow-1 overflow-hidden position-relative" style="mask-image:linear-gradient(to bottom,transparent 0%,#000 3%,#000 97%,transparent 100%);">
+        <div style="flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(to bottom,transparent 0%,#000 3%,#000 97%,transparent 100%);">
           <div class="log-feed p-1" id="logFeed"></div>
           <div class="log-feed p-1" id="logFeed2"></div>
         </div>
       </div>
     </div>
 
-    <!-- COL 2: Threat Map + Feed -->
-    <div class="col-6 col-lg-3 d-flex flex-column">
-      <div class="dash-panel d-flex flex-column flex-grow-1">
+    <!-- COL 2: Threat Map + Live Feed -->
+    <div class="col-3 px-1" style="height:100%;padding:0;">
+      <div class="dash-panel d-flex flex-column" style="height:100%;">
         <div class="dash-panel-header">
           <span><i class="bi bi-globe2 me-1"></i>Global Threat Map</span>
         </div>
-        <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-center position-relative" style="min-height:80px;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;min-height:0;">
           <div class="d-flex align-items-center gap-2">
-            <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#00d48a;box-shadow:0 0 8px #00d48a;"></span>
-            <span style="color:rgba(0,200,255,0.3);font-size:0.6rem;letter-spacing:1px;">MONITORING ACTIVE</span>
+            <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#00d48a;box-shadow:0 0 6px #00d48a;"></span>
+            <span style="color:rgba(0,200,255,0.3);font-size:0.55rem;letter-spacing:1px;">MONITORING ACTIVE</span>
           </div>
-          <div class="d-flex gap-3 mt-1">
+          <div class="d-flex gap-2 mt-1">
             <span style="color:rgba(0,200,255,0.2);font-size:0.5rem;"><i class="bi bi-dot" style="color:#00d4ff;"></i> 14 nodes</span>
             <span style="color:rgba(0,200,255,0.2);font-size:0.5rem;"><i class="bi bi-dot" style="color:#ff6060;"></i> 3 threats</span>
             <span style="color:rgba(0,200,255,0.2);font-size:0.5rem;"><i class="bi bi-dot" style="color:#ffd700;"></i> 8 alerts</span>
           </div>
           <div class="scan-line" style="position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,180,255,0.12),transparent);"></div>
         </div>
-        <div class="flex-shrink-0 px-3 py-1" style="border-top:1px solid rgba(0,180,255,0.08);">
-          <div class="d-flex align-items-center justify-content-between mb-1">
-            <span style="color:rgba(0,200,255,0.4);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-broadcast me-1"></i>Live Feed</span>
+        <div style="flex-shrink:0;border-top:1px solid rgba(0,180,255,0.08);padding:2px 8px;">
+          <div class="d-flex align-items-center justify-content-between">
+            <span style="color:rgba(0,200,255,0.4);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-broadcast me-1"></i>Live Feed</span>
           </div>
-          <div class="log-feed-wrap" style="max-height:90px;overflow:hidden;mask-image:linear-gradient(to bottom,transparent 0%,#000 8%,#000 92%,transparent 100%);">
+          <div class="log-feed-wrap" style="height:60px;overflow:hidden;mask-image:linear-gradient(to bottom,transparent 0%,#000 10%,#000 90%,transparent 100%);">
             <div class="log-feed" id="centerFeed"></div>
             <div class="log-feed" id="centerFeed2"></div>
           </div>
@@ -89,179 +86,139 @@
     </div>
 
     <!-- COL 3: Threat Level + Attack Sources -->
-    <div class="col-6 col-lg-3 d-flex flex-column gap-1">
-      <!-- Threat Level -->
-      <div class="dash-panel p-2 flex-shrink-0" style="animation:threat-pulse 3s infinite;">
-        <div class="d-flex align-items-center justify-content-between mb-1">
-          <span style="color:rgba(0,200,255,0.5);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-shield-exclamation me-1"></i>Threat Level</span>
-          <span id="threatLevelBadge" style="color:#ffd700;font-size:0.7rem;font-weight:600;">ELEVATED</span>
+    <div class="col-3 px-1" style="height:100%;padding:0;">
+      <div class="d-flex flex-column" style="height:100%;gap:4px;">
+        <div class="dash-panel" style="flex:2;padding:6px 8px;animation:threat-pulse 3s infinite;">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span style="color:rgba(0,200,255,0.5);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;"><i class="bi bi-shield-exclamation me-1"></i>Threat Level</span>
+            <span id="threatLevelBadge" style="color:#ffd700;font-size:0.65rem;font-weight:600;">ELEVATED</span>
+          </div>
+          <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);overflow:hidden;">
+            <div id="threatBar" style="height:100%;width:62%;border-radius:2px;background:linear-gradient(90deg,#ffd700,#ff8800);transition:width .5s;"></div>
+          </div>
+          <div class="d-flex justify-content-between mt-1">
+            <span style="color:rgba(0,180,255,0.2);font-size:0.4rem;">LOW</span>
+            <span style="color:rgba(255,200,0,0.3);font-size:0.4rem;">MOD</span>
+            <span style="color:rgba(255,60,60,0.3);font-size:0.4rem;">HIGH</span>
+            <span style="color:rgba(255,60,60,0.3);font-size:0.4rem;">CRIT</span>
+          </div>
         </div>
-        <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);overflow:hidden;">
-          <div id="threatBar" style="height:100%;width:62%;border-radius:2px;background:linear-gradient(90deg,#ffd700,#ff8800);transition:width .5s;"></div>
-        </div>
-        <div class="d-flex justify-content-between mt-1">
-          <span style="color:rgba(0,180,255,0.2);font-size:0.45rem;">LOW</span>
-          <span style="color:rgba(255,200,0,0.3);font-size:0.45rem;">MOD</span>
-          <span style="color:rgba(255,60,60,0.3);font-size:0.45rem;">HIGH</span>
-          <span style="color:rgba(255,60,60,0.3);font-size:0.45rem;">CRIT</span>
-        </div>
-      </div>
-      <!-- Attack Sources -->
-      <div class="dash-panel p-2 flex-grow-1">
-        <div style="color:rgba(0,200,255,0.5);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;"><i class="bi bi-globe me-1"></i>Top Attack Sources</div>
-        <div class="d-flex flex-column gap-1">
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">🇺🇸 US</span><span style="color:#e5e7eb;font-size:0.6rem;">34%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:34%;border-radius:1px;background:#00d4ff;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">🇷🇺 RU</span><span style="color:#e5e7eb;font-size:0.6rem;">22%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:22%;border-radius:1px;background:#ff6060;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">🇨🇳 CN</span><span style="color:#e5e7eb;font-size:0.6rem;">18%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:18%;border-radius:1px;background:#ffd700;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">🇰🇵 KP</span><span style="color:#e5e7eb;font-size:0.6rem;">11%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:11%;border-radius:1px;background:#ff6060;"></div></div></div>
-          <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">🌍 Other</span><span style="color:#e5e7eb;font-size:0.6rem;">15%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:15%;border-radius:1px;background:rgba(0,180,255,0.3);"></div></div></div>
+        <div class="dash-panel" style="flex:3;padding:6px 8px;">
+          <div style="color:rgba(0,200,255,0.5);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;"><i class="bi bi-globe me-1"></i>Top Attack Sources</div>
+          <div class="d-flex flex-column gap-1">
+            <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">🇺🇸 US</span><span style="color:#e5e7eb;font-size:0.55rem;">34%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:34%;border-radius:1px;background:#00d4ff;"></div></div></div>
+            <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">🇷🇺 RU</span><span style="color:#e5e7eb;font-size:0.55rem;">22%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:22%;border-radius:1px;background:#ff6060;"></div></div></div>
+            <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">🇨🇳 CN</span><span style="color:#e5e7eb;font-size:0.55rem;">18%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:18%;border-radius:1px;background:#ffd700;"></div></div></div>
+            <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">🇰🇵 KP</span><span style="color:#e5e7eb;font-size:0.55rem;">11%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:11%;border-radius:1px;background:#ff6060;"></div></div></div>
+            <div><div class="d-flex justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">🌍 Other</span><span style="color:#e5e7eb;font-size:0.55rem;">15%</span></div><div style="height:2px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:15%;border-radius:1px;background:rgba(0,180,255,0.3);"></div></div></div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- COL 4: Events + System Status -->
-    <div class="col-6 col-lg-3 d-flex flex-column gap-1">
-      <!-- Events Over Time -->
-      <div class="dash-panel p-2 flex-shrink-0">
-        <div style="color:rgba(0,200,255,0.5);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;"><i class="bi bi-graph-up me-1"></i>Events (24h)</div>
-        <div class="d-flex align-items-end justify-content-between gap-1" style="height:32px;">
-          {% set bars = [35,52,28,68,44,72,55,38,82,61,45,90,71,48,63,77,39,56,84,50,66,43,74,58] %}
-          {% for b in bars %}
-          <div style="flex:1;height:{{ b }}%;border-radius:1px 1px 0 0;background:{% if b > 75 %}rgba(255,60,60,0.6){% elif b > 50 %}rgba(0,200,255,0.5){% else %}rgba(0,200,255,0.25){% endif %};transition:height .3s;" title="{{ b }}"></div>
-          {% endfor %}
+    <div class="col-3 px-1" style="height:100%;padding:0;">
+      <div class="d-flex flex-column" style="height:100%;gap:4px;">
+        <div class="dash-panel" style="flex:2;padding:6px 8px;">
+          <div style="color:rgba(0,200,255,0.5);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;"><i class="bi bi-graph-up me-1"></i>Events (24h)</div>
+          <div class="d-flex align-items-end justify-content-between gap-1" style="height:28px;">
+            {% set bars = [35,52,28,68,44,72,55,38,82,61,45,90,71,48,63,77,39,56,84,50,66,43,74,58] %}
+            {% for b in bars %}
+            <div style="flex:1;height:{{ b }}%;border-radius:1px 1px 0 0;background:{% if b > 75 %}rgba(255,60,60,0.6){% elif b > 50 %}rgba(0,200,255,0.5){% else %}rgba(0,200,255,0.25){% endif %};transition:height .3s;" title="{{ b }}"></div>
+            {% endfor %}
+          </div>
+          <div class="d-flex justify-content-between mt-1">
+            <span style="color:rgba(0,180,255,0.2);font-size:0.4rem;">00</span>
+            <span style="color:rgba(0,180,255,0.2);font-size:0.4rem;">06</span>
+            <span style="color:rgba(0,180,255,0.2);font-size:0.4rem;">12</span>
+            <span style="color:rgba(0,180,255,0.2);font-size:0.4rem;">18</span>
+            <span style="color:rgba(0,180,255,0.2);font-size:0.4rem;">23</span>
+          </div>
         </div>
-        <div class="d-flex justify-content-between mt-1">
-          <span style="color:rgba(0,180,255,0.2);font-size:0.45rem;">00</span>
-          <span style="color:rgba(0,180,255,0.2);font-size:0.45rem;">06</span>
-          <span style="color:rgba(0,180,255,0.2);font-size:0.45rem;">12</span>
-          <span style="color:rgba(0,180,255,0.2);font-size:0.45rem;">18</span>
-          <span style="color:rgba(0,180,255,0.2);font-size:0.45rem;">23</span>
-        </div>
-      </div>
-      <!-- System Status -->
-      <div class="dash-panel p-2 flex-grow-1">
-        <div style="color:rgba(0,200,255,0.5);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;"><i class="bi bi-shield-check me-1"></i>System Status</div>
-        <div class="d-flex flex-column gap-1">
-          <div>
-            <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">SIEM</span><span style="color:#00d48a;font-size:0.55rem;">98%</span></div>
-            <div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:98%;border-radius:1px;background:#00d48a;"></div></div>
-          </div>
-          <div>
-            <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">EDR</span><span style="color:#00d48a;font-size:0.55rem;">92%</span></div>
-            <div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:92%;border-radius:1px;background:#00d48a;"></div></div>
-          </div>
-          <div>
-            <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">WAF</span><span style="color:#00d48a;font-size:0.55rem;">87%</span></div>
-            <div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:87%;border-radius:1px;background:#00d48a;"></div></div>
-          </div>
-          <div>
-            <div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.6rem;">IDS/IPS</span><span style="color:#ffd700;font-size:0.55rem;">76%</span></div>
-            <div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:76%;border-radius:1px;background:#ffd700;"></div></div>
+        <div class="dash-panel" style="flex:3;padding:6px 8px;">
+          <div style="color:rgba(0,200,255,0.5);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;"><i class="bi bi-shield-check me-1"></i>System Status</div>
+          <div class="d-flex flex-column gap-1">
+            <div><div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">SIEM</span><span style="color:#00d48a;font-size:0.5rem;">98%</span></div><div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:98%;border-radius:1px;background:#00d48a;"></div></div></div>
+            <div><div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">EDR</span><span style="color:#00d48a;font-size:0.5rem;">92%</span></div><div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:92%;border-radius:1px;background:#00d48a;"></div></div></div>
+            <div><div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">WAF</span><span style="color:#00d48a;font-size:0.5rem;">87%</span></div><div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:87%;border-radius:1px;background:#00d48a;"></div></div></div>
+            <div><div class="d-flex align-items-center justify-content-between"><span style="color:#8098a8;font-size:0.55rem;">IDS/IPS</span><span style="color:#ffd700;font-size:0.5rem;">76%</span></div><div style="height:3px;border-radius:1px;background:rgba(255,255,255,0.04);"><div style="height:100%;width:76%;border-radius:1px;background:#ffd700;"></div></div></div>
           </div>
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-(function() {
-  const h = new Date().getHours();
-  let g;
-  if (h < 12) g = 'Good Morning';
-  else if (h < 17) g = 'Good Afternoon';
-  else if (h < 21) g = 'Good Evening';
-  else g = 'Good Night';
-  document.getElementById('greeting2').textContent = g;
+(function(){
+  const h=new Date().getHours();
+  const g=h<12?'Good Morning':h<17?'Good Afternoon':h<21?'Good Evening':'Good Night';
+  document.getElementById('greeting2').textContent=g;
 
-  const logTypes = [
-    { icon:'bi-shield-fill-check', txt:'SQLi blocked from 103.235.46.x', severity:'crit', color:'#ff6060' },
-    { icon:'bi-exclamation-triangle-fill', txt:'Port scan from 45.33.22.12 (284 ports)', severity:'warn', color:'#ffd700' },
-    { icon:'bi-bug-fill', txt:'Trojan detected: win32.exe', severity:'crit', color:'#ff6060' },
-    { icon:'bi-lock-fill', txt:'SSH brute force from 78.146.32.x', severity:'warn', color:'#ff8800' },
-    { icon:'bi-hdd-network', txt:'DNS tunneling via subdomain queries', severity:'warn', color:'#ffd700' },
-    { icon:'bi-envelope-exclamation-fill', txt:'Phishing campaign targeting HR (12 emails)', severity:'alert', color:'#00d4ff' },
-    { icon:'bi-code-slash', txt:'XSS in /search endpoint', severity:'warn', color:'#ffd700' },
-    { icon:'bi-person-fill-lock', txt:'Credential stuffing on /login (2,341 attempts)', severity:'crit', color:'#ff6060' },
-    { icon:'bi-shield', txt:'Suspicious outbound to 185.220.101.x', severity:'alert', color:'#00d4ff' },
-    { icon:'bi-globe', txt:'C2 beaconing from 10.0.12.45', severity:'crit', color:'#ff6060' },
-    { icon:'bi-hdd-stack', txt:'Unauthorized SMB access on DB server', severity:'warn', color:'#ffd700' },
-    { icon:'bi-shield-fill', txt:'WAF blocked SQLi (UNION SELECT)', severity:'alert', color:'#00d4ff' },
-    { icon:'bi-diagram-3', txt:'Lateral movement: ADMIN-03 to DC-01 (PsExec)', severity:'crit', color:'#ff6060' },
-    { icon:'bi-file-earmark-binary', txt:'Malicious macro in invoice.doc (Dridex)', severity:'warn', color:'#ffd700' },
-    { icon:'bi-shield-exclamation', txt:'Ransomware encryption on WS-045', severity:'crit', color:'#ff6060' },
-    { icon:'bi-activity', txt:'Abnormal outbound: 2.3GB to external IP', severity:'warn', color:'#ff8800' },
-    { icon:'bi-key-fill', txt:'Kerberoasting on DC-01', severity:'crit', color:'#ff6060' },
-    { icon:'bi-wifi', txt:'SSH brute force — 284 attempts', severity:'warn', color:'#ff8800' },
-    { icon:'bi-box-arrow-up', txt:'Data exfiltration to cloud (S3)', severity:'crit', color:'#ff6060' },
-    { icon:'bi-shield-check', txt:'EDR quarantined malicious powershell.exe', severity:'alert', color:'#00d4ff' },
+  const logTypes=[
+    {icon:'bi-shield-fill-check',txt:'SQLi blocked from 103.235.46.x',severity:'crit',color:'#ff6060'},
+    {icon:'bi-exclamation-triangle-fill',txt:'Port scan from 45.33.22.12 (284 ports)',severity:'warn',color:'#ffd700'},
+    {icon:'bi-bug-fill',txt:'Trojan detected: win32.exe',severity:'crit',color:'#ff6060'},
+    {icon:'bi-lock-fill',txt:'SSH brute force from 78.146.32.x',severity:'warn',color:'#ff8800'},
+    {icon:'bi-hdd-network',txt:'DNS tunneling via subdomain queries',severity:'warn',color:'#ffd700'},
+    {icon:'bi-envelope-exclamation-fill',txt:'Phishing campaign targeting HR (12)',severity:'alert',color:'#00d4ff'},
+    {icon:'bi-code-slash',txt:'XSS in /search endpoint',severity:'warn',color:'#ffd700'},
+    {icon:'bi-person-fill-lock',txt:'Credential stuffing (2,341 attempts)',severity:'crit',color:'#ff6060'},
+    {icon:'bi-shield',txt:'Suspicious outbound to 185.220.101.x',severity:'alert',color:'#00d4ff'},
+    {icon:'bi-globe',txt:'C2 beaconing from 10.0.12.45',severity:'crit',color:'#ff6060'},
+    {icon:'bi-hdd-stack',txt:'Unauthorized SMB access on DB server',severity:'warn',color:'#ffd700'},
+    {icon:'bi-shield-fill',txt:'WAF blocked SQLi (UNION SELECT)',severity:'alert',color:'#00d4ff'},
+    {icon:'bi-diagram-3',txt:'Lateral movement: ADMIN-03 to DC-01',severity:'crit',color:'#ff6060'},
+    {icon:'bi-file-earmark-binary',txt:'Malicious macro in invoice.doc (Dridex)',severity:'warn',color:'#ffd700'},
+    {icon:'bi-shield-exclamation',txt:'Ransomware encryption on WS-045',severity:'crit',color:'#ff6060'},
+    {icon:'bi-activity',txt:'Abnormal outbound: 2.3GB',severity:'warn',color:'#ff8800'},
+    {icon:'bi-key-fill',txt:'Kerberoasting on DC-01',severity:'crit',color:'#ff6060'},
+    {icon:'bi-box-arrow-up',txt:'Data exfiltration to S3',severity:'crit',color:'#ff6060'},
+    {icon:'bi-shield-check',txt:'EDR quarantined malicious process',severity:'alert',color:'#00d4ff'},
   ];
 
-  function pad2(n) { return n.toString().padStart(2, '0'); }
-  function timeStr() {
-    const d = new Date();
-    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
-  }
+  function pad2(n){return n.toString().padStart(2,'0')}
+  function ts(){const d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds())}
 
-  function makeLogEntry(container) {
-    const e = logTypes[Math.floor(Math.random() * logTypes.length)];
-    const sevColors = { crit:'#ff6060', warn:'#ffd700', alert:'#00d4ff' };
-    const c = sevColors[e.severity] || '#8098a8';
-    const div = document.createElement('div');
-    div.style.cssText = 'padding:2px 4px;margin-bottom:1px;font-size:0.55rem;border-left:2px solid ' + c + ';padding-left:4px;border-bottom:1px solid rgba(0,180,255,0.04);';
-    div.innerHTML = '<span style="color:rgba(0,180,255,0.3);">' + timeStr() + '</span> <i class="' + e.icon + '" style="color:' + e.color + ';font-size:0.45rem;"></i> <span style="color:#8098a8;">' + e.txt + '</span>';
+  function mkLog(container){
+    const e=logTypes[Math.floor(Math.random()*logTypes.length)];
+    const sc={crit:'#ff6060',warn:'#ffd700',alert:'#00d4ff'};
+    const c=sc[e.severity]||'#8098a8';
+    const div=document.createElement('div');
+    div.style.cssText='padding:1px 4px;margin-bottom:1px;font-size:0.5rem;border-left:2px solid '+c+';padding-left:4px;border-bottom:1px solid rgba(0,180,255,0.04);';
+    div.innerHTML='<span style="color:rgba(0,180,255,0.3);">'+ts()+'</span> <i class="'+e.icon+'" style="color:'+e.color+';font-size:0.4rem;"></i> <span style="color:#8098a8;">'+e.txt+'</span>';
     container.appendChild(div);
-    if (container.children.length > 50) container.removeChild(container.firstChild);
+    if(container.children.length>50)container.removeChild(container.firstChild);
   }
 
-  // LEFT: Active Logs
-  const feed1 = document.getElementById('logFeed');
-  const feed2 = document.getElementById('logFeed2');
-  const logCount = document.getElementById('logCount');
-  let entryCount = 0;
-  function addLeftLog(container) {
-    makeLogEntry(container);
-    entryCount++;
-    logCount.textContent = entryCount;
-  }
-  for (let i = 0; i < 25; i++) { addLeftLog(feed1); addLeftLog(feed2); }
-  setInterval(() => addLeftLog(feed1), 2000);
-  setInterval(() => addLeftLog(feed2), 2000);
+  const f1=document.getElementById('logFeed'),f2=document.getElementById('logFeed2'),lc=document.getElementById('logCount');
+  let ec=0;
+  function al(c){mkLog(c);ec++;lc.textContent=ec}
+  for(let i=0;i<20;i++){al(f1);al(f2)}
+  setInterval(()=>al(f1),2000);setInterval(()=>al(f2),2000);
 
-  // CENTER: Live Feed
-  const cFeed = document.getElementById('centerFeed');
-  const cFeed2 = document.getElementById('centerFeed2');
-  function addCenterLog(container) {
-    const e = logTypes[Math.floor(Math.random() * logTypes.length)];
-    const sevColors = { crit:'#ff6060', warn:'#ffd700', alert:'#00d4ff' };
-    const c = sevColors[e.severity] || '#8098a8';
-    const div = document.createElement('div');
-    div.style.cssText = 'padding:1px 4px;font-size:0.5rem;border-left:2px solid ' + c + ';padding-left:3px;margin-bottom:1px;';
-    div.innerHTML = '<span style="color:rgba(0,180,255,0.25);">' + timeStr() + '</span> <span style="color:#8098a8;">' + e.txt + '</span>';
-    container.appendChild(div);
-    if (container.children.length > 30) container.removeChild(container.firstChild);
+  const cf=document.getElementById('centerFeed'),cf2=document.getElementById('centerFeed2');
+  function ac(c){
+    const e=logTypes[Math.floor(Math.random()*logTypes.length)];
+    const sc={crit:'#ff6060',warn:'#ffd700',alert:'#00d4ff'};
+    const cc=sc[e.severity]||'#8098a8';
+    const div=document.createElement('div');
+    div.style.cssText='padding:1px 4px;font-size:0.45rem;border-left:2px solid '+cc+';padding-left:3px;margin-bottom:1px;';
+    div.innerHTML='<span style="color:rgba(0,180,255,0.25);">'+ts()+'</span> <span style="color:#8098a8;">'+e.txt+'</span>';
+    c.appendChild(div);
+    if(c.children.length>25)c.removeChild(c.firstChild);
   }
-  for (let i = 0; i < 15; i++) { addCenterLog(cFeed); addCenterLog(cFeed2); }
-  setInterval(() => addCenterLog(cFeed), 3500);
-  setInterval(() => addCenterLog(cFeed2), 3500);
+  for(let i=0;i<10;i++){ac(cf);ac(cf2)}
+  setInterval(()=>ac(cf),3500);setInterval(()=>ac(cf2),3500);
 
-  // Threat level oscillation
-  const threatBar = document.getElementById('threatBar');
-  const threatBadge = document.getElementById('threatLevelBadge');
-  const levels = [
-    { w:62, l:'ELEVATED', c:'#ffd700' }, { w:45, l:'GUARDED', c:'#ffd700' },
-    { w:78, l:'HIGH', c:'#ff8800' }, { w:55, l:'ELEVATED', c:'#ffd700' },
-    { w:35, l:'LOW', c:'#00d48a' }, { w:70, l:'HIGH', c:'#ff8800' },
+  const tb=document.getElementById('threatBar'),tbg=document.getElementById('threatLevelBadge');
+  const lvls=[
+    {w:62,l:'ELEVATED',c:'#ffd700'},{w:45,l:'GUARDED',c:'#ffd700'},
+    {w:78,l:'HIGH',c:'#ff8800'},{w:55,l:'ELEVATED',c:'#ffd700'},
+    {w:35,l:'LOW',c:'#00d48a'},{w:70,l:'HIGH',c:'#ff8800'},
   ];
-  let li = 0;
-  setInterval(() => {
-    li = (li + 1) % levels.length;
-    threatBar.style.width = levels[li].w + '%';
-    threatBar.style.background = 'linear-gradient(90deg, ' + levels[li].c + ', ' + (li > 2 ? '#ff4400' : '#ffd700') + ')';
-    threatBadge.textContent = levels[li].l;
-    threatBadge.style.color = levels[li].c;
-  }, 5000);
+  let li=0;
+  setInterval(()=>{li=(li+1)%lvls.length;tb.style.width=lvls[li].w+'%';tb.style.background='linear-gradient(90deg,'+lvls[li].c+','+(li>2?'#ff4400':'#ffd700')+')';tbg.textContent=lvls[li].l;tbg.style.color=lvls[li].c;},5000);
 })();
 </script>
 {% endblock %}
