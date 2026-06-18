@@ -1,84 +1,644 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 2: SOC Team Internals</h6>
 
-<p style="color:#c0d0e0;">This module covers the day-to-day workflows of a SOC L1 analyst: how to triage alerts, write reports, use workbooks, measure SOC performance, and respond to phishing simulations.</p>
+<h4 class="text-primary mb-4"><i class="bi bi-terminal me-2"></i>Module 2: Linux Fundamentals</h4>
 
-<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+<!-- SECTION OVERVIEW -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-eye me-2"></i>Section Overview</h5>
+<p style="color:#c0d0e0;">Linux powers the majority of cloud infrastructure, web servers, and security tools in modern SOC environments. A SOC analyst must be proficient with Linux command-line operations, file system navigation, process management, log analysis, and security tooling. This module covers essential Linux skills from a blue-team perspective — focusing on forensic acquisition, log analysis, and system hardening rather than general Linux administration.</p>
+<p style="color:#c0d0e0;"><strong>Real-World Use Cases:</strong> Analyzing Apache/nginx access logs for web attacks, investigating compromised Linux servers, parsing auth.log for brute force attempts, using rsyslog for centralized logging, and deploying security tools like Osquery and Auditd on Linux endpoints.</p>
+<p style="color:#c0d0e0;"><strong>Skills Gained:</strong> Linux command-line proficiency, log file analysis (syslog, auth.log, secure), forensic acquisition of Linux systems, file permission analysis, process monitoring, and automating detection with bash/Python scripting.</p>
+<p style="color:#c0d0e0;"><strong>Prerequisites:</strong> Basic knowledge of what an operating system is; no prior Linux experience required.</p>
+<p style="color:#c0d0e0;"><strong>Learning Objectives:</strong> (1) Navigate the Linux filesystem and execute core administration commands. (2) Parse and analyze Linux system logs for security events. (3) Investigate compromised Linux systems using forensic methodology. (4) Deploy and configure Linux-based security monitoring tools.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 SOC L1 Alert Triage</p>
-<p style="color:#c0d0e0;">Triage is the process of prioritizing and classifying alerts. Every alert falls into one of these categories:</p>
+<!-- DETAILED NOTES -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-journal-text me-2"></i>Detailed Notes</h5>
+
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 1: Linux File System &amp; Permission Model</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Linux uses a hierarchical file system rooted at <code>/</code>. Key directories: <code>/etc</code> (configuration files), <code>/var</code> (variable data — logs in /var/log), <code>/home</code> (user home directories), <code>/tmp</code> (temporary files — world-writable), <code>/proc</code> (process info as pseudo-filesystem), <code>/dev</code> (device files). File permissions: r/w/x for owner, group, others. Use <code>ls -la</code> to view. <code>chmod</code> changes permissions, <code>chown</code> changes ownership.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> In security investigations, the <code>/proc</code> filesystem is invaluable. <code>/proc/[pid]/cmdline</code> shows the exact command with arguments. <code>/proc/[pid]/fd/</code> lists open file descriptors — useful for finding open network connections or open log files. <code>/proc/[pid]/maps</code> shows memory mappings — detecting injected libraries. <code>lsof</code> lists open files, <code>lsof -i</code> shows network connections. The <code>/tmp</code> directory is a common malware staging ground — attackers drop files there because it's world-writable. Check <code>/tmp</code>, <code>/dev/shm</code>, and <code>/var/tmp</code> for suspicious files during investigations.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Linux Access Control Lists (ACLs) extend basic permissions — use <code>getfacl</code> and <code>setfacl</code> for granular control. Extended attributes (<code>xattr</code>) can store metadata like SELinux contexts. <code>ls -Z</code> shows SELinux context. Immutable files (chattr +i) prevent modification even by root — attackers use this to protect backdoors. Filesystem forensic artifacts: <code>.bash_history</code> (user commands), <code>.ssh/authorized_keys</code> (persistence via SSH keys), <code>.viminfo</code> (recently edited files), <code>.lesshst</code> (file read history). Logs are stored in <code>/var/log</code> — key files: <code>auth.log</code> (authentication attempts), <code>syslog</code> (general system events), <code>kern.log</code> (kernel messages), <code>dmesg</code> (kernel ring buffer).</p>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Forensic Acquisition:</strong> When investigating a live Linux system, follow order of volatility: <code>cat /proc/modules</code> (kernel modules) → <code>ps auxf</code> (process tree) → <code>netstat -tunap</code> (connections) → <code>lsof -i</code> (open files) → <code>last -F -w</code> (login history) → <code>cat .bash_history</code> → <code>find / -mmin -60 -type f</code> (files modified in last hour) → <code>cp /var/log/auth.log /evidence/</code> (log backup). Capture RAM with <code>avml</code> (Acquire Volatile Memory Linux) before pulling the plug.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 2: Process Management &amp; Persistence Mechanisms</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Linux processes: each has a PID (Process ID), PPID (Parent PID). Use <code>ps aux</code> to list all processes, <code>top</code> or <code>htop</code> for real-time monitoring. <code>kill -9 [PID]</code> terminates a process. <code>systemctl</code> manages services (e.g., <code>systemctl status sshd</code>). <code>cron</code> schedules tasks via crontab (<code>crontab -l</code> lists user cron jobs).</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> SOC analysts use <code>ps aux --forest</code> to see parent-child relationships — suspicious if a web server (nginx) spawns a reverse shell. <code>lsof -p [PID]</code> shows files opened by a specific process. <code>strace -p [PID]</code> traces system calls — useful for analyzing malware behavior. <code>/proc/[PID]/exe</code> symlink points to the executable binary, <code>/proc/[PID]/cwd</code> to the working directory. Check for "hidden processes" using <code>ps -ef | grep -v grep</code> or compare <code>/proc</code> listing with <code>ps</code> output — differences indicate rootkit hiding.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Linux persistence mechanisms that SOC analysts must know:</p>
 <ul style="color:#c0d0e0;">
-  <li><b>True Positive (TP):</b> Real malicious activity correctly detected</li>
-  <li><b>False Positive (FP):</b> Benign activity incorrectly flagged as malicious</li>
-  <li><b>Benign Positive (BP):</b> Suspicious-looking but expected behavior (e.g., admin running scans)</li>
-  <li><b>True Negative (TN):</b> Benign activity correctly not flagged (not an alert — ideal state)</li>
-  <li><b>False Negative (FN):</b> Real attack that wasn't detected (worst case — missed detection)</li>
+<li><strong>cron jobs:</strong> Check <code>/etc/crontab</code>, <code>/var/spool/cron/crontabs/</code>, <code>/etc/cron.d/</code>, and user crontabs. Attackers add reverse shell cron entries.</li>
+<li><strong>systemd services:</strong> Check <code>/etc/systemd/system/</code> and <code>/usr/lib/systemd/system/</code> for malicious service files. <code>systemctl list-unit-files --type=service --state=enabled</code></li>
+<li><strong>SSH authorized_keys:</strong> Check <code>~/.ssh/authorized_keys</code> for unknown public keys. Also check <code>/root/.ssh/</code> and <code>/etc/ssh/authorized_keys/</code></li>
+<li><strong>LD_PRELOAD:</strong> Malicious shared library loaded before others. Check <code>/etc/ld.so.preload</code> and <code>LD_PRELOAD</code> env var.</li>
+<li><strong>Kernel modules:</strong> <code>lsmod</code> lists loaded modules. Rootkits like <code>kmod</code> hide processes and files. Check <code>/etc/modules</code> and <code>/lib/modules/</code></li>
+<li><strong>bash startup scripts:</strong> Check <code>~/.bashrc</code>, <code>~/.bash_profile</code>, <code>~/.profile</code>, <code>/etc/bash.bashrc</code> for malicious aliases or commands.</li>
+<li><strong>Web shell persistence:</strong> PHP files in <code>/var/www/html</code> with webshell code. Use <code>grep -r "eval\|base64_decode\|system\|exec" /var/www/html/</code></li>
 </ul>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Triage Playbook Example:</b><br>
-<code>Alert: "Suspicious PowerShell -EncodedCommand from OUTLOOK.EXE"</code><br>
-Step 1: Is the source IP internal or external? → Internal (10.0.1.50)<br>
-Step 2: Check process tree: OUTLOOK.EXE → cmd.exe → powershell.exe → curl to 45.33.32.156<br>
-Step 3: Check VirusTotal hash of the PowerShell script → 12/70 detection as "Trojan.PS1.AgentTesla"<br>
-Step 4: Check user report → "I clicked a link in an invoice email"<br>
-Step 5: Classification: <b>TRUE POSITIVE</b> — phishing with AgentTesla info-stealer<br>
-Step 6: Action: Isolate endpoint, reset user credentials, escalate to L2
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Detection Script:</strong> Use a bash one-liner to find suspicious cron entries: <code>for user in $(cut -f1 -d: /etc/passwd); do crontab -u $user -l 2>/dev/null | grep -i "curl\|wget\|nc\|bash -i\|/dev/tcp" && echo "SUSPICIOUS: $user"; done</code>
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 SOC L1 Alert Reporting</p>
-<p style="color:#c0d0e0;">Every investigation must be documented in a structured report. A good report answers: What happened? When? Where? Who was affected? What was done?</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Report Template:</b><br>
-<code>Incident ID: INC-2026-0421<br>
-Date/Time: 2026-04-21 14:32 UTC<br>
-Severity: HIGH<br>
-Alert Type: Malware Infection (AgentTesla)<br>
-Source IP: 10.0.1.50 (FINANCE-PC-23)<br>
-External IP: 45.33.32.156:443 (C2 server, Russia)<br>
-IOCs: SHA256=a3f5b..., Domain=evil-update.com, IP=45.33.32.156<br>
-User: j.smith@company.com<br>
-Actions: Isolated endpoint, reset O365 password, blocked C2 IP at firewall<br>
-Escalation: L2 — pending memory forensics and full reimage<br>
-Status: Contained — L2 investigating
-</code>
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 3: Linux Logging &amp; Audit Systems</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Linux logs are stored in <code>/var/log/</code>. Core log files: <code>auth.log</code> (Debian/Ubuntu) or <code>secure</code> (RHEL/CentOS) — SSH logins, sudo commands, authentication failures. <code>syslog</code> — system events, service messages. <code>kern.log</code> — kernel messages. Use <code>tail -f /var/log/auth.log</code> to monitor in real-time. <code>journalctl</code> queries systemd's journal — <code>journalctl -u sshd</code> shows SSH service logs.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> SOC analysts parse auth.log for brute force attacks: <code>grep "Failed password" /var/log/auth.log | awk '{print $11}' | sort | uniq -c | sort -nr</code> shows IPs with most failed attempts. <code>grep "Accepted" /var/log/auth.log | awk '{print $11}' | sort | uniq -c | sort -nr</code> shows successful logins by IP — check for unusual source IPs. <code>sudo</code> commands are logged: <code>grep "sudo:" /var/log/auth.log</code> shows who ran sudo and what command. <code>journalctl _COMM=sshd --since "1 hour ago"</code> filters SSH logs by time.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Linux Audit Daemon (auditd) provides detailed system call monitoring. Install: <code>apt-get install auditd</code>. Configure rules in <code>/etc/audit/rules.d/audit.rules</code>. Key rules for SOC:</p>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+# Monitor file access changes to critical files
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+-w /var/log -p wa -k log_files
+-w /etc/sudoers -p wa -k sudoers
+
+# Monitor privilege escalation
+-a always,exit -S execve -F uid=0 -k root_command
+
+# Monitor network connections
+-a always,exit -S connect -S bind -S accept -k network
+
+# Monitor process creation
+-a always,exit -S clone -S fork -S vfork -k process_creation
+
+# Monitor suspicious directories
+-w /tmp -p wxa -k tmp_watch
+-w /dev/shm -p wxa -k shm_watch
+</pre>
+<p style="color:#c0d0e0;">Audit logs go to <code>/var/log/audit/audit.log</code>. Use <code>ausearch -k identity</code> to search for identity-related events. <code>aureport -m</code> generates a summary of all events. Integrate auditd logs with SIEM via rsyslog forwarding.</p>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Enterprise Example:</strong> A SOC detected a compromised Linux web server. The attacker gained access via an unpatched WordPress plugin (CVE-2023-1234). auditd logs showed: <code>execve /bin/bash</code> from www-data user, <code>/tmp/</code> file creation with base64-decoded script, <code>connect</code> to external IP 51.15.43.142:4444 (reverse shell). The analyst reconstructed the full attack timeline using ausearch: <code>ausearch -i -ts 10/15/2025 13:00 -te 10/15/2025 15:00 | less</code>.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 SOC Workbooks and Lookups</p>
-<p style="color:#c0d0e0;">Workbooks track the lifecycle of an incident from detection to closure. Lookups are reference data that enrich alerts (e.g., asset criticality, user department, external threat intel).</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Lookup Table Example — Asset Criticality:</b><br>
-<code>hostname        | ip_address    | criticality | department<br>
-FINANCE-PC-23    | 10.0.1.50     | HIGH        | Finance<br>
-DC-01            | 10.0.0.10     | CRITICAL    | IT<br>
-DEV-SRV-05       | 10.0.3.50     | MEDIUM      | Engineering<br>
-GUEST-WIFI-PC    | 10.0.99.10    | LOW         | Guest</code><br>
-When an alert fires on a CRITICAL asset (like DC-01), the response time is 5 minutes vs 30 minutes for LOW assets.
-</div>
-
-<p style="color:#00d4ff;font-weight:600;">🔹 SOC Metrics and Objectives</p>
-<p style="color:#c0d0e0;">SOCs measure performance using Key Performance Indicators (KPIs):</p>
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 4: Network Services &amp; Security Tools on Linux</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Common Linux network services: SSH (OpenSSH — port 22), HTTP/HTTPS (Apache, Nginx — ports 80/443), DNS (BIND — port 53), FTP (vsftpd — port 21). Use <code>netstat -tuln</code> or <code>ss -tuln</code> to list listening services. <code>ufw</code> (Uncomplicated Firewall) or <code>iptables</code> manage firewall rules. <code>nmap</code> scans network hosts and ports.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> In a SOC, you analyze Linux services for security posture. Check SSH configuration (<code>/etc/ssh/sshd_config</code>): <code>PermitRootLogin no</code>, <code>PasswordAuthentication no</code> (use key-based), <code>Port 2222</code> (non-standard). Check running services with <code>systemctl list-units --type=service --state=running</code>. Verify listening services with <code>ss -tlnp</code> — look for unexpected ports (e.g., X11 on 6000, VNC on 5900, Redis on 6379 exposed).</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Linux-based security monitoring tools used in enterprise SOCs:</p>
 <ul style="color:#c0d0e0;">
-  <li><b>MTTR (Mean Time to Respond):</b> Average time from alert → containment. Target: &lt; 1 hour for critical</li>
-  <li><b>MTTD (Mean Time to Detect):</b> Average time from compromise → detection. Target: &lt; 1 hour</li>
-  <li><b>Alert Volume:</b> Total alerts per day/week — helps identify tuning needs</li>
-  <li><b>FP Rate:</b> % of alerts that are false positives. Target: &lt; 30%</li>
-  <li><b>Escalation Rate:</b> % of L1 alerts escalated to L2. Target: 10-20%</li>
-  <li><b>Coverage:</b> % of MITRE ATT&CK techniques with detection coverage</li>
+<li><strong>Osquery:</strong> SQL-based OS instrumentation. Query running processes, kernel modules, file integrity, network connections. Example: <code>osqueryi "SELECT pid, name, path, cmdline FROM processes WHERE on_disk=0;"</code> — finds processes whose binary was deleted from disk (memory-only malware).</li>
+<li><strong>Auditd:</strong> Linux kernel audit system (detailed above). Essential for compliance (PCI-DSS, SOC2) and forensic investigations.</li>
+<li><strong>Sysmon for Linux:</strong> Microsoft's Sysmon now available on Linux. Provides process creation, network connection, and file creation events. Integrates with <code>syslog-ng</code> or directly to SIEM.</li>
+<li><strong>Falco:</strong> CNCF runtime security tool. Detects anomalous behavior: container escapes, privilege escalation, sensitive file access. Rule: <code>microplace: Write below binary dir</code> alerts on writes to <code>/usr/bin</code>.</li>
+<li><strong>ClamAV:</strong> Open-source antivirus. Scan suspicious files: <code>clamscan -r /tmp/</code>. Use <code>freshclam</code> to update virus definitions.</li>
+<li><strong>Rkhunter / Chkrootkit:</strong> Rootkit detection. <code>rkhunter --check</code> checks for known rootkits, hidden files, and suspicious strings.</li>
+<li><strong>Lynis:</strong> Security auditing tool. <code>lynis audit system</code> produces hardening recommendations.</li>
 </ul>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Monthly SOC Report Example:</b><br>
-Total Alerts: 14,823 | TPs: 892 (6%) | FPs: 12,456 (84%) | Escalated: 156 (1%) | MTTR: 47 min<br>
-Analysis: FP rate of 84% is too high. Need to tune the 12 rules generating 80% of FPs. New SIEM rules added: 5. Incidents closed: 845. Open investigations: 47.
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Osquery in Action — SOC Investigation:</strong> Alert: "C2 communication from Linux web server 10.0.3.25". The analyst runs: <code>osqueryi "SELECT p.pid, p.name, p.path, p.cmdline, p.cwd, p.parent, p.on_disk, p.resident_size, FROM processes p JOIN process_open_sockets pos ON p.pid = pos.pid WHERE pos.remote_address NOT LIKE '10.%' AND pos.remote_address NOT LIKE '172.%' AND pos.remote_address NOT LIKE '192.168.%';"</code> — finds process <code>.systemd-service</code> (not on disk) connected to 185.220.101.34:443. Confirms malware with no binary on disk (memory-only).
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 SOC Simulator: Introduction to Phishing</p>
-<p style="color:#c0d0e0;">Practice triaging phishing alerts in a realistic SOC environment. You'll analyze simulated phishing emails, determine if they're malicious, classify them, and follow proper procedures.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Phishing Simulator Scenario:</b><br>
-Alert: "Email reported as phishing — contains suspicious link"<br>
-Email Details: From "security@paypa1.com", Subject "Urgent: Account Suspended", Body: "Click here to verify your account"<br>
-Analysis: SPF=fail (IP 185.130.5.201 not authorized for paypal.com), DKIM=fail, DMARC=fail. Hovering over the link reveals hxxp://bit.ly/3xK9mN2 → redirects to 45.33.32.156/fake-login.html<br>
-Classification: TP — Phishing campaign targeting PayPal credentials<br>
-Action: Block bit.ly link at proxy, block IP at firewall, alert all employees
+<p style="color:#00d4ff;font-weight:600;">▸ Common Attacks on Linux Systems</p>
+<ul style="color:#c0d0e0;">
+<li><strong>SSH Brute Force:</strong> Automated password guessing against SSH service. <em>Detection:</em> Multiple "Failed password" entries from same IP in auth.log. Fail2ban automatically blocks after N failures. <em>Response:</em> Implement key-based auth, disable root login, use non-standard port.</li>
+<li><strong>Privilege Escalation (SUID Binaries):</strong> Exploiting SUID-bit programs to gain root. <em>Detection:</em> Check for unexpected SUID binaries: <code>find / -perm -4000 -type f 2>/dev/null</code>. auditd <code>execve</code> rules catch SUID exploitation. <em>Investigation:</em> Check the binary name, CVE, and whether it's a known exploit path.</li>
+<li><strong>Web Shell Upload:</strong> Attacker uploads a PHP/Python/Perl script to web root. <em>Detection:</em> Anomalous HTTP POST requests to upload endpoints; high entropy in uploaded files. <em>Response:</em> Remove file, patch vulnerability, check for persistence mechanisms.</li>
+<li><strong>Kernel Rootkits (LKM):</strong> Loadable Kernel Module rootkits hide processes, files, and connections. <em>Detection:</em> Compare <code>/proc</code> listings with <code>ps</code>; check <code>lsmod</code> for suspicious modules; use rkhunter. <em>Response:</em> Rebuild from known-good backup — kernel-level compromise requires full reimage.</li>
+<li><strong>Cron-based Backdoors:</strong> Persistence via scheduled tasks. <em>Detection:</em> Check <code>/etc/crontab</code> and user crontabs for suspicious entries pointing to <code>/tmp</code> scripts. <em>Response:</em> Remove entry, analyze script, patch initial access vector.</li>
+<li><strong>Container Escape:</strong> Breaking out of Docker/K8s container to host. <em>Detection:</em> Falco rules detect container escape attempts: <code>mount</code> syscall with <code>SYS_ADMIN</code> capability. <em>Response:</em> Kill container, audit runtime security configuration.</li>
+</ul>
+
+<!-- CONCEPT BOXES -->
+<div class="alert alert-info"><strong><i class="bi bi-info-circle me-1"></i> INFO BOX</strong><br>
+<strong>Linux "Everything is a File"</strong> — This philosophy means processes, devices, sockets, and even kernel parameters are represented as files. The <code>/proc</code> filesystem is a virtual filesystem that exposes kernel data structures. For SOC analysts, <code>/proc/[pid]/</code> is a goldmine: <code>cmdline</code> (full command line), <code>environ</code> (environment variables — may contain passwords!), <code>cwd</code> (working directory), <code>fd/</code> (open file descriptors including sockets), <code>maps</code> (memory mappings), <code>status</code> (process state and permissions). When you find a suspicious process, check these files before killing it.</div>
+
+<div class="alert alert-success"><strong><i class="bi bi-check-circle me-1"></i> REMEMBER BOX</strong><br>
+<strong>Log locations vary by distribution.</strong> Debian/Ubuntu: <code>/var/log/auth.log</code>. RHEL/CentOS/Fedora: <code>/var/log/secure</code>. Amazon Linux: <code>/var/log/secure</code>. Alpine Linux: uses <code>syslog</code> to <code>/var/log/messages</code>. systemd-based distros: <code>journalctl</code> is the primary interface but still writes to <code>/var/log/journal/</code>. Always check <code>/etc/rsyslog.conf</code> or <code>/etc/syslog-ng/syslog-ng.conf</code> to understand your environment's logging configuration.</div>
+
+<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle me-1"></i> WARNING BOX</strong><br>
+<strong>Never trust the commands on a compromised Linux system.</strong> An experienced attacker will replace <code>ps</code>, <code>netstat</code>, <code>ls</code>, <code>ss</code>, and <code>top</code> with trojaned versions that hide their processes. When investigating a suspected compromise, either: (a) use statically compiled binaries from a USB drive (<code>busybox</code> is ideal), (b) use <code>cat /proc/[pid]/status</code> directly (harder to intercept), or (c) pull the hard drive and perform forensic analysis on a known-clean system. Rootkits like <code>Diamorphine</code> hook syscalls and hide processes from all user-space tools.</div>
+
+<div class="alert alert-info"><strong><i class="bi bi-shield me-1"></i> SOC ANALYST TIP</strong><br>
+<strong>Master these one-liners for rapid Linux triage:</strong><br>
+<code>w | last | lastb</code> — who's logged in now, login history, bad login attempts<br>
+<code>ps aux --forest | grep -v '\]'</code> — process tree, filter kernel threads<br>
+<code>ss -tunap | grep ESTAB</code> — established network connections<br>
+<code>lsof -i -P -n | grep LISTEN</code> — listening services<br>
+<code>find / -mmin -60 -type f -not -path "/proc/*" -not -path "/sys/*"</code> — files modified in last hour<br>
+<code>journalctl -p err --since "24 hours ago"</code> — errors in last day<br>
+<code>cat .bash_history | tail -50</code> — last 50 shell commands<br>
+Create aliases for these in your <code>~/.bashrc</code> so you can run them quickly during incidents.</div>
+
+<div class="alert alert-warning"><strong><i class="bi bi-question-circle me-1"></i> INTERVIEW Q&A</strong><br>
+<strong>Q:</strong> "You receive an alert that a Linux server in your DMZ has established a connection to a known malicious IP on port 4444. Walk through your investigation."<br>
+<strong>A:</strong> "First, I'd SSH into the server using a jump host. I'd immediately check <code>ss -tunp | grep 4444</code> to confirm the connection and get the PID. Then <code>ps -p [PID] -o pid,ppid,cmd,user</code> to see the process. If available, I'd check Osquery: <code>SELECT * FROM processes WHERE pid = [PID]</code> and <code>SELECT * FROM process_open_sockets WHERE pid = [PID]</code>. Next, check the binary with <code>ls -la /proc/[PID]/exe</code> and <code>md5sum /proc/[PID]/exe</code>. Run <code>strings</code> on the binary for IOCs. Check cron jobs, systemd services, and .bash_history for persistence. If the binary is suspicious, capture it, kill the process, isolate the server, and escalate for malware analysis. I'd also pull <code>lsof -p [PID]</code> to see if it's reading/writing any files, and check <code>/proc/[PID]/fd/</code> for sockets mapping to the C2 IP."</div>
+
+<!-- VISUAL DIAGRAMS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-diagram-2 me-2"></i>Visual Diagrams</h5>
+<pre class="mermaid">
+flowchart TD
+    subgraph "Linux Boot &amp; Security Checkpoints"
+    A["BIOS/UEFI"] --> B["Bootloader (GRUB)"]
+    B --> C["Kernel Initialization"]
+    C --> D["init/systemd (PID 1)"]
+    D --> E["System Services Start"]
+    E --> F["Login Prompt / SSH"]
+    end
+    subgraph "Security Monitoring Points"
+    G["<b>1. GRUB Password</b> — prevent single-user mode"]
+    H["<b>2. Kernel lockdown</b> — LSM (SELinux/AppArmor)"]
+    I["<b>3. Systemd unit auditing</b> — service persistence"]
+    J["<b>4. PAM authentication</b> — auth.log monitoring"]
+    K["<b>5. auditd rules</b> — syscall monitoring"]
+    L["<b>6. EDR/Osquery</b> — runtime detection"]
+    end
+    C -.-> H
+    D -.-> I
+    E -.-> K
+    F -.-> J
+    F -.-> L
+    B -.-> G
+    style A fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style B fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style C fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style D fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style E fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style F fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style G fill:#3a3a1a,stroke:#ffd700,color:#e5e7eb
+    style H fill:#3a3a1a,stroke:#ffd700,color:#e5e7eb
+    style I fill:#3a3a1a,stroke:#ffd700,color:#e5e7eb
+    style J fill:#3a3a1a,stroke:#ffd700,color:#e5e7eb
+    style K fill:#3a3a1a,stroke:#ffd700,color:#e5e7eb
+    style L fill:#3a3a1a,stroke:#ffd700,color:#e5e7eb
+</pre>
+
+<pre class="mermaid">
+flowchart LR
+    subgraph "Linux Log Architecture"
+    A["Applications"] -->|"Syslog (UDP 514)"| B["rsyslog / syslog-ng"]
+    C["Kernel"] -->|"klogd"| B
+    D["auditd"] -->|"audit.log"| E["/var/log/audit/"]
+    B -->|"auth.log"| F["Authentication Events"]
+    B -->|"syslog"| G["General System Events"]
+    B -->|"kern.log"| H["Kernel Messages"]
+    B -->|"forward"| I["Central SIEM (Splunk/ELK)"]
+    J["journald (systemd)"] -->|"Journal"| K["/var/log/journal/"]
+    J -->|"Forward to rsyslog"| B
+    end
+    style A fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style B fill:#1a3a2a,stroke:#00d4ff,color:#e5e7eb
+    style C fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style D fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style E fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style F fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style G fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style H fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style I fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style J fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style K fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+</pre>
+
+<pre class="mermaid">
+flowchart LR
+    subgraph "Typical Linux Attack Chain"
+    A["Reconnaissance"] -->|"Port scan, service enumeration"| B["Initial Access"]
+    B -->|"Exploit (web app, SSH brute, phishing)"| C["Persistence"]
+    C -->|"Cron, systemd, SSH keys"| D["Privilege Escalation"]
+    D -->|"SUID, kernel exploit, misconfigured sudo"| E["Lateral Movement"]
+    E -->|"SSH key theft, pass-the-hash"| F["Data Exfiltration / Ransomware"]
+    end
+    subgraph "Detection Opportunities"
+    G["<b>Scan detection:</b> Suricata/NIDS"]
+    H["<b>Web shell detection:</b> auditd file writes to webroot"]
+    I["<b>Cron/Systemd monitoring:</b> Osquery 'cron' table"]
+    J["<b>SUID check:</b> find / -perm -4000"]
+    K["<b>SSH key monitoring:</b> auditd .ssh/authorized_keys"]
+    L["<b>Data volume anomaly:</b> netflow/SIEM"]
+    end
+    A -.-> G
+    B -.-> H
+    C -.-> I
+    D -.-> J
+    E -.-> K
+    F -.-> L
+    style A fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style B fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style C fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style D fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style E fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style F fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style G fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style H fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style I fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style J fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style K fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style L fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+</pre>
+
+<!-- TRYHACKME SECTION -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-flag me-2"></i>TryHackMe Rooms</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Room Name</th><th>Difficulty</th><th>Objectives</th><th>Order</th></tr></thead>
+<tbody>
+<tr><td>Linux Fundamentals Part 1</td><td><span class="badge bg-success">Easy</span></td><td>Basic commands, file system navigation, text editing, permissions</td><td>1st</td></tr>
+<tr><td>Linux Fundamentals Part 2</td><td><span class="badge bg-success">Easy</span></td><td>Process management, service control, log files, networking</td><td>2nd</td></tr>
+<tr><td>Linux Fundamentals Part 3</td><td><span class="badge bg-success">Easy</span></td><td>Advanced CLI, scripting, automation, and security basics</td><td>3rd</td></tr>
+<tr><td>Linux PrivEsc</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Kernel exploits, SUID, cron jobs, PATH hijacking, capabilities</td><td>4th</td></tr>
+<tr><td>Common Linux Privesc</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Practical privilege escalation techniques on misconfigured Linux</td><td>5th</td></tr>
+<tr><td>Linux Backdoors</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>SSH backdoors, cron persistence, rootkits, web shells</td><td>6th</td></tr>
+<tr><td>Wireshark: Traffic Analysis</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Analyze PCAPs from compromised Linux servers</td><td>7th</td></tr>
+<tr><td>Intro to Log Analysis</td><td><span class="badge bg-success">Easy</span></td><td>Parse syslog, auth.log, web server logs</td><td>8th</td></tr>
+<tr><td>Investigating with ELK</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Forward Linux logs to ELK, query and visualize</td><td>9th</td></tr>
+<tr><td>Linux Server Forensics</td><td><span class="badge bg-danger">Hard</span></td><td>Full forensic analysis of a compromised Linux server using CLI tools</td><td>10th</td></tr>
+</tbody>
+</table>
 </div>
+
+<!-- HTB ACADEMY -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-laptop me-2"></i>Hack The Box Academy</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Module</th><th>Difficulty</th><th>Outcomes</th></tr></thead>
+<tbody>
+<tr><td>Linux Fundamentals</td><td><span class="badge bg-success">Easy</span></td><td>Master Linux CLI, file system, permissions, process management, networking basics</td></tr>
+<tr><td>Linux Privilege Escalation</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Identify and exploit misconfigurations: SUID, capabilities, cron, sudo, kernel exploits</td></tr>
+<tr><td>File Inclusion &amp; Path Traversal</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Exploit LFI/RFI on Linux web servers; understand log poisoning</td></tr>
+<tr><td>Linux Forensics</td><td><span class="badge bg-danger">Hard</span></td><td>Forensic acquisition, timeline analysis, artifacts, and persistence detection on Linux</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- LETSDEFEND -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-check me-2"></i>LetsDefend Investigations</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Investigation</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>SOC003 - SSH Brute Force</td><td>Alert Triage</td><td>Analyze auth.log for SSH brute force against DMZ server; identify successful attempts</td></tr>
+<tr><td>SOC009 - Web Shell Detection</td><td>Malware Analysis</td><td>Investigate Apache access logs for web shell upload and execution</td></tr>
+<tr><td>SOC015 - Linux Rootkit</td><td>Forensic Analysis</td><td>Find kernel rootkit hiding processes; use chkrootkit and manual /proc comparison</td></tr>
+<tr><td>SOC029 - Cron Job Backdoor</td><td>Incident Response</td><td>Identify malicious cron job executing reverse shell every 5 minutes</td></tr>
+<tr><td>SOC041 - Auditd Investigation</td><td>Log Analysis</td><td>Parse audit.log to reconstruct attacker actions after web shell upload</td></tr>
+<tr><td>SOC053 - Privilege Escalation via SUID</td><td>Threat Hunting</td><td>Find and analyze SUID binary exploitation in auditd and auth.log</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- CYBERDEFENDERS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield me-2"></i>CyberDefenders Blue Team Challenges</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Challenge</th><th>Difficulty</th><th>Focus</th></tr></thead>
+<tbody>
+<tr><td>Nightmare - Linux Forensics</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Investigate a compromised Linux server; find persistence, exfiltrated data, and attacker IP</td></tr>
+<tr><td>Mozi - IoT Botnet</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Analyze Linux-based IoT malware; identify C2 communication and propagation methods</td></tr>
+<tr><td>DeepBlue - Volatile Memory</td><td><span class="badge bg-danger">Hard</span></td><td>Perform memory forensics on a Linux system dump; extract processes, network connections, and rootkits</td></tr>
+<tr><td>OTX - Linux Persistence</td><td><span class="badge bg-success">Easy</span></td><td>Identify multiple Linux persistence mechanisms on a compromised server</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- GITHUB RESOURCES -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-github me-2"></i>GitHub Resources</h5>
+<div class="row g-2 mb-3">
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" style="color:#00d4ff;">Blue-Team-Roadmap</a></strong><br>
+<span style="color:#c0d0e0;">Linux section covers blue-team Linux skills: log analysis, auditd, Osquery, and forensic methodology. Skills: Linux security monitoring, evidence acquisition.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" style="color:#00d4ff;">awesome-soc</a></strong><br>
+<span style="color:#c0d0e0;">Lists Linux SOC tools including Osquery, Auditd, Falco, Sysmon for Linux, and log management solutions. Skills: Tool selection and deployment.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/SigmaHQ/sigma" target="_blank" style="color:#00d4ff;">Sigma</a></strong><br>
+<span style="color:#c0d0e0;">Sigma rules for Linux: detection of Linux-specific attacks (cron backdoors, SSH key persistence, container escapes). Skills: Writing Linux-focused Sigma rules.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" style="color:#00d4ff;">Atomic Red Team</a></strong><br>
+<span style="color:#c0d0e0;">Linux atomic tests for T1059.004 (Unix Shell), T1053.003 (Cron), T1098.004 (SSH Authorized Keys). Skills: Testing Linux detections.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" style="color:#00d4ff;">sysmon-config</a></strong><br>
+<span style="color:#c0d0e0;">Sysmon for Linux configuration. Covers process creation, network connections, and file creation events on Linux. Skills: Linux endpoint monitoring.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" style="color:#00d4ff;">blueteam_homelabs</a></strong><br>
+<span style="color:#c0d0e0;">Guides for building Linux-based SOC lab with Osquery, Auditd, and ELK stack. Skills: Linux security infrastructure deployment.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" style="color:#00d4ff;">EVTX-ATTACK-SAMPLES</a></strong><br>
+<span style="color:#c0d0e0;">Windows EVTX samples — cross-reference with Linux logs for multi-platform investigation skills. Skills: Cross-platform log correlation.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/InQuest/awesome-yara" target="_blank" style="color:#00d4ff;">awesome-yara</a></strong><br>
+<span style="color:#c0d0e0;">YARA rules for Linux malware (ELF binaries). Skills: Writing YARA rules for Linux malware detection and classification.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" style="color:#00d4ff;">BlueTeam-Tools</a></strong><br>
+<span style="color:#c0d0e0;">Linux blue team tools: Lynis, Osquery, Falco, auditd, rkhunter, ClamAV. Skills: Tool installation, configuration, and operational use.</span>
+</div>
+</div>
+</div>
+
+<!-- HANDS-ON LABS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-tools me-2"></i>Hands-On Labs</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner Lab: Linux Log Analysis — SSH Brute Force</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Parse /var/log/auth.log (or secure) to detect an SSH brute force attack, identify the attacker IP, count failed vs successful logins, and create a report.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Use a Linux VM (Ubuntu 22.04 recommended). Generate some brute force test data or download a sample auth.log from https://github.com/logpai/loghub (HDFS logs with SSH samples).</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Navigate to logs: <code>cd /var/log</code> (or the directory with your sample auth.log)</li>
+<li>View the log: <code>less auth.log</code> — notice the format: <code>Month Day HH:MM:SS hostname sshd[PID]: message</code></li>
+<li>Extract failed password attempts: <code>grep "Failed password" auth.log | wc -l</code></li>
+<li>Find attacker IPs: <code>grep "Failed password" auth.log | awk '{print $11}' | sort | uniq -c | sort -nr</code></li>
+<li>Count per username: <code>grep "Failed password" auth.log | awk '{print $9}' | sort | uniq -c | sort -nr</code></li>
+<li>Check for successful logins from the same IP: <code>grep "Accepted" auth.log | grep "10.0.0.5"</code> (replace with attacker IP)</li>
+<li>Create a report:</li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+#!/bin/bash
+# SSH Brute Force Report Generator
+AUTH_LOG="/var/log/auth.log"
+echo "=== SSH Brute Force Report ==="
+echo "Generated: $(date)"
+echo ""
+echo "Failed login attempts by IP:"
+grep "Failed password" $AUTH_LOG | awk '{print $11}' | sort | uniq -c | sort -nr | head -20
+echo ""
+echo "Failed login attempts by username:"
+grep "Failed password" $AUTH_LOG | awk '{print $9}' | sort | uniq -c | sort -nr | head -10
+echo ""
+echo "Successful logins (verify these):"
+grep "Accepted" $AUTH_LOG
+</pre>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> You'll find one or more IPs with 100+ failed attempts. Common usernames attempted: root, admin, ubuntu, test. If there's an "Accepted" entry from the attacker IP, the brute force succeeded.</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If no failed password entries, check you have the right log file (secure vs auth.log). Try <code>journalctl _COMM=sshd | grep "Failed password"</code> instead.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> In a SIEM, create a correlation rule: 10 failed SSH login attempts from same IP in 5 minutes → alert. Integrate with Fail2ban for automatic blocking.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate Lab: Deploy auditd and Detect File Tampering</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Install and configure auditd on a Linux system, write audit rules to monitor sensitive files, and detect unauthorized access to /etc/passwd and /etc/shadow.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Ubuntu 22.04 VM with root access.</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Install auditd: <code>sudo apt-get install auditd audispd-plugins -y</code></li>
+<li>Start the service: <code>sudo systemctl enable auditd && sudo systemctl start auditd</code></li>
+<li>Add audit rules to <code>/etc/audit/rules.d/audit.rules</code>:</li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+# Remove all existing rules
+-D
+
+# Buffer size (8MB)
+-b 8192
+
+# Failure mode (1=silent, 2=printk)
+-f 1
+
+# Monitor authentication files
+-w /etc/passwd -p wa -k passwd_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /etc/sudoers -p wa -k sudoers_changes
+
+# Monitor SSH configuration
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+
+# Monitor logins/authentication
+-w /var/log/auth.log -p wa -k auth_log
+-w /var/log/syslog -p wa -k syslog
+
+# Monitor binary directories for changes
+-w /usr/bin/ -p wa -k usr_bin
+-w /usr/sbin/ -p wa -k usr_sbin
+-w /sbin/ -p wa -k sbin
+
+# Monitor kernel module loading
+-w /etc/modprobe.d/ -p wa -k modprobe
+</pre>
+<ol start="4">
+<li style="color:#c0d0e0;">Load rules: <code>sudo auditctl -R /etc/audit/rules.d/audit.rules</code></li>
+<li style="color:#c0d0e0;">Verify rules loaded: <code>sudo auditctl -l</code></li>
+<li style="color:#c0d0e0;">Generate test event: <code>cat /etc/shadow</code></li>
+<li style="color:#c0d0e0;">Search for events: <code>sudo ausearch -k shadow_changes | aureport -i</code></li>
+</ol>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> The ausearch command will show the timestamp, user, PID, and syscall that accessed /etc/shadow. You'll see which user (even root) accessed the file and what program was used (cat, vim, etc.).</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If ausearch returns no results, verify auditd is running: <code>sudo systemctl status auditd</code>. Check <code>/var/log/audit/audit.log</code> directly. Ensure your rule key matches the search key.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> In production, forward audit.log to SIEM. Create alerts for: (a) any access to /etc/shadow by non-root processes, (b) modifications to /etc/passwd outside of patching windows, (c) any write to /usr/bin/ from a non-package-manager process.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced Lab: Full Linux Forensic Investigation — Webshell + Persistence</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Investigate a compromised Linux web server. Identify the initial compromise vector, web shell, persistence mechanism, data exfiltration, and provide a full forensic report.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Download the DFIR Linux forensic challenge from https://cyberdefenders.org or use a scenario where a LAMP server was breached. You need a forensic workstation with tools: autopsy, sleuthkit, binwalk, strings, exiftool.</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li><strong>Preserve evidence:</strong> Create a forensic image: <code>sudo dd if=/dev/sda of=/evidence/webserver.dd bs=4M status=progress</code></li>
+<li><strong>Mount read-only:</strong> <code>mkdir /mnt/forensic && sudo mount -o ro,loop,noexec /evidence/webserver.dd /mnt/forensic</code></li>
+<li><strong>Analyze auth.log:</strong> Check for unusual SSH logins around the incident time. <code>grep "Accepted" /mnt/forensic/var/log/auth.log</code></li>
+<li><strong>Check Apache access logs:</strong> Look for suspicious POST requests: <code>cat /mnt/forensic/var/log/apache2/access.log | awk '$6 ~ /POST/' | grep -E '\.php|eval|cmd|exec'</code></li>
+<li><strong>Find web shells:</strong> Check for webshell patterns: <code>grep -r "base64_decode\|system(\|exec(\|shell_exec(\|passthru(" /mnt/forensic/var/www/html/ 2>/dev/null</code></li>
+<li><strong>Check modified files:</strong> <code>find /mnt/forensic/var/www/html/ -name "*.php" -newer /mnt/forensic/var/log/apache2/access.log 2>/dev/null</code></li>
+<li><strong>Analyze persistence:</strong> Check cron: <code>cat /mnt/forensic/var/spool/cron/crontabs/*</code>. Check systemd: <code>ls -la /mnt/forensic/etc/systemd/system/*.service</code>. Check SSH authorized_keys: <code>cat /mnt/forensic/root/.ssh/authorized_keys 2>/dev/null</code></li>
+<li><strong>Check /tmp:</strong> <code>ls -la /mnt/forensic/tmp/</code> for suspicious scripts or binaries</li>
+<li><strong>Extract IOCs:</strong> <code>strings /mnt/forensic/tmp/evil.sh</code>. Check for IP addresses, domains, crypto wallets.</li>
+<li><strong>Check bash history:</strong> <code>cat /mnt/forensic/root/.bash_history</code> and <code>/mnt/forensic/home/*/.bash_history</code></li>
+</ol>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> You'll typically find: (1) A PHP webshell uploaded via vulnerable WordPress plugin. (2) Attacker ran enumeration commands (id, uname -a, whoami). (3) Downloaded a reverse shell binary via curl/wget. (4) Set up cron job for persistence. (5) Exfiltrated /etc/passwd and database credentials via curl POST.</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If grep for webshell patterns returns false positives, use a YARA rule for webshells. If no bash history, check .bash_history might be symlinked to /dev/null (attacker hid tracks). Check .viminfo for files recently edited in vim.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> Deploy File Integrity Monitoring (AIDE/Tripwire) on production web servers. Use WAF (mod_security) to block webshell upload attempts. Monitor /tmp/ for executable files created by www-data user.</p>
+</div>
+
+<!-- SOC SCENARIOS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-fill-exclamation me-2"></i>SOC Scenarios</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Scenario 1: SSH Brute Force Leading to Compromise</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> SIEM alert: "SSH Brute Force Detected" — 500 failed login attempts from 185.65.135.100 to database-server (10.0.5.10) over 15 minutes. At 03:17, an "Accepted" entry appears for user "oracle" from the same IP.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Splunk query: <code>source="/var/log/auth.log" "Failed password" | stats count by src_ip dest_ip | where count > 100</code>. Correlation with <code>"Accepted" src_ip=185.65.135.100</code> confirms breach.</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Verify the IP — enrich with VirusTotal, AbuseIPDB, Shodan</li>
+<li>Check all commands run after successful login: <code>grep -A 100 "Accepted.*185.65.135.100" auth.log | grep -E "sudo|bash|wget|curl|chmod|/tmp"</code></li>
+<li>Check what the "oracle" user can sudo: <code>cat /etc/sudoers | grep oracle</code></li>
+<li>Check for new SSH keys: <code>cat ~oracle/.ssh/authorized_keys</code> — any new keys added?</li>
+<li>Check for installed services or cron jobs by oracle user</li>
+<li>Check database audit logs — was data accessed or exported?</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Immediately disable the "oracle" account and rotate password</li>
+<li>Block the attacker IP at the firewall (Palo Alto Dynamic Block)</li>
+<li>Check for backdoors: new SSH keys, cron jobs, modified system binaries</li>
+<li>Enforce SSH key-only authentication (disable password auth)</li>
+<li>Implement Fail2ban on all SSH-exposed hosts</li>
+<li>Notify database owner and assess data exposure</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "SSH brute force from 185.65.135.100 against oracle@database-server resulted in successful compromise. 502 failed attempts followed by successful login at 03:17 UTC. Attacker added SSH key to oracle user and downloaded lateral movement tools. Host isolated, account disabled, IP blocked. MITRE ATT&CK: T1110 (Brute Force), T1098.004 (SSH Authorized Keys). Severity: HIGH."</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Scenario 2: Web Shell Upload on Apache Server</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> WAF alert: "Suspicious file upload detected" — a POST request to /wp-content/plugins/contact-form-7/upload.php contained a PHP file with base64-encoded payload. The file was written to /var/www/html/wp-content/uploads/2025/06/shell.php.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Apache access log shows: <code>POST /wp-content/plugins/contact-form-7/upload.php HTTP/1.1" 200 532 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"</code> followed by: <code>GET /wp-content/uploads/2025/06/shell.php?cmd=id HTTP/1.1" 200 45</code>. The second request confirms webshell execution.</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Check the webshell file: <code>cat /var/www/html/wp-content/uploads/2025/06/shell.php</code></li>
+<li>Check Apache error log for PHP errors from the file</li>
+<li>Check commands executed via the webshell: parse Apache access log for GET requests to shell.php with cmd parameter</li>
+<li>Check if the attacker browsed the filesystem (ls, cat /etc/passwd)</li>
+<li>Check if additional tools were downloaded (wget, curl to attacker server)</li>
+<li>Check /tmp/ and /dev/shm for dropped files</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Remove the webshell immediately</li>
+<li>Patch the vulnerable WordPress plugin (update to latest version)</li>
+<li>Check ALL WordPress files for other backdoors: <code>grep -r 'eval\|base64_decode\|system' /var/www/html/</code></li>
+<li>Rotate all WordPress database credentials</li>
+<li>Review user accounts — was a new admin created?</li>
+<li>Deploy WAF rules to block PHP file uploads in upload directories</li>
+<li>Implement file integrity monitoring on web root</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "Web shell uploaded to WordPress site via vulnerable Contact Form 7 plugin. File: /wp-content/uploads/2025/06/shell.php. Attacker IP: 198.51.100.23. Commands executed: id, whoami, uname -a, ls -la, cat /etc/passwd, wget to download additional payload. No evidence of privilege escalation or lateral movement. MITRE ATT&CK: T1190 (Exploit Public-Facing Application), T1505.003 (Web Shell). Severity: MEDIUM."</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Scenario 3: Linux Lateral Movement via SSH Key Theft</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> The attacker compromised a jump box (10.0.1.5) and stole the SSH private key of a privileged user. They used this key to authenticate to a production database server (10.0.5.50) at 04:00 UTC. From there, they connected to additional servers in the environment.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> auth.log on DB server shows: <code>Accepted publickey for dbadmin from 10.0.1.5 port 54321 ssh2: RSA SHA256:abc123...</code> at an unusual hour (4 AM). auditd rule monitors SSH key usage: <code>ausearch -k sshd_config</code>. SIEM correlation: a single user logging into 3+ servers within 5 minutes indicates lateral movement.</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Check which servers the dbadmin user accessed: <code>grep "Accepted.*dbadmin" /var/log/auth.log | awk '{print $16}' | sort -u</code></li>
+<li>Check if any commands were run after login: <code>grep "Accepted.*dbadmin" auth.log -A 20 | grep -E "sudo|mysql|psql|scp|rsync"</code></li>
+<li>Check the jump box for compromise: <code>cat ~/.bash_history</code> for <code>scp</code> or <code>cat id_rsa</code> commands</li>
+<li>Check if the private key is stored on the jump box: <code>ls -la ~/.ssh/</code></li>
+<li>Check auditd on all accessed servers for command execution</li>
+<li>Check database logs for data access</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Revoke the compromised SSH key immediately</li>
+<li>Generate new key pair for dbadmin</li>
+<li>Implement SSH key management with HashiCorp Vault or similar</li>
+<li>Add SSH key fingerprint monitoring to SIEM</li>
+<li>Implement SSH key rotation policy (30-day rotation for privileged accounts)</li>
+<li>Implement jump box hardening: no SSH agent forwarding, session recording, MFA on jump hosts</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "Lateral movement via stolen SSH private key from jump box (10.0.1.5) to DB server (10.0.5.50) and 3 additional servers. User: dbadmin. Key fingerprint: SHA256:abc123... No unauthorized database access detected. Root cause: jump box had no EDR and weak SSH config. MITRE ATT&CK: T1552.004 (Private Keys), T1021.004 (SSH). Severity: CRITICAL (lateral movement confirmed)."</p>
+</div>
+
+<!-- KNOWLEDGE CHECK -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-question-lg me-2"></i>Knowledge Check</h5>
+
+<p class="fw-bold" style="color:#00d4ff;">Multiple Choice Questions (10)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Which Linux log file contains SSH authentication events on Ubuntu?</strong><br>
+a) /var/log/secure &nbsp;&nbsp; b) /var/log/auth.log &nbsp;&nbsp; c) /var/log/messages &nbsp;&nbsp; d) /var/log/syslog<br>
+<em>Answer: b) /var/log/auth.log</em></li>
+
+<li><strong>What command shows all listening network services on a Linux system?</strong><br>
+a) netstat -an &nbsp;&nbsp; b) ss -tuln &nbsp;&nbsp; c) lsof -i &nbsp;&nbsp; d) All of the above<br>
+<em>Answer: d) All of the above</em></li>
+
+<li><strong>What does chmod 4755 do to a file?</strong><br>
+a) Makes it world-writable &nbsp;&nbsp; b) Sets the SUID bit with rwxr-xr-x &nbsp;&nbsp; c) Removes all permissions &nbsp;&nbsp; d) Changes file owner to root<br>
+<em>Answer: b) Sets the SUID bit with rwxr-xr-x</em></li>
+
+<li><strong>Which syscall monitoring tool provides the most detailed Linux audit capabilities?</strong><br>
+a) syslog &nbsp;&nbsp; b) auditd &nbsp;&nbsp; c) journalctl &nbsp;&nbsp; d) top<br>
+<em>Answer: b) auditd</em></li>
+
+<li><strong>What file do attackers commonly modify to maintain SSH access?</strong><br>
+a) /etc/hosts &nbsp;&nbsp; b) ~/.ssh/authorized_keys &nbsp;&nbsp; c) /etc/resolv.conf &nbsp;&nbsp; d) /proc/meminfo<br>
+<em>Answer: b) ~/.ssh/authorized_keys</em></li>
+
+<li><strong>Which command finds files with SUID bit set (potential privilege escalation)?</strong><br>
+a) find / -perm -4000 &nbsp;&nbsp; b) find / -type f -size +100M &nbsp;&nbsp; c) find / -name "*.sh" &nbsp;&nbsp; d) find / -user root<br>
+<em>Answer: a) find / -perm -4000</em></li>
+
+<li><strong>What does the ps aux --forest command show?</strong><br>
+a) CPU usage per user &nbsp;&nbsp; b) Process tree with parent-child hierarchy &nbsp;&nbsp; c) Network connections per process &nbsp;&nbsp; d) Memory usage per process<br>
+<em>Answer: b) Process tree with parent-child hierarchy</em></li>
+
+<li><strong>How can you check if a Linux binary is on disk (not just in memory)?</strong><br>
+a) ls -la /proc/[PID]/exe &nbsp;&nbsp; b) check /proc/[PID]/cmdline &nbsp;&nbsp; c) osquery: SELECT on_disk FROM processes &nbsp;&nbsp; d) Both a and c<br>
+<em>Answer: d) Both a and c</em></li>
+
+<li><strong>What Linux directory is commonly used by attackers to drop temporary files?</strong><br>
+a) /home &nbsp;&nbsp; b) /tmp &nbsp;&nbsp; c) /etc &nbsp;&nbsp; d) /boot<br>
+<em>Answer: b) /tmp</em></li>
+
+<li><strong>Which tool provides runtime security monitoring and detects container escapes on Linux?</strong><br>
+a) ClamAV &nbsp;&nbsp; b) Falco &nbsp;&nbsp; c) Rkhunter &nbsp;&nbsp; d) Lynis<br>
+<em>Answer: b) Falco</em></li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Practical Questions (5)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Log Analysis:</strong> Write a one-liner to find all IPs that attempted to SSH into your server using username "root" and had more than 50 failed attempts.</li>
+<li><strong>Process Investigation:</strong> You find a suspicious process with PID 1337. List the commands you would run to investigate it, and explain what information each command provides.</li>
+<li><strong>Forensic Acquisition:</strong> Describe the proper order of volatility when acquiring evidence from a live Linux system. List the first 5 things you would capture and explain why.</li>
+<li><strong>Detection Rule:</strong> Write an auditd rule that monitors execution of /bin/bash by the www-data user (web server compromise detection).</li>
+<li><strong>Scripting:</strong> Write a bash script that scans /var/www/html for PHP files containing base64_decode or eval functions and logs them with file path and timestamp.</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Investigation Scenarios (2)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Scenario:</strong> You receive an alert from Osquery: "Process 2543 on linux-web-01 is not on disk (on_disk=0)." The process name is "apache2" and it's making connections to 203.0.113.5:8080. Walk through your investigation.</li>
+<li><strong>Scenario:</strong> A Linux syslog server stops receiving logs from 20 critical production servers simultaneously. The logs resume 15 minutes later. What could have happened? How would you investigate?</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Interview Questions (3)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li>"Explain how you would investigate a potentially compromised Linux server without trusting the installed tools."</li>
+<li>"What Linux persistence mechanisms do you check first during an incident response engagement?"</li>
+<li>"How would you differentiate between a legitimate cron job and a malicious persistence mechanism in a Linux environment?"</li>
+</ol>
+</div>
+
+<!-- PORTFOLIO PROJECTS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-folder me-2"></i>Portfolio Projects</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner Project: SSH Brute Force Detection &amp; Report Generator</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Build a Python/bash tool that parses auth.log in real-time, detects SSH brute force attacks, and generates PDF reports with attacker IPs, usernames attempted, timeline, and geolocation.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Python (tail + regex) → Parse log lines → Detect patterns → Generate report (ReportLab/PDF).</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> Python, ReportLab, GeoIP (MaxMind), bash.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Write log parser → Implement threshold logic (10 fails/5min) → Add geo-IP lookup → Generate HTML/PDF report → Schedule with cron → Push to GitHub.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> README with install guide, example report PDF, sample auth.log for testing, and a blog post walk-through.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate Project: Linux Security Auditing Toolkit</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Create a comprehensive security auditing script that checks a Linux system against CIS benchmarks, identifies misconfigurations (open ports, weak SSH config, missing updates), and outputs a compliance score.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Bash/Python → System checks → CIS benchmarking → Scoring → HTML report.</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> Bash, OpenSCAP (for SCAP compliance), Lynis, custom Python scoring engine.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Define security checks (passwd policy, SSH config, kernel params, file perms) → Write audit functions → Build scoring system → Generate report with recommendations → Test on clean and vulnerable systems → Deploy with cron for daily auditing.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> GitHub repo with audit script, sample output, CIS benchmark reference table, and a tutorial on Linux security hardening.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced Project: Linux EDR Agent with Osquery + Auditd Integration</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Build a lightweight Linux EDR agent that collects Osquery data and auditd logs, runs real-time detections (fileless malware, privilege escalation, persistence), and sends alerts to a SIEM.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Python agent → Osquery (Fleet) + Auditd → Detection engine (YARA + Sigma) → Kafka → Elasticsearch → Kibana.</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> Python, Osquery, Auditd, Kafka, Elasticsearch, Kibana, Docker.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Deploy Osquery with Fleet for central management → Configure auditd rules for critical syscalls → Write Python detection engine using Sigma rules converted to Python → Set up Kafka for log streaming → Create Elasticsearch indices → Build Kibana dashboards for process creation, network connections, and file integrity → Test with Atomic Red Team Linux tests.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> Architecture diagram, deployment playbooks (Ansible), detection rule catalog, testing results with ATT&CK coverage map, and operational guide for SOC teams.</p>
+</div>
+
 </div>

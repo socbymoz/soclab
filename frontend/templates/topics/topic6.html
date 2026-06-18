@@ -1,80 +1,634 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Module 6: Network Traffic Analysis</h6>
+<h6 class="text-primary mb-3"><i class="bi bi-arrow-left-right me-2"></i>Module 6: SOC Workflow</h6>
 
-<p style="color:#c0d0e0;">Network traffic analysis is a core SOC skill. You'll learn to capture, filter, and analyze packets using Wireshark and TShark to detect malicious activity.</p>
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-info-circle me-2"></i>1. SECTION OVERVIEW</h6>
+<p style="color:#c0d0e0;"><strong>What is SOC Workflow?</strong> SOC Workflow encompasses the people, processes, and technologies that transform raw security alerts into resolved incidents. It defines how alerts are triaged, investigated, escalated, contained, eradicated, recovered from, and documented. A well-defined workflow is what separates a professional SOC from chaos — it ensures every alert is handled consistently, nothing falls through the cracks, and lessons are learned from every incident.</p>
+<p style="color:#c0d0e0;"><strong>Why It Matters:</strong> In a 24/7 SOC, analysts work in shifts. Handoffs between shifts must be seamless — if the day shift analyst identifies a suspicious pattern but doesn't document it, the night shift analyst starts from zero. Workflows standardize this: every alert follows the same process, every investigation uses the same playbook, and every incident is documented in the same format. Without workflows, SOCs suffer from inconsistent investigations, missed steps, and finger-pointing when things go wrong. The average time to contain a breach is 277 days (IBM Cost of Data Breach 2025); effective workflows can reduce this to hours.</p>
+<p style="color:#c0d0e0;"><strong>Real-World Use Cases:</strong> A phishing alert arrives — the workflow tells L1 to check headers, URLs, and attachments in 20 minutes or escalate to L2. A ransomware outbreak triggers the IR playbook — automatically isolates affected hosts, pages the incident response team, and opens a bridge line. A compliance audit requires proof of incident handling — the workflow ensures every step is documented in the case management system.</p>
+<p style="color:#c0d0e0;"><strong>Skills Gained:</strong> Incident triage and prioritization; case management and documentation; escalation procedures; playbook creation and automation; incident response phases; communication protocols; post-incident review.</p>
+<p style="color:#c0d0e0;"><strong>Prerequisites:</strong> Understanding of SIEM fundamentals, basic networking, common attack types, organizational structure.</p>
+<p style="color:#c0d0e0;"><strong>Learning Objectives:</strong> (1) Describe the complete SOC incident lifecycle from alert to closure, (2) Apply triage prioritization frameworks to real-world alerts, (3) Execute structured investigation workflows using playbooks, (4) Write professional incident reports suitable for management and legal, (5) Design and improve SOC processes using metrics and feedback loops.</p>
 
-<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-journal-text me-2"></i>2. DETAILED NOTES</h6>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Wireshark Basics & Deep Dives</p>
-<p style="color:#c0d0e0;">Wireshark is the industry-standard network protocol analyzer. Key skills every SOC analyst needs:</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 1: The SOC Incident Lifecycle — Triage to Closure</p>
+<p style="color:#c0d0e0;">The incident lifecycle is the backbone of SOC operations. Every alert — whether a critical ransomware outbreak or a low-severity scanning detection — follows the same general path from discovery to closure. Understanding this lifecycle ensures no incident is abandoned mid-stream and every investigation is thorough.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Essential Wireshark Filters:</b><br>
-<code>ip.addr == 45.33.32.156</code> — Show all traffic to/from a specific IP<br>
-<code>http.request</code> — Show only HTTP request packets<br>
-<code>tcp.port == 443</code> — Show only HTTPS traffic<br>
-<code>dns.qry.name contains "evil"</code> — Find DNS queries containing "evil"<br>
-<code>http.request.uri contains "cmd="</code> — Find web requests with command execution<br>
-<code>tls.handshake.type == 1</code> — Show TLS Client Hello (identify JA3 fingerprints)<br>
-<code>data.len > 1000</code> — Show packets with large data payloads (possible exfiltration)<br>
-<code>!(arp or dns or dhcpv6)</code> — Hide noise protocols<br><br>
-<b>Detecting C2 Beaconing in Wireshark:</b><br>
-1. Filter: <code>ip.addr == 10.0.1.50 && tcp.flags.syn == 1 && tcp.flags.ack == 0</code><br>
-2. Look for SYN packets to the same destination at regular intervals (e.g., every 60 seconds)<br>
-3. Check: Go to Statistics → Flow Graph → TCP to visualize connection timing<br>
-4. C2 beacon pattern: Regular, periodic connections to external IP, small data exchange, often on unusual ports (4444, 8080, 8443)
+<b>Phase 1 — Triage (L1, 0-15 minutes):</b><br>
+Alert arrives in the SIEM → Analyst verifies the alert is real (not a test or known FP) → Checks alert metadata (source IP, destination, user, system, timestamp, severity) → Makes initial classification:<br>
+- <b>False Positive:</b> Alert is noise (e.g., vulnerability scanner triggered C2 rule). Close as FP with reasoning.<br>
+- <b>Benign True Positive:</b> Real security event but expected (e.g., approved pen test triggered brute force rule). Close as Benign with ticket reference.<br>
+- <b>Suspicious True Positive:</b> Unknown if malicious. Assign severity, create incident ticket, triage to L2.<br>
+- <b>Malicious True Positive:</b> Clearly malicious (ransomware, exfiltration, C2 confirmed). Immediate escalation to L2/L3. Activate IR plan.<br><br>
+<em>Real-World Example:</em> An alert fires: "Multiple failed logins from IP 5.188.62.10 against 50 different accounts in 2 minutes." L1 checks: IP is in Russia, no employees work from Russia. Accounts targeted are all IT admins. This is suspicious — classify as Suspicious TP, create incident, assign to L2.<br><br>
+<b>Phase 2 — Investigation (L2/L3, 15 minutes-4 hours):</b><br>
+Deep dive: Query SIEM for all events involving the source IP, affected accounts, and affected systems. Check process creation logs, network connections, file system changes. Timeline reconstruction: what happened before/during/after the alert? Determine scope: how many hosts affected? What data was accessed? Are there additional IoCs to hunt for?<br><br>
+<em>Real-World Example:</em> L2 analyst runs queries: the IP 5.188.62.10 attempted 500 logins — 3 succeeded before the attacker was locked out. The successful logins were on 3 accounts: j.smith, a.jones, r.garcia. L2 checks mailbox access logs: attacker accessed j.smith's email, searched for "password reset" and "wire transfer". L2 calls j.smith — they were asleep at 3 AM. Conclusion: credential theft, mailbox compromised, wire fraud attempted. Scope: 3 accounts, 1 mailbox compromised, 0 data exfiltrated (financial team caught it before wire went through).<br><br>
+<b>Phase 3 — Containment (L2/L3, 30 minutes-2 hours):</b><br>
+Stop the bleeding: Disable compromised accounts, revoke sessions, block attacker IPs at firewall, isolate affected hosts (network isolation via EDR or switch port block), change passwords, enable MFA if not already active.<br><br>
+<b>Phase 4 — Eradication (L3/SysAdmin, 2 hours-2 days):</b><br>
+Remove the threat: If malware found — remove via EDR, reimage host. If backdoor found — remove persistence mechanisms. If attacker had admin access — reset all credentials on affected systems, review all user accounts and groups for unauthorized changes.<br><br>
+<b>Phase 5 — Recovery (SysAdmin, 1-7 days):</b><br>
+Restore normal operations: Bring hosts back online from clean backup, verify no remnant access, monitor for recurrence, enable additional logging and detection rules.<br><br>
+<b>Phase 6 — Lessons Learned (SOC Manager, 1-2 weeks post-incident):</b><br>
+Post-incident review: What went well? What went wrong? What detection gaps existed? What process failures occurred? Update playbooks, tune rules, improve automation. Write final incident report.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 TShark Challenge I: Teamwork</p>
-<p style="color:#c0d0e0;">TShark is the command-line version of Wireshark. Essential for automated analysis, server environments, and large PCAP processing.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 2: Triage Frameworks — Severity, Priority, and Risk Scoring</p>
+<p style="color:#c0d0e0;">Not all alerts are equal. A SOC receives hundreds to thousands of alerts per day; triage frameworks ensure the most critical threats get attention first. The goal is to minimize Mean Time to Detect (MTTD) and Mean Time to Respond (MTTR) by prioritizing based on objective criteria rather than analyst intuition.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>TShark Commands for SOC:</b><br>
-<code>tshark -r capture.pcap -Y "http.request" -T fields -e http.host -e http.request.uri</code><br>
-→ Extract all HTTP requests — see every URL visited<br><br>
-<code>tshark -r capture.pcap -Y "dns" -T fields -e dns.qry.name | sort | uniq -c | sort -rn</code><br>
-→ List all DNS queries sorted by frequency — helps identify DGA domains<br><br>
-<code>tshark -r capture.pcap -Y "ip.addr==45.33.32.156" -T fields -e frame.time -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport</code><br>
-→ Extract all connections to a specific IP with timestamps<br><br>
-<code>tshark -r capture.pcap -z conv,tcp | sort -k5 -rn | head -10</code><br>
-→ Show top 10 TCP conversations by bytes transferred — detect data exfiltration<br><br>
-<b>Challenge Scenario — Teamwork:</b><br>
-Your team receives a PCAP of a suspected breach. Use TShark to:<br>
-1. Identify the attacker's IP address (most connections, scanning behavior)<br>
-2. Find what vulnerability was exploited (check HTTP requests for SQLi, path traversal, etc.)<br>
-3. Extract the payload downloaded from the C2 server<br>
-4. Determine what data was exfiltrated (look at large outbound transfers)<br>
-5. Build a timeline of attacker actions using frame timestamps
+<b>Severity vs Priority vs Risk Score:</b><br>
+- <b>Severity:</b> Intrinsic danger of the alert type (set by rule author). Ransomware = Critical. Port scan = Low.<br>
+- <b>Priority:</b> Business context applied to the alert. Ransomware on a domain controller = P1. Ransomware on a test server = P3.<br>
+- <b>Risk Score:</b> Computed value combining severity + asset criticality + threat intel + user context + time. Example: 0-100 scale.<br><br>
+<b>Common Severity Classification:</b><br>
+| Level | Score | Response Time | Example |
+|-------|-------|---------------|---------|
+| Critical (P1) | 90-100 | Immediate, &lt;15 min | Ransomware, active exfiltration, DC compromise |
+| High (P2) | 70-89 | &lt;1 hour | Successful C2 beaconing, lateral movement, privilege escalation |
+| Medium (P3) | 40-69 | &lt;4 hours | Failed brute force (not succeeded), phishing reported (not clicked) |
+| Low (P4) | 10-39 | &lt;24 hours | Port scan, policy violation, informational alert |
+| Informational (P5) | 0-9 | Logged only | Thresholds returning to normal, minor policy alerts |<br><br>
+<b>Asset Criticality Classification:</b><br>
+Assign every asset a criticality label (0-10):<br>
+- <b>10 — Mission Critical:</b> Domain controllers, Active Directory, core payment systems<br>
+- <b>8-9 — High:</b> File servers with sensitive data, email servers, financial databases<br>
+- <b>5-7 — Medium:</b> Employee workstations, internal web servers, development servers<br>
+- <b>1-4 — Low:</b> Test systems, isolated labs, IT-admin only systems<br><br>
+<b>Risk Scoring Formula (Example):</b><br>
+<code>RiskScore = (AlertSeverity * 3) + (AssetCriticality * 2) + (UserRisk * 1.5) + (ThreatIntelScore * 2) + (ResponseTimePenalty * -1)</code><br><br>
+<em>Example Calculation:</em><br>
+Alert: "Malware detected" (Severity: 90) on CEO's laptop (Criticality: 8). User: CEO (User Risk: 2 — high-value target). Threat Intel: The malware hash is known (Score: 75). Time: 2 AM (Response Time Penalty: -5 — fewer staff on shift).<br>
+<code>RiskScore = (90 * 3) + (8 * 2) + (2 * 1.5) + (75 * 2) + (-5) = 270 + 16 + 3 + 150 - 5 = 434 → CRITICAL</code><br><br>
+<b>Triage Decision Matrix:</b><br>
+| Triage Result | Action | Timeframe |
+|--------------|--------|-----------|
+| Confirm TP + Critical asset = Critical | Immediate escalation, page IR lead | 5 min |
+| Confirm TP + Non-critical asset | Investigate, contain, escalate if needed | 15 min |
+| Unable to confirm + High severity | Escalate to L2 for analysis | 15 min |
+| Confirmed FP | Close ticket with explanation | 5 min |
+| Benign TP (approved activity) | Close ticket, reference change ticket | 5 min |
+| Unknown + Low severity | Add to queue for batch review | 24 hours |
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 TShark Challenge II: Directory</p>
-<p style="color:#c0d0e0;">Advanced TShark challenges focused on directory traversal attacks and complex data extraction from PCAPs.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 3: Playbooks, Automation, and Orchestration (SOAR)</p>
+<p style="color:#c0d0e0;">A playbook is a step-by-step guide for handling a specific type of alert. It tells analysts exactly what to check, in what order, and what actions to take based on outcomes. Automation (via SOAR — Security Orchestration, Automation, and Response) executes playbook steps automatically — enriching data, blocking IPs, isolating hosts, opening tickets — so analysts focus on investigation, not clicking buttons.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Directory Traversal Detection:</b><br>
-<code>tshark -r capture.pcap -Y "http.request.uri contains \"../\" or http.request.uri contains \"..%2f\" or http.request.uri contains \"%2e%2e/\""</code><br>
-→ Find directory traversal attempts in HTTP requests<br><br>
-<b>Extracting Transferred Files:</b><br>
-<code>tshark -r capture.pcap --export-objects "http,./extracted_files"</code><br>
-→ Extract all files transferred via HTTP from the PCAP<br><br>
-<code>tshark -r capture.pcap -Y "data.data" -T fields -e data.data | xxd -r -p > extracted_file.bin</code><br>
-→ Extract raw binary data from packets<br><br>
-<b>Challenge Scenario — Directory:</b><br>
-You're investigating a web server compromise. The PCAP shows:<br>
-1. Initial reconnaissance: <code>GET /../../etc/passwd HTTP/1.1</code> — attacker found path traversal<br>
-2. File read: <code>GET /../../../etc/shadow</code> — attacker read password hashes<br>
-3. File upload: <code>POST /uploads/cmd.aspx</code> PHP content-type — web shell uploaded<br>
-4. Command execution: <code>GET /uploads/cmd.aspx?cmd=whoami</code> — attacker ran commands<br>
-5. Data exfiltration: <code>GET /uploads/cmd.aspx?cmd=type%20C:\Users\Administrator\Desktop\passwords.txt</code><br><br>
-<b>Your tasks:</b> Extract all files, reconstruct the attack timeline, identify stolen data, and determine the vulnerability's root cause.
+<b>Anatomy of a Playbook:</b><br><br>
+<b>Playbook: Phishing Email Investigation</b><br>
+<em>Trigger:</em> User reports suspicious email OR email gateway blocks malicious email<br>
+<em>Assigned To:</em> L1 SOC Analyst<br>
+<em>SLA:</em> 20 minutes<br><br>
+<b>Step 1 — Gather Email Metadata:</b><br>
+- Forward email as .eml attachment to SOC mailbox<br>
+- Extract: From, Reply-To, Return-Path, Received headers, SPF/DKIM/DMARC results<br>
+- Check: Is domain similar to known legitimate? (e.g., amaz0n.com vs amazon.com)<br>
+- Automated: SOAR extracts metadata via Python, checks SPF/DKIM via API<br><br>
+<b>Step 2 — Analyze URLs:</b><br>
+- Extract all URLs from email body<br>
+- Submit each URL to URLScan.io and VirusTotal<br>
+- Check: Does URL resolve? What's the redirect chain? What's the final destination?<br>
+- Check domain age (WHOIS) — domains &lt; 30 days are suspicious<br>
+- Automated: SOAR submits all URLs, parses results, flags any malicious detections<br><br>
+<b>Step 3 — Analyze Attachments:</b><br>
+- Check file extension (exe, docm, xlsm, js, vbs = high risk)<br>
+- Submit file hash to VirusTotal<br>
+- If Office document: run olevba to extract VBA macros<br>
+- If macro found: decode and analyze the payload<br>
+- Automated: SOAR detaches attachment, computes hash, checks VT, runs olevba<br><br>
+<b>Step 4 — Determine Disposition:</b><br>
+- <b>Malicious:</b> Delete email from all mailboxes, block URLs/IPs/domain at gateway, alert affected users, escalate to L2 if credentials were stolen<br>
+- <b>Suspicious:</b> Quarantine email, notify user, escalate to L2 for further analysis<br>
+- <b>Clean:</b> Inform user, close ticket<br><br>
+<b>Step 5 — Document and Close:</b><br>
+- Log all findings in ticketing system<br>
+- Add IoCs to threat intel blocklist<br>
+- If phishing campaign: update threat bulletin for other SOC team members<br><br>
+<b>SOAR Integration Example — Splunk SOAR (Phantom) Playbook:</b><br>
+<code>def on_start(incident):<br>
+    # Step 1: Extract email artifacts<br>
+    artifacts = incident.get_artifacts()<br>
+    urls = [a for a in artifacts if a['type'] == 'url']<br>
+    hashes = [a for a in artifacts if a['type'] == 'hash']<br>
+    # Step 2: Enrich all URLs<br>
+    for url in urls:<br>
+        urlscan_result = urlscan_lookup(url['value'])<br>
+        vt_result = virustotal_lookup(url['value'])<br>
+        url['urlscan_score'] = urlscan_result['score']<br>
+        url['vt_positives'] = vt_result['positives']<br>
+    # Step 3: If malicious — automate blocking<br>
+    if any(url['vt_positives'] > 0 for url in urls):<br>
+        block_ip_on_firewall(critical_ip)<br>
+        delete_email_from_all_mailboxes(msg_id)<br>
+        contain_endpoint(affected_user['host'])<br>
+    # Step 4: Update incident<br>
+    incident.update_status('open')<br>
+    incident.add_note(f'Found {len(urls)} URLs, {sum(u.vt_positives for u in urls)} malicious')</code><br><br>
+<b>Playbook Automation Maturity Levels:</b><br>
+- <b>Level 1 — Manual:</b> Analyst follows paper/PDF playbook. Slow, error-prone, inconsistent.<br>
+- <b>Level 2 — Assisted:</b> Analyst uses checklist in ticketing system. Steps displayed, manual execution.<br>
+- <b>Level 3 — Partially Automated:</b> SOAR runs enrichment steps automatically, analyst makes decisions.<br>
+- <b>Level 4 — Mostly Automated:</b> SOAR handles routine alerts end-to-end. Analyst reviews exceptions.<br>
+- <b>Level 5 — Fully Automated:</b> SOAR handles all alerts, only escalates to analyst when confidence &lt; 90%.<br><br>
+<b>Common SOC Automation Opportunities:</b><br>
+- <b>Enrichment Automation:</b> Automatically check every IP against 5 threat intel sources, add context to alert<br>
+- <b>Containment Automation:</b> Block confirmed malicious IP at firewall, isolate infected host via EDR API<br>
+- <b>Notification Automation:</b> Send Slack/Teams message to affected user, page on-call engineer, create bridge call<br>
+- <b>Reporting Automation:</b> Generate daily SOC summary, weekly metrics report, monthly compliance dashboard
 </div>
 
-<h6 class="text-primary mt-3">Network Traffic Analysis Methodology</h6>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 4: Documentation, Metrics, and Continuous Improvement</p>
+<p style="color:#c0d0e0;">A SOC without metrics is flying blind. You cannot improve what you don't measure. Comprehensive documentation ensures legal defensibility, regulatory compliance, and actionable post-incident reviews. Metrics drive decisions about staffing, tooling investment, and process improvements.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>SOC Network Investigation Checklist:</b><br>
-1. <b>Identify suspicious IP:</b> Check firewall logs, proxy logs, or SIEM alerts for unusual outbound connections<br>
-2. <b>Extract PCAP:</b> If available, capture traffic at the endpoint or network TAP<br>
-3. <b>Find the beacon:</b> Look for regular periodic connections to external IPs (60s, 120s intervals)<br>
-4. <b>Analyze protocol:</b> Is this HTTP, HTTPS, DNS, ICMP? Unusual protocol on unusual port = suspicious<br>
-5. <b>Check DNS:</b> DGA domains look random (e.g., jd83kf92.ddns.net), often use .tk, .ml, .ga TLDs<br>
-6. <b>Look for exfiltration:</b> Large outbound transfers, especially during off-hours (2-4 AM)<br>
-7. <b>Correlate with endpoint:</b> Does the network traffic match process creation events on the host?
+<b>Incident Documentation Requirements:</b><br>
+Every incident must capture:<br>
+- <b>Basic Info:</b> Incident ID, date/time opened/closed, reporter name, alert source, rule name<br>
+- <b>Classification:</b> Incident type (Malware, Phishing, Unauthorized Access, Policy Violation, etc.), severity, criticality<br>
+- <b>Timeline:</b> Every action taken with timestamp. Example: "14:32: Alert received. 14:35: Analyst assigned. 14:42: Initial analysis complete. 14:50: Escalated to L2. 15:10: Host isolated. 15:45: IR lead paged."<br>
+- <b>Evidence:</b> Log excerpts, screenshots, IoC lists, forensic images references<br>
+- <b>Actions Taken:</b> What was done — blocked IP, reset password, reimaged host, reported to law enforcement<br>
+- <b>Findings:</b> Root cause, attack vector, data accessed, systems affected<br>
+- <b>Resolution:</b> How the incident was resolved, what residual risks remain<br>
+- <b>Lessons Learned:</b> What went well, what could be improved, action items with owners and deadlines<br><br>
+<b>Key SOC Metrics (KPIs):</b><br>
+| Metric | Formula | Target | Why It Matters |
+|--------|---------|--------|----------------|
+| Mean Time to Detect (MTTD) | Sum(Detection time - Compromise time) / Incidents | &lt; 1 hour | How fast do we find threats? |
+| Mean Time to Respond (MTTR) | Sum(Containment time - Detection time) / Incidents | &lt; 2 hours | How fast do we stop threats? |
+| Mean Time to Triage (MTTT) | Sum(Triage time - Alert time) / Alerts | &lt; 15 minutes | How fast do we acknowledge alerts? |
+| Mean Time to Escalate (MTTE) | Sum(Escalation time - Triage time) / Alerts | &lt; 30 minutes | How fast do we get L2 involved? |
+| Alert Volume per Day | Count(Alerts) / Days | Track trend | Is noise increasing or decreasing? |
+| False Positive Rate | Count(FP) / Count(Total Alerts) | &lt; 30% | How well are rules tuned? |
+| Escalation Rate | Count(Escalated) / Count(Total Alerts) | 5-15% | Are we sending right things to L2? |
+| SLA Compliance | Count(Alerts within SLA) / Count(Alerts) | &gt; 95% | Are we meeting response deadlines? |
+| Analyst Utilization | Time on alerts / Total shift time | 60-80% | Are analysts busy or idle? |<br><br>
+<b>Continuous Improvement Cycle (Plan-Do-Check-Act):</b><br>
+1. <b>Plan:</b> Identify improvement area from metrics (e.g., too many FP alerts on rule X). Set target (reduce FP by 50%).<br>
+2. <b>Do:</b> Implement change — tune rule, add exception list, modify condition logic.<br>
+3. <b>Check:</b> Measure after 2 weeks — did FP rate drop? By how much? Any new issues?<br>
+4. <b>Act:</b> If successful — standardize the change. If not — analyze why, try different approach.<br><br>
+<b>Common SOC Workflow Problems and Solutions:</b><br>
+- <b>Problem:</b> Analysts skip documentation because they're too busy.<br>
+  <b>Solution:</b> Use ticketing templates with required fields. Automate documentation — have SOAR auto-populate timeline. Require documentation before closing incident.<br>
+- <b>Problem:</b> Handoffs between shifts lose context.<br>
+  <b>Solution:</b> 15-minute shift overlap for verbal handoff. Standardized shift handoff document. Shared Slack channel for ongoing investigations.<br>
+- <b>Problem:</b> High-priority alerts get missed in alert queue.<br>
+  <b>Solution:</b> Auto-escalation — if alert isn't acknowledged in 5 minutes, page backup. Use alert triage dashboard sorted by risk score. Critical alerts bypass queue via SMS/page.<br>
+- <b>Problem:</b> Analysts feel like they're fighting fires with no improvement.<br>
+  <b>Solution:</b> Regular "time to improve" sessions — 2 hours per week for rule tuning, playbook updates, skill development. Track metrics to show progress.
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-box-seam me-2"></i>3. CONCEPT BOXES</h6>
+
+<div class="alert alert-info">
+<strong>INFO BOX</strong><br>
+<b>NIST Incident Response Lifecycle:</b> The NIST SP 800-61 Revision 2 defines four phases: (1) Preparation — preventing incidents and preparing tools/playbooks/team, (2) Detection & Analysis — finding and validating incidents, (3) Containment, Eradication & Recovery — stopping the attack and restoring systems, (4) Post-Incident Activity — lessons learned, evidence retention, process improvement. Most SOC workflows map directly to NIST phases. Preparation is the most overlooked phase — a 2025 SANS survey found that organizations with formal incident response plans contain breaches 54% faster.
+</div>
+
+<div class="alert alert-success">
+<strong>REMEMBER BOX</strong><br>
+<b>Documentation is Not Optional — It's Legal Protection.</b> If you don't document it, it didn't happen. When a breach leads to lawsuits, regulatory fines, or insurance claims, your incident documentation is your defense. Prosecutors, regulators, and auditors will ask: "What did you know? When did you know it? What did you do about it?" Your ticketing system with timestamps, actions, and rationale is the answer. Poor documentation has led to millions in fines for companies that couldn't prove they responded appropriately.
+</div>
+
+<div class="alert alert-warning">
+<strong>WARNING BOX</strong><br>
+<b>Alert Triage — Don't Let Urgency Override Accuracy.</b> A common SOC trap: an alert is marked "Critical" so the analyst immediately isolates the host — before verifying it's a True Positive. This has caused production outages, blocked legitimate business traffic, and embarrassed SOC teams. Example: A SOC blocked all traffic from a critical vendor's IP because an alert fired, but the IP was shared infrastructure. The vendor's services went down for 24,000 customers. Always confirm before containing. Rule: "Verify, then act. Not act, then verify."
+</div>
+
+<div class="alert alert-info">
+<strong>SOC ANALYST TIP</strong><br>
+<b>Master the "5 Whys" Investigation Technique.</b> When investigating an alert, don't stop at the first finding. Ask "why" five times to find root cause.<br>
+1. Why did the alert fire? → Process made an outbound connection to a suspicious IP.<br>
+2. Why was that process running? → It was launched by a PowerShell script.<br>
+3. Why did PowerShell run? → User double-clicked a PDF attachment in an email.<br>
+4. Why did the user open the PDF? → It appeared to be an invoice from their manager.<br>
+5. Why was the email not blocked? → The email gateway didn't detect the phishing because the domain was registered 2 hours ago and not yet blocklisted.<br>
+Root cause: Email gateway lacks real-time domain reputation checks on newly registered domains. Fix: Enable domain age scoring in email gateway rules.
+</div>
+
+<div class="alert alert-warning">
+<strong>INTERVIEW Q&A</strong><br>
+<b>Q: "Walk me through a time you handled a high-severity incident — what was your process?"</b><br>
+<b>A:</b> "We had a ransomware alert on a file server at 2 AM. My process: (1) Acknowledge the alert within 2 minutes. (2) Verify — check if it's a test or false positive (look at alert source — EDR confirmed encryption activity). (3) Immediate containment — isolate the host via EDR, block SMB traffic at the firewall to prevent spread. (4) Assess scope — query SIEM for other hosts showing similar behavior, check if the ransomware source was on the file server or if it spread from elsewhere. (5) Activate IR plan — page IR lead, open bridge, assign tasks. (6) Gather evidence — capture memory, take disk image, check process tree. (7) Determine patient zero — traced initial infection to a user who opened a phishing email 6 hours earlier. (8) Contain patient zero — isolate that host. (9) Block IoCs — block C2 IPs, domains, hashes at all security controls. (10) Document everything in real-time — one team member focused on documentation while others handled response. The incident was contained in 37 minutes; the file server was restored from backup in 4 hours. Post-incident, we found the email gateway missed the phishing email because the domain was only 1 hour old — we implemented real-time domain age checking."<br><br>
+<b>Q: "How do you handle a situation where you disagree with a senior analyst about the severity of an alert?"</b><br>
+<b>A:</b> "I'd present my evidence clearly. For example, 'I understand you think this is a low-severity port scan, but I found that the scanning IP also attempted SQL injection on our web server 2 minutes later, and the source IP is on three threat intel blocklists. I believe this is active reconnaissance for a web application attack, not automated scanning.' I'd show my data, explain my rationale, and ask for their perspective. If we still disagree, I'd escalate to the SOC manager with both positions documented. The key is being data-driven and respectful — no ego in security operations."<br><br>
+<b>Q: "What metrics do you use to measure SOC effectiveness and how would you improve them?"</b><br>
+<b>A:</b> "I track MTTD, MTTR, false positive rate, and escalation rate. MTTD tells me how fast we detect threats — if it's high, we have detection gaps or log latency issues. MTTR tells us how fast we respond — if it's high, we need better playbooks, automation, or training. False positive rate tells us how well our rules are tuned — above 30% means we're wasting time on noise. Escalation rate should be 5-15% — too low means L1 isn't finding real threats; too high means L1 isn't confident enough. To improve, I'd: (1) Automate enrichment to reduce L1 analysis time, (2) Implement SOAR for routine containment actions, (3) Schedule regular tuning sessions for high-FP rules, (4) Provide feedback loops to L1 on escalation quality, (5) Run purple team exercises to test detection and response speed."
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-diagram-3 me-2"></i>4. VISUAL DIAGRAMS</h6>
+<pre class="mermaid">
+flowchart TD
+    A["Alert Generated by SIEM"] --> B["L1 Triage Queue"]
+    B --> C{"Within 15 min?"}
+    C -->|"Yes"| D["L1 Analyst Assigns Alert"]
+    C -->|"No"| E["Auto-Escalate to L2 Queue"]
+    
+    D --> F{"Initial Assessment"}
+    F -->|"False Positive"| G["Close — Document Reasoning"]
+    F -->|"Benign TP"| H["Close — Reference Change Ticket"]
+    F -->|"Suspicious TP"| I["Create Incident Ticket"]
+    F -->|"Malicious TP"| J["Immediate Escalation"]
+    
+    I --> K["Assign to L2 Analyst"]
+    J --> L["Activate IR Plan"]
+    
+    L --> M["L2/L3 Deep Investigation"]
+    K --> M
+    
+    M --> N{"Confirmed Malicious?"}
+    N -->|"No"| G
+    N -->|"Yes"| O["Determine Scope & Impact"]
+    
+    O --> P["Containment Actions"]
+    P --> P1["Isolate Affected Hosts"]
+    P --> P2["Block Attacker Infrastructure"]
+    P --> P3["Disable Compromised Accounts"]
+    P --> P4["Reset Credentials"]
+    
+    P1 --> Q["Eradication"]
+    P2 --> Q
+    P3 --> Q
+    P4 --> Q
+    
+    Q --> Q1["Remove Malware"]
+    Q --> Q2["Remove Persistence"]
+    Q --> Q3["Patch Vulnerabilities"]
+    
+    Q1 --> R["Recovery"]
+    Q2 --> R
+    Q3 --> R
+    
+    R --> R1["Restore from Backup"]
+    R --> R2["Monitor for Recurrence"]
+    R --> R3["Enable Additional Logging"]
+    
+    R1 --> S["Post-Incident Review"]
+    R2 --> S
+    R3 --> S
+    
+    S --> T["Lessons Learned Document"]
+    T --> U["Update Playbooks"]
+    T --> V["Tune Detection Rules"]
+    T --> W["Implement Automation"]
+    
+    U --> X["Incident Closed"]
+    V --> X
+    W --> X
+    
+    subgraph Timeline["Target SLAs by Severity"]
+        SL1["Critical: &lt;15 min to acknowledge, &lt;2 hours to contain"]
+        SL2["High: &lt;1 hour to acknowledge, &lt;4 hours to contain"]
+        SL3["Medium: &lt;4 hours to acknowledge, &lt;24 hours to contain"]
+        SL4["Low: &lt;24 hours to acknowledge, &lt;72 hours to close"]
+    end
+</pre>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-mortarboard me-2"></i>5. TRYHACKME SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Room</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Objectives</th><th style="color:#00d4ff;text-align:left;">Completion Order</th></tr>
+<tr><td>Incident Handling — Intro to IR</td><td>Easy</td><td>Understand incident response phases, team roles, identification methods, preparation steps</td><td>1</td></tr>
+<tr><td>Incident Handling — Triage</td><td>Medium</td><td>Practice triaging real security alerts — classify, prioritize, determine severity, decide escalation</td><td>2</td></tr>
+<tr><td>Incident Handling — Containment Methods</td><td>Medium</td><td>Learn containment strategies for different attack types — network isolation, account disablement, process termination</td><td>3</td></tr>
+<tr><td>Incident Handling — Eradication & Recovery</td><td>Medium</td><td>Practice removing threats, restoring systems, validating no remnant access remains</td><td>4</td></tr>
+<tr><td>Intro to Digital Forensics</td><td>Easy</td><td>Learn forensic methodology — acquisition, preservation, analysis, reporting</td><td>5</td></tr>
+<tr><td>Windows Forensics 1</td><td>Medium</td><td>Extract forensic artifacts from Windows — prefetch, registry, event logs, USN journal, MFT</td><td>6</td></tr>
+<tr><td>Windows Forensics 2</td><td>Medium</td><td>Advanced Windows forensics — timeline analysis, $MFT parsing, registry hive analysis, LNK files</td><td>7</td></tr>
+<tr><td>Phishing Analysis Fundamentals</td><td>Easy</td><td>Analyze email headers, URLs, attachments — practice triaging reported phishing emails</td><td>8</td></tr>
+<tr><td>Phishing Analysis Tools</td><td>Medium</td><td>Use PhishTool, EmlAnalyzer, MailReaper, URLScan.io — automate phishing investigation workflow</td><td>9</td></tr>
+<tr><td>Digital Forensics — Case B4DM755</td><td>Hard</td><td>Complete forensic investigation — find evidence of compromise, write formal incident report</td><td>10</td></tr>
+</table>
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-shield-shaded me-2"></i>6. HACK THE BOX ACADEMY SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Module</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Learning Outcomes</th></tr>
+<tr><td>Incident Handling Process</td><td>Easy</td><td>Master NIST IR lifecycle, create incident classification taxonomy, build escalation matrix</td></tr>
+<tr><td>SOC Operations & Management</td><td>Medium</td><td>Understand SOC tiers, shift structures, KPIs, SLA management, communication protocols</td></tr>
+<tr><td>SIEM Triage & Investigation</td><td>Medium</td><td>Practice alert triage across multiple SIEMs, develop standardized investigation methodology</td></tr>
+<tr><td>Threat Intelligence & CTI</td><td>Medium</td><td>Integrate CTI into SOC workflow, use MISP/OpenCTI, operationalize intelligence for detection</td></tr>
+<tr><td>Incident Reporting & Communication</td><td>Medium</td><td>Write executive summaries, technical reports, legal documentation, stakeholder communications</td></tr>
+<tr><td>SOAR Automation Fundamentals</td><td>Hard</td><td>Design SOAR playbooks, automate enrichment and containment, measure automation ROI</td></tr>
+<tr><td>Purple Team Fundamentals</td><td>Hard</td><td>Bridge red/blue team operations, run adversary emulation tests, validate detection coverage</td></tr>
+<tr><td>Post-Incident Analysis & Improvement</td><td>Medium</td><td>Conduct lessons learned sessions, perform root cause analysis, track improvement metrics</td></tr>
+</table>
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-shield-check me-2"></i>7. LETSDEFEND SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Investigation/Scenario</th><th style="color:#00d4ff;text-align:left;">Type</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>SOC161 — Phishing Analysis Workflow</td><td>SOC Simulation</td><td>Full phishing incident from report to closure — analyze email, identify 20+ IoCs, write incident report</td></tr>
+<tr><td>SOC161 — SOC Simulation Lab</td><td>SOC Simulation</td><td>Comprehensive SOC simulation covering triage, investigation, containment, eradication, recovery phases</td></tr>
+<tr><td>SOC147 — Incident Triage</td><td>Alert Triage</td><td>Practice classifying 20 different alerts — determine TP/FP/Benign, assign severity, decide escalation</td></tr>
+<tr><td>SOC138 — SOC Automation Lab</td><td>SOC Simulation</td><td>Design and implement SOAR playbook for phishing automation using Splunk SOAR playbook editor</td></tr>
+<tr><td>SOC150 — Malicious PowerShell With Log Analysis</td><td>Alert Triage</td><td>Triage and investigate PowerShell execution alert — decode scripts, trace parent process, determine intent</td></tr>
+<tr><td>SOC165 — Brute Force Attack Response</td><td>SOC Simulation</td><td>Full incident lifecycle for brute force attack — detect, investigate, contain, eradicate, document</td></tr>
+<tr><td>SOC164 — Malware Analysis Workflow</td><td>SOC Simulation</td><td>Analyze malware sample as part of incident — static analysis, dynamic analysis, determine C2, write report</td></tr>
+</table>
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-shield-fill me-2"></i>8. CYBERDEFENDERS SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Challenge</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>SOC Playbook Development</td><td>Easy</td><td>Create 5 playbooks (phishing, malware, brute force, data exfiltration, policy violation) following NIST framework</td></tr>
+<tr><td>Incident Report Writing</td><td>Medium</td><td>Given raw investigation notes, write professional incident report suitable for management, legal, and auditors</td></tr>
+<tr><td>SOC Metrics Dashboard</td><td>Medium</td><td>Design and build SOC metrics dashboard tracking MTTD, MTTR, FP rate, SLA compliance, analyst utilization</td></tr>
+<tr><td>SOAR Playbook Challenge</td><td>Hard</td><td>Implement fully automated SOAR playbook for phishing response — enrichment, containment, notification, documentation</td></tr>
+<tr><td>SOC Shift Lead Simulation</td><td>Hard</td><td>Run a SOC shift for 8 hours — manage 5 analysts, prioritize 50+ alerts, handle 2 critical incidents, ensure SLAs met</td></tr>
+</table>
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-github me-2"></i>9. GITHUB RESOURCES</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Repository</th><th style="color:#00d4ff;text-align:left;">Purpose</th><th style="color:#00d4ff;text-align:left;">Skills Learned</th></tr>
+<tr><td><a href="https://github.com/keraattin/Blue-Team-Roadmap" style="color:#00d4ff;" target="_blank">Blue-Team-Roadmap</a></td><td>Structured learning path from beginner to advanced blue team skills</td><td>Career planning, skill gap analysis, SOC role preparation</td></tr>
+<tr><td><a href="https://github.com/cyb3rxp/awesome-soc" style="color:#00d4ff;" target="_blank">awesome-soc</a></td><td>Curated list of SOC tools, platforms, frameworks, and training materials</td><td>SOC tool discovery, industry best practices, workflow optimization</td></tr>
+<tr><td><a href="https://github.com/SigmaHQ/sigma" style="color:#00d4ff;" target="_blank">sigma</a></td><td>Generic detection rule format — essential for SOC detection engineering</td><td>Rule writing, SIEM-agnostic detection, rule deployment workflows</td></tr>
+<tr><td><a href="https://github.com/redcanaryco/atomic-red-team" style="color:#00d4ff;" target="_blank">atomic-red-team</a></td><td>Test detection workflows with real adversary techniques mapped to ATT&CK</td><td>Playbook testing, detection validation, SOC readiness exercises</td></tr>
+<tr><td><a href="https://github.com/SwiftOnSecurity/sysmon-config" style="color:#00d4ff;" target="_blank">sysmon-config</a></td><td>Windows Sysmon configuration for comprehensive logging</td><td>Endpoint visibility, detection engineering, log source configuration</td></tr>
+<tr><td><a href="https://github.com/aboutsecurity/blueteam_homelabs" style="color:#00d4ff;" target="_blank">blueteam_homelabs</a></td><td>Blue team home lab setups for practicing SOC workflows</td><td>Lab design, tool deployment, hands-on SOC simulation</td></tr>
+<tr><td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" style="color:#00d4ff;" target="_blank">EVTX-ATTACK-SAMPLES</a></td><td>Real Windows Event Log attack samples for testing investigation workflows</td><td>Event log analysis, incident timeline reconstruction, pattern recognition</td></tr>
+<tr><td><a href="https://github.com/InQuest/awesome-yara" style="color:#00d4ff;" target="_blank">awesome-yara</a></td><td>Curated YARA resources for malware detection workflows</td><td>Signature writing, malware detection, forensic triage automation</td></tr>
+<tr><td><a href="https://github.com/A-poc/BlueTeam-Tools" style="color:#00d4ff;" target="_blank">BlueTeam-Tools</a></td><td>Blue team toolchain with setup guides for SOC operations</td><td>Tool proficiency, defensive operations, automated response workflows</td></tr>
+</table>
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-laptop me-2"></i>10. HANDS-ON LABS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Lab: Alert Triage Simulation</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Practice triaging 20 simulated security alerts — classify each alert, assign severity, determine disposition, and decide escalation path.<br><br>
+<b>Setup:</b> Download the LetsDefend SOC Simulation Lab VM or create your own alert list with diverse scenarios. Use a spreadsheet or ticketing system (like osTicket installed locally) to track your decisions.<br><br>
+<b>Step-by-Step:</b><br>
+1. Prepare 20 alert descriptions spanning: brute force, phishing, malware, policy violation, port scan, DLP, C2 beaconing, abnormal process execution, suspicious log clearing, impossible travel, etc.<br>
+2. For each alert, document:<br>
+   - Alert name and source<br>
+   - Key metadata (IPs, users, systems, timestamps)<br>
+   - Your initial classification (FP, Benign TP, Suspicious TP, Malicious TP)<br>
+   - Severity assignment (Critical/High/Medium/Low/Info)<br>
+   - Recommended escalation path (Close, L1 Investigation, L2, L3, IR Plan)<br>
+3. Create a decision flow for each alert — what additional data would you query?<br>
+4. After triage, reveal the "true" answer for each scenario and compare<br><br>
+<b>Expected Results:</b> You should be able to triage 20 alerts in under 30 minutes with 80%+ accuracy. Track your FP rate vs TP rate.<br><br>
+<b>Troubleshooting:</b> If you misclassify an alert, analyze why — did you miss a clue? Were you too quick? Too slow? Document your mistakes to build mental models.<br><br>
+<b>Detection Opportunities:</b> Create your own alerts by running Atomic Red Team tests and observing what your SIEM generates. Practice triaging your own alerts as if they came from a real attacker.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Lab: Build a Complete SOC Playbook Set</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Create a set of 5 professional SOC playbooks for common incident types: Phishing, Malware, Brute Force, Data Exfiltration, Insider Threat. Each playbook must include: trigger, SLA, assigned role, step-by-step instructions, decision tree, expected outcomes, escalation criteria.<br><br>
+<b>Setup:</b> Use a document template (Word, Google Docs, or Markdown in a Git repo). Use draw.io or Lucidchart for decision trees.<br><br>
+<b>Step-by-Step:</b><br>
+1. Research SOC playbook standards — NIST SP 800-61, SANS IR templates, FIRST CSIRT playbook guide<br>
+2. For each playbook, define:<br>
+   - <b>Trigger:</b> What event starts this playbook? (SIEM alert, user report, partner notification)<br>
+   - <b>Goal:</b> What does successful execution look like?<br>
+   - <b>Assumptions:</b> What tools/data are available?<br>
+   - <b>Steps:</b> Numbered, actionable steps with expected outputs<br>
+   - <b>Decision Points:</b> If X, go to step Y; if Z, escalate to team W<br>
+   - <b>Escalation Criteria:</b> When does this become a formal incident?<br>
+   - <b>Communication Template:</b> What to say to affected users, management, legal, press<br>
+3. Include automation triggers — which steps can be automated with SOAR?<br>
+4. Add checklist for documentation — what must be recorded in the ticketing system?<br><br>
+<b>Expected Results:</b> Five complete, ready-to-use playbooks that any SOC analyst could follow without asking questions.<br><br>
+<b>Troubleshooting:</b> Test your playbooks by having another person follow them with a real alert. Where did they get stuck? What was unclear? Revise.<br><br>
+<b>Detection Opportunities:</b> Map each playbook step to the relevant SIEM queries, log sources, and tools needed. Ensure every "investigate" instruction includes the exact query or command.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Lab: Full SOC Simulation — 24-Hour Incident Response Exercise</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Run a complete simulated incident response exercise from initial alert through post-incident review. Involve multiple roles (L1, L2, SOC Manager, Legal, Comms) and practice all phases of the IR lifecycle.<br><br>
+<b>Setup:</b> Use a lab environment with Splunk Wazuh or Elastic SIEM preloaded with attack data. Use Splunk SOAR (free tier) for automation simulation. Set up Slack/Teams channels for communication. Use ServiceNow or osTicket for ticketing.<br><br>
+<b>Step-by-Step:</b><br>
+1. <b>Scenario Preparation:</b> Plant evidence of a multi-stage attack: phishing email → credential theft → mailbox access → lateral movement → data exfiltration. Pre-load logs into SIEM.<br>
+2. <b>Phase 1 — Alert Generation:</b> L1 analyst sees the phishing alert. Must triage and escalate within 15 minutes.<br>
+3. <b>Phase 2 — Triage & Escalation:</b> L1 confirms TP, creates incident ticket, assigns to L2. Documents initial findings.<br>
+4. <b>Phase 3 — Investigation:</b> L2 queries SIEM for all events involving the affected user — discovers credential theft and mailbox access. Finds lateral movement to a file server. Determines data exfiltration occurred (5 PDFs downloaded).<br>
+5. <b>Phase 4 — Containment:</b> L2 isolates affected hosts, resets user password, revokes O365 sessions, blocks attacker IPs at firewall. Documented in ticketing system with timestamps.<br>
+6. <b>Phase 5 — Escalation:</b> L2 pages SOC Manager and Incident Commander. Bridge call is established. Legal is notified of data breach involving 5 files.<br>
+7. <b>Phase 6 — Eradication & Recovery:</b> All compromised systems are reimaged. Passwords reset for all users in the same department. MFA enabled for the affected user group. Breached data inventory is created.<br>
+8. <b>Phase 7 — Post-Incident:</b> 24 hours after containment, conduct lessons learned. Identify 3 improvements: email gateway missed the phishing email (need real-time domain scoring), lateral movement detection was delayed (need faster alert), documentation was incomplete (need template).<br>
+9. <b>Phase 8 — Reporting:</b> Generate final incident report: executive summary, technical timeline, impact assessment, evidence inventory, lessons learned, action items.<br><br>
+<b>Expected Results:</b> Complete incident report with full timeline, evidence log, containment actions, and improvement plan. All team members understand their roles and the complete incident lifecycle.<br><br>
+<b>Troubleshooting:</b> Common issues: communication breakdown (use structured comms like "I have the incident, I'm investigating timeline"), documentation gaps (assign a scribe), slow decision-making on containment (pre-approve common containment actions).<br><br>
+<b>Detection Opportunities:</b> After the exercise, review what detection gaps existed. What attacks went undetected? What detection rules missed the adversary actions? Update rules and playbooks.
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-people me-2"></i>11. SOC SCENARIOS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 1: Insider Threat — Data Theft via USB</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> DLP (Data Loss Prevention) alert: "Employee j.doe copied 5 GB of files from the financial share (F:\FINANCE) to their workstation at 2:00 PM. At 2:15 PM, a USB Mass Storage Device was connected. At 2:30 PM, the files were deleted from the workstation." j.doe is a finance analyst who submitted their resignation earlier that day.<br><br>
+<b>How to Detect:</b> DLP alerts on file copy events (Event ID 4663 — file access) to external media. Windows Event Logs show Event ID 6416 (new device connected — USB). Sysmon Event ID 11 (file create) for files written to removable drive. File deletion events (Event ID 4659) after the copy. Look for the sequence: access share → copy locally → connect USB → write to USB → delete local copies.<br><br>
+<b>Splunk Query:</b><br>
+<code>index=windows (EventCode=4663 OR EventCode=6416 OR EventCode=11 OR EventCode=4659) Account_Name=j.doe<br>
+| transaction maxspan=1h Account_Name, ComputerName<br>
+| where mvcount(EventCode) >= 3<br>
+| table _time, Account_Name, ComputerName, EventCode, FileName, Object_Name</code><br><br>
+<b>How to Investigate:</b> Confirm with HR that j.doe resigned. Review file access logs — what specific files were copied? Are they financial reports, customer data, intellectual property? Review CCTV for the time period (if available). Check j.doe's badge access logs — did they enter the building at unusual times? Interview j.doe's manager — was there any recent conflict? Check j.doe's email for any communication with competitors or unusual external parties.<br><br>
+<b>How to Respond:</b><br>
+1. Immediately revoke j.doe's building access and system access<br>
+2. Escort j.doe out of the building (HR/security handle this)<br>
+3. Seize the USB device if possible<br>
+4. Determine if any data was exfiltrated before the alert (did they send files via email earlier?)<br>
+5. Contact legal — this may be a criminal matter (trade secret theft)<br>
+6. Preserve all logs and forensic images for potential litigation<br>
+7. Assess business impact — what data is now outside the organization?<br><br>
+<b>How to Document:</b> Insider Threat incident report with HR involvement, legal review, evidence chain of custody, data inventory of stolen files, business impact assessment, containment actions, and policy recommendations (disable USB ports for departing employees automatically).
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 2: Ransomware Infection — Full Incident Lifecycle</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> Monday 8:15 AM — helpdesk tickets start flooding in: "Can't open files on shared drive, all my files have .lockbit extension now." The SIEM alerts on 100+ hosts showing mass file rename events (Event ID 4659). EDR alerts on all workstations in the accounting department: "Ransomware behavior detected — file encryption activity."<br><br>
+<b>How to Detect:</b> EDR behavioral detection flags: process creating thousands of files with random names, modifying registry Run keys, deleting Volume Shadow Copies (vssadmin.exe delete shadows /all /quiet). Network detection: C2 beaconing to IPs associated with LockBit 3.0 ransomware group. SIEM correlation: file creation events + shadow copy deletion + C2 beaconing from same host = confirmed ransomware.<br><br>
+<b>Splunk Query to Find Patient Zero:</b><br>
+<code>index=windows EventCode=4659<br>
+| eval Extension = if(match(File_Name, "\.lockbit$"), "encrypted", "normal")<br>
+| where Extension = "encrypted"<br>
+| stats earliest(_time) as First_Encryption by ComputerName<br>
+| sort First_Encryption<br>
+| head 1</code><br><br>
+<b>How to Investigate:</b> The first host to show encryption is patient zero. Find what that user did — check proxy logs for downloads, email for phishing, RDP logs for external connections. Determine the initial access vector (phishing? RDP brute force? Software vulnerability?). Check the encryption key — is there a local key or did it contact C2 for the key? This determines if decryption is possible. Check if backups are intact — are they stored offline or were they also encrypted?<br><br>
+<b>How to Respond:</b><br>
+1. <b>Containment (0-30 min):</b> Isolate all affected hosts at switch level. Block SMB (445) and RDP (3389) at firewalls to prevent lateral spread. Disable Active Directory accounts of affected users.<br>
+2. <b>Eradication (30 min-4 hrs):</b> Identify patient zero and isolate. Determine the initial access vector and block it (block phishing domains, patch exploited service).<br>
+3. <b>Recovery (4 hrs-48 hrs):</b> Wipe and reimage all affected hosts (never pay ransom — only 54% of companies that pay get their data back, and 22% pay again). Restore data from clean backups. Verify backup integrity before restoring — attackers sometimes pre-plant malware in backups that activates post-restore.<br>
+4. <b>Post-Incident:</b> Conduct tabletop exercise. Update backup strategy — implement 3-2-1 rule (3 copies, 2 media types, 1 offsite/offline). Implement Network Detection and Response (NDR) to detect ransomware C2 patterns earlier.<br><br>
+<b>How to Document:</b> Major Incident report. Include: timeline of encryption spread, patient zero identification, ransom note analysis, IOC list (C2 IPs, domains, hashes), containment actions with exact times, recovery confirmation, business impact (hours of downtime, data loss amount), lessons learned. Submit to law enforcement (FBI IC3). Share IOCs with Information Sharing organizations.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 3: Business Email Compromise (BEC)</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> The CFO receives an email that appears to be from the CEO: "Urgent — I need a wire transfer of $47,500 to account 12345678 at First National Bank for an acquisition. I'm in a meeting, can't talk. Please process immediately." The CFO processes the wire. Three days later, the real CEO asks about the payment during a budget review, and the fraud is discovered.<br><br>
+<b>How to Detect:</b> Email gateway checks: SPF/DKIM/DMARC analysis — the email came from "ceo@company.com" but DMARC shows SPF fail and DKIM fail because the actual sending server is not authorized. The FROM header was spoofed. ALSO: Email gateway URL analysis shows the Reply-To is "ceo.help@gmail.com" — not a company domain. Modern email gateways can detect: display name spoofing (CEO John Smith), reply-to mismatch, external user sending to internal finance team with urgency language.<br><br>
+<b>O365 Audit Log Query (KQL):</b><br>
+<code>EmailEvents<br>
+| where TimeGenerated > ago(3d)<br>
+| where EmailDirection == "Inbound"<br>
+| where SenderDisplayName contains "CEO"<br>
+| where AuthenticationResults !contains "pass"  // SPF/DKIM/DMARC failed<br>
+| project TimeGenerated, Subject, SenderDisplayName, SenderFromAddress, RecipientEmailAddress, AuthenticationResults</code><br><br>
+<b>How to Investigate:</b> Check Office 365 audit logs for any unusual email access by the compromised CEO account (if the CEO account was actually compromised vs just spoofed). Check for email forwarding rules created by the attacker to intercept replies. Check the wire transfer details — where did the money go? Contact the bank immediately to try to halt the transfer. Check if there are other employees who received similar emails. Interview the CFO — what was the context? Were there prior emails setting up this request?<br><br>
+<b>How to Respond:</b><br>
+1. Immediately contact the receiving bank with a fraud affidavit — attempt to freeze the account<br>
+2. If CEO account was compromised: reset password, revoke sessions, check for forwarding rules<br>
+3. Alert all employees about the BEC attack — look for similar emails<br>
+4. Implement payment verification policy: all wire transfers over $5,000 require verbal confirmation via a known phone number<br>
+5. Enable DMARC reject policy (p=reject) to prevent domain spoofing<br>
+6. Enable BEC detections in email security platform (display name spoofing protection)<br><br>
+<b>How to Document:</b> Fraud incident report. Include: email headers showing spoofing, wire transfer details, bank communication timeline, financial impact (amount lost, amount recovered), policy changes implemented. File report with FBI IC3 (Internet Crime Complaint Center). BEC is the #1 costliest cybercrime — total losses exceeded $50 billion between 2013-2024 (FBI report).
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-question-circle me-2"></i>12. KNOWLEDGE CHECK</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Multiple Choice Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. What is the first step in the NIST IR lifecycle?</b><br>
+a) Detection & Analysis<br>
+b) Preparation<br>
+c) Containment, Eradication & Recovery<br>
+d) Post-Incident Activity<br>
+<strong style="color:#00d4ff;">Answer: b) Preparation</strong><br><br>
+
+<b>2. An L1 analyst receives a "Port Scan" alert on a non-critical development server. The scanning IP is internal (10.0.1.50). How should they classify this?</b><br>
+a) Critical TP — immediate escalation<br>
+b) High TP — investigate further<br>
+c) Low TP — check if there's an approved scan, else low severity investigation<br>
+d) False Positive — ignore<br>
+<strong style="color:#00d4ff;">Answer: c) Low TP — check if there's an approved scan, else low severity investigation</strong><br><br>
+
+<b>3. What does MTTD measure?</b><br>
+a) Mean Time to Document<br>
+b) Mean Time to Detect<br>
+c) Mean Time to Deploy<br>
+d) Mean Time to Diagnose<br>
+<strong style="color:#00d4ff;">Answer: b) Mean Time to Detect</strong><br><br>
+
+<b>4. In a SOC with 3 tiers, which tier is primarily responsible for proactive threat hunting?</b><br>
+a) L1 — Triage<br>
+b) L2 — Investigation<br>
+c) L3 — Advanced Analysis & Hunting<br>
+d) SOC Manager<br>
+<strong style="color:#00d4ff;">Answer: c) L3 — Advanced Analysis & Hunting</strong><br><br>
+
+<b>5. What is the difference between Severity and Priority?</b><br>
+a) They are the same thing<br>
+b) Severity is set by the alert source; Priority adds business context<br>
+c) Severity is assigned by L2; Priority is assigned by L1<br>
+d) Severity is for external reports; Priority is for internal use<br>
+<strong style="color:#00d4ff;">Answer: b) Severity is set by the alert source; Priority adds business context</strong><br><br>
+
+<b>6. Which of the following is the BEST use case for SOAR automation?</b><br>
+a) Investigating complex APT campaigns<br>
+b) Automating enrichment and containment for repeatable alert types<br>
+c) Replacing all SOC analysts<br>
+d) Writing incident reports from scratch<br>
+<strong style="color:#00d4ff;">Answer: b) Automating enrichment and containment for repeatable alert types</strong><br><br>
+
+<b>7. During which incident phase should the CEO and legal team be notified?</b><br>
+a) Triage phase — always<br>
+b) As soon as the incident is confirmed and business impact is understood<br>
+c) Never — only the SOC team handles incidents<br>
+d) Only after the incident is resolved<br>
+<strong style="color:#00d4ff;">Answer: b) As soon as the incident is confirmed and business impact is understood</strong><br><br>
+
+<b>8. What is a Post-Incident Review (PIR) also known as?</b><br>
+a) Post-Mortem<br>
+b) After Action Report<br>
+c) Lessons Learned<br>
+d) All of the above<br>
+<strong style="color:#00d4ff;">Answer: d) All of the above</strong><br><br>
+
+<b>9. If a SOC has a False Positive rate of 75%, what should the team focus on?</b><br>
+a) Adding more detection rules<br>
+b) Increasing analyst headcount<br>
+c) Tuning existing rules to reduce noise<br>
+d) Upgrading the SIEM platform<br>
+<strong style="color:#00d4ff;">Answer: c) Tuning existing rules to reduce noise</strong><br><br>
+
+<b>10. Which documentation element is MOST critical for legal defensibility?</b><br>
+a) Screenshots of the SIEM dashboard<br>
+b) Timestamped log of every action taken and by whom<br>
+c) The cost of the incident<br>
+d) The malware sample itself<br>
+<strong style="color:#00d4ff;">Answer: b) Timestamped log of every action taken and by whom</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Practical Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1.</b> You are the L2 analyst assigned to investigate a "Successful login from unusual location" alert for user m.jones. The login originated from Nigeria at 3 AM local time. m.jones lives in Chicago. List your first 5 investigation steps in order.<br>
+<strong style="color:#00d4ff;">Answer: (1) Verify m.jones's location — call them, check if they traveled, (2) Check the SIEM for other logins from m.jones at the same time — if there's a login from Chicago at 3:01 AM, it's impossible travel = credential theft, (3) Check if the Nigerian IP is on any threat intel blocklists, (4) Check what systems were accessed after the login — mail? Files? VPN?, (5) Check for any data exfiltration from those systems after the login</strong><br><br>
+
+<b>2.</b> Write a standard operating procedure (SOP) for accepting an alert from an L1 analyst who handles alert triage.<br>
+<strong style="color:#00d4ff;">Answer: (1) Acknowledge alert assignment in ticketing system within 2 minutes, (2) Review alert metadata: source, type, severity, timestamp, affected assets, (3) Run initial verification queries in SIEM (check source IP reputation, user activity timeline, correlated events), (4) Make initial classification decision: FP/Benign TP/Suspicious TP/Malicious TP, (5) If FP or Benign: document reasoning and close ticket, (6) If Suspicious TP: document initial findings, assign priority, escalate to L2 with investigation notes, (7) If Malicious TP: immediately isolate affected assets, page SOC manager, activate IR plan, (8) Update ticket status and document all actions with timestamps</strong><br><br>
+
+<b>3.</b> An incident is closed but the SOC manager wants metrics. Calculate MTTD and MTTR from this data:<br>
+- Compromise: 2026-05-21 02:00:00 UTC<br>
+- Detection: 2026-05-21 06:30:00 UTC<br>
+- Containment: 2026-05-21 07:45:00 UTC<br>
+- Eradication: 2026-05-22 14:00:00 UTC<br>
+- Recovery: 2026-05-23 09:00:00 UTC<br>
+<strong style="color:#00d4ff;">Answer: MTTD = Detection - Compromise = 4.5 hours (270 minutes). MTTR = Containment - Detection = 1.25 hours (75 minutes). Target MTTD should be &lt;1 hour — this is slow (detected 4.5 hours later). Target MTTR should be &lt;2 hours — this is acceptable (contained in 75 min).</strong><br><br>
+
+<b>4.</b> Your SOC receives 5,000 alerts per day. Your team of 10 analysts can each investigate 75 alerts per 8-hour shift. Two shifts cover 16 hours/day. What is your investigation gap?<br>
+<strong style="color:#00d4ff;">Answer: Total capacity = 10 analysts × 75 alerts = 750 alerts per shift × 2 shifts = 1,500 alerts/day. Gap = 5,000 - 1,500 = 3,500 alerts/day not investigated (70%). Solutions: (1) Tune rules to reduce alert volume, (2) Automate handling of low-severity alerts with SOAR, (3) Increase headcount, (4) Prioritize by risk score so only critical alerts are immediately investigated, (5) Batch lower-severity alerts for daily review</strong><br><br>
+
+<b>5.</b> Describe a playbook step that should NOT be automated and explain why.<br>
+<strong style="color:#00d4ff;">Answer: The final decision to isolate a production server should never be fully automated. While enrichment and initial classification can be automated, the containment action on a critical system requires human judgment. Example: A "Suspicious Process" alert on a database server could be a real malware infection OR it could be a scheduled maintenance task that was updated. Automated isolation would take a production database offline, potentially costing millions. The playbook should: automate enrichment (gather process details, check threat intel, query SIEM) but present the decision to a human analyst with evidence. The analyst makes the call — "isolate" or "continue monitoring."</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Investigation Scenarios</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Scenario A — False Positive Flood:</b> Your SIEM suddenly starts generating 50,000 alerts per hour instead of the normal 500. The alerts are all from the same rule: "Suspicious DNS Query — DGA Domain Detected." Investigation shows the rule is flagging queries to microsoft.com, google.com, and other legitimate domains. What happened and how do you fix it?<br>
+<strong style="color:#00d4ff;">Answer: Root cause analysis: The rule likely uses a threshold on domain length or entropy. A legitimate service (maybe a CDN or cloud provider) started using random-looking subdomains, which crossed the DGA threshold. Fix: (1) Temporarily disable the rule to stop the alert flood, (2) Analyze the DGA detection logic — was it domain entropy? Domain length? Character frequency? (3) Add the known-good domains to an allowlist, (4) Adjust thresholds to be more specific (e.g., combine domain length + no DNS resolution + recently registered domain), (5) Consider using ML-based DGA detection that learns normal patterns, (6) After fix, re-enable rule in monitor-only mode for 24 hours, (7) Verify alerts have returned to normal volume before enabling alerting. Permanent fix: Implement a feedback loop where analysts can quickly add false positives to an exception list directly from the alert queue.</strong><br><br>
+
+<b>Scenario B — Shift Handoff Failure:</b> Your team works 3 shifts: 7-15, 15-23, 23-7. The day shift investigates a potential data exfiltration alert but doesn't escalate because they're "still gathering evidence." They go home at 15:00 without documenting their findings in the ticketing system. The evening shift sees the alert in the queue but has no context — they mark it as "Requires Investigation" and move on. At 2 AM, the night shift realizes the alert is critical and calls the SOC manager, but by then, the attacker has exfiltrated 50 GB of data. What process improvements prevent this?<br>
+<strong style="color:#00d4ff;">Answer: Multiple failures: (1) Lack of mandatory shift handoff — require a 15-minute overlap where outgoing analysts verbally brief incoming team on all open investigations, (2) No documentation requirement — tickets must be updated before an analyst clocks out, (3) No "in-progress" escalation rule — any alert that hasn't been triaged after 4 hours should auto-escalate to L2, (4) No automated timeout — if an investigation is in progress for more than 2 hours, it should auto-notify the shift lead, (5) Training gap — the day shift analyst should have recognized 50 GB of outbound traffic as critical and escalated immediately, not waited to "gather more evidence." Fixes: Implement mandatory shift handoffs with written summary, enforce ticket documentation policies, set auto-escalation rules based on time in queue, and train analysts on escalation criteria.</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Interview Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. "Describe a time you had to make a quick decision under pressure during an incident. What was the outcome?"</b><br>
+<strong style="color:#00d4ff;">Answer: "I received a critical alert: ransomware behavior detected on the file server hosting our financial data. The playbook said 'isolate the host,' but isolating the file server would impact 200 users who were actively working on end-of-quarter reports. I had 2 minutes to decide. I checked: was encryption happening to all files or just a subset? Was the server itself compromised or was a user's mapped drive being encrypted? I saw encryption was happening to all files on the server — the server itself was compromised. I made the call to isolate immediately. 200 users lost 5 minutes of work, but we prevented encryption of 2 TB of financial data. The server was restored from backup within 4 hours. Post-incident, we set up better file server monitoring so we can identify the affected users faster and give targeted warnings before isolation."</strong><br><br>
+
+<b>2. "How do you prioritize your work when you have 25 uninvestigated alerts, 3 ongoing investigations, and 2 critical alerts that just came in?"</b><br>
+<strong style="color:#00d4ff;">Answer: "First, I acknowledge the 2 critical alerts immediately — within 1 minute, I verify they're not false positives. If they're TPs, I start the isolation procedure right away. For the 3 ongoing investigations, I check if any need immediate attention (time-sensitive containment actions) or if they can wait. I quickly scan the 25 uninvestigated alerts for any that involve critical assets (domain controllers, CEO's machine, payment systems) — those get priority. The rest I batch into a queue by severity and investigate in order. I use the SIEM's risk scoring to sort. If I'm overwhelmed, I escalate to the shift lead for additional resources. Key principle: never let perfect be the enemy of good — do quick triage, contain critical threats, then deep-dive."</strong><br><br>
+
+<b>3. "What would you change about the SOC you currently work in (or trained in)?"</b><br>
+<strong style="color:#00d4ff;">Answer: "I'd implement more automation for low-level triage. When I trained, about 60% of alerts were repeatable patterns — same scanning IPs, same phishing campaigns, same user errors. Each one required manual enrichment by L1 analysts. I'd automate those with SOAR: when an alert fires, automatically query threat intel, check user history, correlate with other alerts, and present a pre-enriched case to the analyst. This would reduce L1 analysis time from 10 minutes to 2 minutes per alert, freeing up 80% of L1 time for deeper investigations. I'd also implement a better feedback loop — currently, analysts tune rules ad-hoc. I'd schedule monthly tuning sessions where we review top 10 noisiest rules and decide: tune, disable, or keep. This keeps FP rates low and analyst morale high."</strong>
+</div>
+
+<h6 class="text-primary mt-4 mb-2"><i class="bi bi-briefcase me-2"></i>13. PORTFOLIO PROJECTS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Project: Personal SOC Triage Dashboard</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Create a SIEM triage dashboard in Wazuh or Splunk Free that simulates a SOC alert queue. Show alert counts by severity, source, and category. Include a triage workflow for closing, escalating, or investigating each alert.<br><br>
+<b>Architecture:</b> Wazuh server (VM) → Windows agent → Sysmon logs → Custom rules generating alerts → Dashboard showing alert queue.<br><br>
+<b>Tools:</b> Wazuh, Windows VM with Sysmon, Kibana dashboard.<br><br>
+<b>Steps:</b> (1) Deploy Wazuh, (2) Install Windows agent with Sysmon, (3) Create 5 custom rules (port scan, brute force, suspicious process, USB connect, registry persistence), (4) Generate events to trigger rules, (5) Build dashboard: alert count by severity over time, top 10 alert sources, alert disposition tracking, triage SLA timer, (6) Document the workflow: how alerts flow from creation → triage → investigating → closed/escalated, (7) Write a user guide explaining how an L1 analyst would use this dashboard daily.<br><br>
+<b>Documentation:</b> Screenshots of each dashboard panel, explanation of each field (what it shows, why it matters), the 5 custom rules with explanations, triage workflow diagram. Demonstrates: SOC dashboard design, alert management workflow, triage process knowledge.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Project: Incident Response Playbook with Automation</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Build a complete SOAR-integrated incident response playbook for phishing incidents. The playbook must include automated email analysis, IOC extraction, threat intel enrichment, containment actions, and ticketing integration.<br><br>
+<b>Architecture:</b> Splunk SOAR (free community edition) or Shuffle SOAR (open-source) → Email analysis tools integration (URLScan.io, VirusTotal, OLEVBA) → Ticketing (TheHive or osTicket) → Notification (Slack/Email).<br><br>
+<b>Tools:</b> Shuffle (open-source SOAR), TheHive (case management), Python scripts for analysis, URLScan.io API, VirusTotal API.<br><br>
+<b>Steps:</b> (1) Design playbook flow in Shuffle: trigger (email submission) → extract artifacts → enrich all IPs/URLs/hashes → check threat intel → decide disposition, (2) Implement enrichment nodes: URL scan via URLScan.io API, hash check via VirusTotal, header analysis via Python script, (3) Create decision node: if any IOC scores > 0 malicious → auto-isolate source host via Wazuh API, (4) Create case in TheHive with all findings, (5) Send Slack notification to SOC channel, (6) Test with real phishing samples from PhishTank or OpenPhish, (7) Document automation metrics: time saved per incident, manual steps eliminated.<br><br>
+<b>Documentation:</b> Playbook design document with flow chart, Shuffle workflow screenshots, API integration guides, test results showing time reduction (e.g., "Manual: 20 minutes per alert → Automated: 3 minutes"). Demonstrates: SOAR workflow design, automation scripting, API integration, measurable SOC improvement.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Project: Full SOC Operations Center Simulation</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Design and build a complete SOC operations center simulation using open-source tools. Include: SIEM alerting, SOAR automation, case management, metrics dashboard, and executive reporting. The simulation should support multiple analysts working in shifts and tracking real performance metrics.<br><br>
+<b>Architecture:</b> Elastic SIEM (detection rules + alerts) → Shuffle SOAR (automated enrichment and containment) → TheHive (case management) → Grafana (metrics dashboard for MTTD/MTTR/FP rate/SLA compliance) → Mattermost (team communication). All integrated via REST APIs.<br><br>
+<b>Tools:</b> Elasticsearch/Kibana, Elastic Agent with Security integration, Shuffle, TheHive, Grafana, Mattermost, Atomic Red Team for generating test events.<br><br>
+<b>Steps:</b> (1) Deploy the full stack — Elastic SIEM, Shuffle, TheHive, Grafana, Mattermost — on separate Docker containers, (2) Configure Elastic detection rules for top 10 MITRE techniques, (3) Build Shuffle workflows that: receive Elastic SIEM alerts → extract IOCs → enrich via VirusTotal → create TheHive case → send Mattermost notification, (4) Implement automated containment for critical alerts via Elastic Agent endpoint response actions, (5) Build Grafana dashboard showing: alert volume/hour, MTTD trend by week, MTTR by alert type, FP rate per rule, SLA compliance %, analyst workload distribution, (6) Run a 2-day SOC simulation: generate alerts using Atomic Red Team, have team triage, investigate, contain, document, (7) After simulation, analyze metrics, identify top 3 improvement areas, implement changes, re-run to measure improvement, (8) Create executive dashboard for SOC manager showing trend data, resource allocation, risk posture over time.<br><br>
+<b>Documentation:</b> Full architecture diagram, deployment scripts (Docker compose), integration configuration guides, API documentation, simulation results report with before/after metrics, improvement recommendations. Demonstrates: full SOC engineering capability, systems integration, automation at scale, data-driven SOC management, and continuous improvement methodology.
 </div>
 </div>

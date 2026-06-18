@@ -1,55 +1,623 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Module 1: Blue Team Introduction</h6>
 
-<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
+<h4 class="text-primary mb-4"><i class="bi bi-diagram-3 me-2"></i>Module 1: Networking Fundamentals</h4>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Junior Security Analyst Intro</p>
-<p style="color:#c0d0e0;">A Junior SOC Analyst (L1) is the first line of defense. You monitor SIEM dashboards, triage incoming alerts, determine True Positives vs False Positives, and escalate confirmed incidents to L2.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Real Example:</b> You see an alert: "Suspicious outbound connection from 10.0.1.45 to 185.220.101.x:4444". You check the SIEM — the source is a finance department workstation. The user reports they didn't initiate any connection. You check the process tree: WINWORD.EXE → cmd.exe → powershell.exe → netcat connection to external IP. The process is unsigned and running from %TEMP%. <b>Conclusion:</b> True Positive — malware from a phishing doc. You isolate the host and escalate to L2.
+<!-- SECTION OVERVIEW -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-eye me-2"></i>Section Overview</h5>
+<p style="color:#c0d0e0;">Networking is the backbone of cybersecurity. A SOC analyst must understand how data flows across networks to identify malicious traffic, detect anomalies, and investigate incidents. This module covers the OSI and TCP/IP models, common protocols, network addressing, and traffic analysis techniques used daily in enterprise SOC operations.</p>
+<p style="color:#c0d0e0;"><strong>Real-World Use Cases:</strong> Identifying C2 beaconing in netflow data, detecting DNS tunneling, analyzing PCAP files after a breach, understanding lateral movement via SMB/RDP, and configuring firewall rules to block malicious IPs.</p>
+<p style="color:#c0d0e0;"><strong>Skills Gained:</strong> Packet-level analysis with Wireshark, understanding protocol headers, subnetting and CIDR, TCP handshake analysis, DNS and HTTP/S traffic inspection, and network log correlation in SIEM platforms.</p>
+<p style="color:#c0d0e0;"><strong>Prerequisites:</strong> Basic understanding of what a network is (routers, switches, IP addresses).</p>
+<p style="color:#c0d0e0;"><strong>Learning Objectives:</strong> (1) Explain the OSI and TCP/IP models and their relevance to security monitoring. (2) Analyze packet captures for signs of malicious activity. (3) Identify abnormal DNS, HTTP, and TLS traffic patterns. (4) Understand how network-based detections (NIDS/NIPS) differ from host-based detections.</p>
+
+<!-- DETAILED NOTES -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-journal-text me-2"></i>Detailed Notes</h5>
+
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 1: OSI Model &amp; TCP/IP Model</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> The OSI model has 7 layers: Physical (1) – cables/signals; Data Link (2) – MAC addresses, switches; Network (3) – IP addressing, routing; Transport (4) – TCP/UDP, port numbers; Session (5) – session establishment; Presentation (6) – encryption/encoding; Application (7) – HTTP, DNS, SMTP. The TCP/IP model condenses this into 4 layers: Network Access, Internet, Transport, Application.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> In the SOC, you map attacks to OSI layers. ARP spoofing (Layer 2), IP fragmentation attacks (Layer 3), SYN floods (Layer 4), SSL stripping (Layer 6), and SQL injection (Layer 7). The TCP/IP model is used more practically — analysts examine IP headers for TTL anomalies (indicating OS fingerprinting), TCP flags for port scans, and application-layer payloads for exploits.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Encapsulation and de-encapsulation: when a packet traverses the stack, each layer adds a header. Attackers exploit this with tunneling — e.g., ICMP tunneling encapsulates C2 traffic inside ICMP echo packets that bypass firewalls. Deep packet inspection (DPI) at Layer 7 can detect protocol anomalies like HTTP traffic on non-standard ports, base64-encoded payloads in DNS queries, or TLS certificates with suspicious Subject Alternative Names (SANs). Enterprise firewalls like Palo Alto and Fortinet perform "app-ID" identification at Layer 7.</p>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Enterprise Example:</strong> A financial organization uses Zeek (formerly Bro) as their NIDS. Zeek logs show connections from an internal server to 8.8.8.8:443 at 3 AM. The analyst sees the JA3 fingerprint matches a known C2 tool (Cobalt Strike). Even though traffic is encrypted (TLS), the JA3 hash of the client hello reveals the malware. The analyst blocks the IP at the firewall and quarantines the host.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 SOC Role in Blue Team</p>
-<p style="color:#c0d0e0;">The Blue Team defends the organization. Unlike Red Team (offensive), Blue Team focuses on detection, prevention, and response. SOC analysts work in shifts, monitor security tools, investigate alerts, and maintain security hygiene.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Team Structure:</b><br>
-<b>L1 (Triage):</b> ~80% of alerts — known FPs, simple TPs, basic escalation.<br>
-<b>L2 (Investigator):</b> Deep-dive forensics, malware analysis, containment actions.<br>
-<b>L3 (Hunter):</b> Proactive threat hunting, reverse engineering, rule creation.<br>
-<b>SOC Manager:</b> Metrics reporting, resource planning, incident coordination.
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 2: TCP/UDP, Ports, and the 3-Way Handshake</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> TCP is connection-oriented (reliable, ordered delivery). UDP is connectionless (faster, no guarantees). Common ports: HTTP=80, HTTPS=443, SSH=22, FTP=21, DNS=53, SMTP=25, RDP=3389, SMB=445. The TCP 3-way handshake: SYN → SYN-ACK → ACK. A FIN or RST terminates connections.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> In packet analysis, look for "SYN scan" patterns: a single SYN sent, then RST received (no SYN-ACK) indicates a port scan. Half-open connections (TCP SYN flood) fill the backlog queue. UDP scans produce ICMP "Port Unreachable" messages for closed ports. Sequence number analysis identifies session hijacking attempts. SOC analysts use Wireshark filters like <code>tcp.flags.syn==1 and tcp.flags.ack==0</code> to detect scans.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> TCP window size and TTL values help identify OS types (Linux default TTL=64, Windows TTL=128). Retransmissions indicate network issues or potential packet injection. Zero-window probes indicate resource exhaustion attacks. In enterprise SOCs, Zeek's <code>conn.log</code> provides per-flow summaries; analysts build detections around <code>service</code>, <code>duration</code>, and <code>orig_bytes/resp_bytes</code> ratios. A connection with high <code>orig_bytes</code> and near-zero <code>resp_bytes</code> on port 445 (SMB) suggests data exfiltration via SMB.</p>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Detection Opportunity:</strong> Use Zeek: <code>bro-cut id.orig_h id.resp_h proto service duration orig_bytes resp_bytes &lt; conn.log | awk '$5 > 300 && $6 > 10000000 {print}'</code> — finds connections over 5 minutes with more than 10MB transferred — potential data exfiltration indicators.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Humans as Attack Vectors</p>
-<p style="color:#c0d0e0;">Attackers target humans because it's easier than hacking systems. Common social engineering attacks:</p>
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 3: DNS, HTTP/HTTPS, and Email Protocols</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> DNS resolves domain names to IP addresses. A DNS query goes: your browser → local resolver → root server → TLD server → authoritative server. HTTP uses request methods (GET, POST, PUT, DELETE). HTTPS adds TLS encryption. Email protocols: SMTP (sending), POP3/IMAP (receiving).</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> Attackers abuse DNS for data exfiltration (DNS tunneling — encoding stolen data in subdomains, e.g., <code>base64data.evil.com</code>). SOC analysts detect this by monitoring DNS query lengths (>52 chars is suspicious), high query volumes to a single domain, or NXDOMAIN responses from algorithmically generated domains (DGA). HTTP headers like <code>User-Agent</code>, <code>Referer</code>, and <code>Cookie</code> contain forensic value — mismatched User-Agent strings often indicate automated exploitation tools.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> TLS fingerprinting (JA3/JA3S) identifies malware by its cryptographic handshake characteristics. Cobalt Strike uses a unique JA3 hash. QUIC (UDP-based, port 443) bypasses traditional inspection — attackers increasingly use QUIC tunneling. SOC platforms integrate passive DNS (pDNS) databases to correlate domains across time; a domain resolving to different IPs every hour indicates fast-flux infrastructure. SMTP log analysis reveals email spoofing via SPF/DKIM/DMARC failures — a DMARC "fail" with <code>envelope-from</code> != <code>header-from</code> is phishing.</p>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Real Case — DNS Tunneling:</strong> In 2021, attackers used Iodine DNS tunneling tool to exfiltrate credit card data from a POS system. The DNS queries contained base32-encoded card numbers: <code>3q4t5w2e7r8t9y0u.k1a2s3t4.evil.com</code>. Each query was 50-60 chars. SIEM detected >10,000 DNS queries/hour from the POS machine to a non-corporate resolver. Investigation showed the queries had <code>TXT</code> record type (unusual for A/AAAA lookups). The host was isolated; EDR confirmed Iodine process running.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 4: Network Traffic Analysis &amp; NIDS</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Network traffic analysis examines packet captures (PCAPs) and flow data (netflow, IPFIX, sFlow). Tools: Wireshark (GUI), tcpdump (CLI), Zeek (metadata), Snort/Suricata (IDS/IPS). A NIDS monitors network segments for malicious signatures and anomalies.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> Signature-based detection (Snort/Suricata) matches patterns like <code>alert tcp $HOME_NET any -> $EXTERNAL_NET 80 (msg:"ET MALWARE Possible C2"; content:"/gate.php"; sid:12345;)</code>. Anomaly-based detection (Zeek's Intelligence Framework) identifies deviations from baselines — e.g., a workstation suddenly connecting to 50 new external IPs in 5 minutes is anomalous. SOC analysts triage NIDS alerts by severity, verify with PCAP analysis, and correlate with endpoint logs.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> In enterprise SOCs, network traffic is captured at aggregation points (span ports, TAPs) and analyzed in real-time. Tools like Arkime (formerly Moloch) provide indexed, searchable PCAP storage. Analysts use BPF (Berkeley Packet Filter) syntax for precise filtering. Machine learning models detect beaconing intervals (periodic C2 check-ins) by identifying jitter patterns in connection timestamps. TLS certificate analysis (matching issuer, subject, validity) detects self-signed certs used by malware. Suricata with Lua scripting provides custom protocol detection (e.g., detecting Modbus exploitation in OT networks).</p>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Enterprise Architecture:</strong> Traffic flows: Internet → Edge Firewall (Palo Alto) → Core Switch (SPAN) → Network TAP → Suricata NIDS → Zeek → Arkime (PCAP) → Kafka → SIEM (Splunk). This pipeline processes ~50 Gbps in a medium SOC with automated PCAP indexing and 30-day retention for threat hunting.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">▸ Common Attacks on Network Layer</p>
 <ul style="color:#c0d0e0;">
-  <li><b>Phishing:</b> Fake emails tricking users to click malicious links or open attachments</li>
-  <li><b>Pretexting:</b> Attacker creates a fabricated scenario to steal information</li>
-  <li><b>Baiting:</b> Leaving infected USB drives in parking lots or office areas</li>
-  <li><b>Tailgating:</b> Following an employee through a secure door without badging</li>
-  <li><b>Vishing:</b> Voice phishing — fake calls pretending to be IT support or bank</li>
-  <li><b>Smishing:</b> SMS phishing — text messages with malicious links</li>
+<li><strong>ARP Spoofing/Poisoning:</strong> Attacker sends forged ARP replies to associate their MAC with the gateway IP, enabling MITM. <em>Detection:</em> Monitor ARP tables for MAC-to-IP mismatches; use ARPwatch or Zeek's arp.log.</li>
+<li><strong>DNS Spoofing/Cache Poisoning:</strong> Attacker injects forged DNS records. <em>Detection:</em> DNSSEC validation fails; unexpected IP resolutions for known domains.</li>
+<li><strong>SYN Flood (DoS):</strong> Attacker sends many SYN packets without completing handshake. <em>Detection:</em> High volume of SYN_RECEIVED states; <code>tcpdump -n 'tcp[13] & 2 != 0'</code> to capture SYN-only packets.</li>
+<li><strong>Man-in-the-Middle (MITM):</strong> Intercepting traffic between two parties. <em>Detection:</em> Certificate warnings, ARP anomalies, SSL stripping indicators (HTTP downgrade).</li>
+<li><strong>Port Scans (Recon):</strong> Attackers probe for open ports. <em>Detection:</em> Multiple SYN to sequential ports from one IP; tools like ScanAlert detect patterns.</li>
+<li><strong>DDoS:</strong> Distributed denial of service overwhelming bandwidth. <em>Detection:</em> Unusual traffic volume spike; netflow analysis shows traffic from thousands of source IPs.</li>
 </ul>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Real Breach Example — Twitter 2020:</b> Attackers used phone spear-phishing targeting Twitter employees. They called employees pretending to be IT, directed them to a fake VPN login page, stole credentials, and gained admin access to 130 high-profile accounts (Obama, Musk, Biden). They posted a Bitcoin scam tweet from these accounts and made $180,000 in one hour.
+
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Investigation Workflow:</strong> Alert: "Port Scan detected from 10.0.1.50" → Check Zeek conn.log for target range → Check Suricata fast.log for signature hits → Pull PCAP for the session in Arkime → Verify scan type (SYN, FIN, Xmas) in Wireshark → Check host for malware using EDR → If malicious, isolate. If benign (e.g., vulnerability scanner), document as authorized scan and tune rule.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Systems as Attack Vectors</p>
-<p style="color:#c0d0e0;">System vulnerabilities occur when software, configurations, or network services have weaknesses that attackers exploit.</p>
-<ul style="color:#c0d0e0;">
-  <li><b>Unpatched Software:</b> Known vulnerabilities with available patches (e.g., EternalBlue, Log4j)</li>
-  <li><b>Misconfigured Services:</b> Default credentials, open SMB shares, exposed databases</li>
-  <li><b>Weak Passwords:</b> No password policy, no MFA, common passwords like "admin123"</li>
-  <li><b>Unnecessary Open Ports:</b> RDP (3389), SSH (22), Telnet (23) exposed to the internet</li>
-  <li><b>Outdated Protocols:</b> SMBv1, SSLv3, FTP — all have known vulnerabilities</li>
-</ul>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Real Breach Example — Colonial Pipeline 2021:</b> Attackers gained initial access through a compromised VPN password (no MFA). The VPN account was for an old, unused system that should have been decommissioned. They found the password in a leaked credentials dump on the dark web. Once inside, they moved laterally to the IT network, then to OT systems, and deployed ransomware that shut down 5,500 miles of pipeline supplying 45% of the East Coast's fuel. The company paid $4.4M ransom.
+<!-- CONCEPT BOXES -->
+<div class="alert alert-info"><strong><i class="bi bi-info-circle me-1"></i> INFO BOX</strong><br>
+The <strong>TCP 3-Way Handshake</strong> is the most important concept in network traffic analysis. Every TCP connection starts with SYN → SYN-ACK → ACK. If you see only SYN (no SYN-ACK), it's a scan. If you see SYN-ACK without prior SYN (called SYN-ACK scan), the attacker is behind a spoofed IP. In C2 communications, the handshake is often followed by an immediate data transfer — look for small payloads in the first few packets after ACK (beacon check-in).</div>
+
+<div class="alert alert-success"><strong><i class="bi bi-check-circle me-1"></i> REMEMBER BOX</strong><br>
+<strong>Port numbers are not protocol indicators.</strong> Just because traffic uses port 443 doesn't mean it's HTTPS. Attackers frequently run custom protocols on standard ports. Always use DPI or protocol decoders to verify. Examples: DNS over HTTPS (DoH) on 443, SSH on 443 (to bypass firewalls), or HTTP on 53. Zeek's <code>service</code> field in conn.log shows the <em>detected</em> protocol, not just the port.</div>
+
+<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle me-1"></i> WARNING BOX</strong><br>
+<strong>Never rely solely on IP addresses for threat intelligence.</strong> IPs are ephemeral — attackers use bulletproof hosting, CDN-based C2 (Cloudflare, Akamai), and dynamic DNS. A malicious IP today could be a benign CDN edge server tomorrow. Always enrich IPs with: DNS history, ASN ownership, certificate transparency logs, and behavior context (what other connections came from this IP?). Use passive DNS (pDNS) and VirusTotal for enrichment before taking blocking actions.</div>
+
+<div class="alert alert-info"><strong><i class="bi bi-shield me-1"></i> SOC ANALYST TIP</strong><br>
+<strong>Build a "network baseline" for your environment.</strong> Know what "normal" looks like. Collect netflow for 2 weeks during normal operations. Then generate statistics: average connections per host per hour, common destination ports, typical data transfer volumes, and peak traffic times. When investigating an alert, compare it to your baseline — a host that usually sends 50 MB/day sending 5 GB is far more suspicious than a backup server doing the same. Use Splunk <code>| timechart span=1h count(connections) by src_ip</code> to visualize baselines.</div>
+
+<div class="alert alert-warning"><strong><i class="bi bi-question-circle me-1"></i> INTERVIEW Q&A</strong><br>
+<strong>Q:</strong> "Walk me through how you would investigate an alert showing a workstation communicating with a known malicious IP on port 443 at 3 AM."<br>
+<strong>A:</strong> "First, I'd check the SIEM for the specific connection — timestamps, source IP, destination IP, port, bytes transferred, and duration. Then I'd pull the PCAP and verify it's not a false positive (e.g., the IP might have been reassigned). I'd check the Zeek logs for TLS handshake details: certificate issuer, JA3 fingerprint. Next, I'd correlate with EDR — what process made the connection? Is it a browser (benign user activity) or a system process (malware)? I'd check DNS logs for the domain resolution — was it an A record to a suspicious domain? Then I'd check the host for other IOCs (registry changes, file drops, scheduled tasks). If confirmed malicious, I'd isolate the host, block the IP at the firewall, and escalate to L2 for deeper forensics."</div>
+
+<!-- VISUAL DIAGRAMS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-diagram-2 me-2"></i>Visual Diagrams</h5>
+<pre class="mermaid">
+flowchart TD
+    A["Client (10.0.1.50)"] -->|"SYN (seq=1000)"| B["Server (203.0.113.5:443)"]
+    B -->|"SYN-ACK (seq=5000, ack=1001)"| A
+    A -->|"ACK (seq=1001, ack=5001)"| B
+    A -->|"GET /login.php HTTP/1.1"| B
+    B -->|"HTTP 200 OK (payload...)"| A
+    A -->|"FIN"| B
+    B -->|"FIN-ACK"| A
+    A -->|"ACK"| B
+    style A fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style B fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+</pre>
+
+<pre class="mermaid">
+flowchart LR
+    subgraph "Attack Chain — DNS Tunneling"
+    A[Compromised Host] -->|"DNS Query: data.evil.com"| B[Internal DNS Server]
+    B -->|"Forward to 8.8.8.8"| C[Internet DNS]
+    C -->|"Query to Authoritative"| D[Attacker DNS Server]
+    D -->|"TXT Record: exfiltrated data"| C
+    C -->|"Response"| B
+    B -->|"Response"| A
+    end
+    subgraph "Detection Points"
+    E["<b>1. DNS Query Length > 52 chars</b>"]
+    F["<b>2. High query volume/minute</b>"]
+    G["<b>3. TXT record type for A lookup</b>"]
+    H["<b>4. Non-company resolver (Google/Cloudflare)</b>"]
+    end
+    style A fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style D fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style E fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style F fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style G fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style H fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+</pre>
+
+<pre class="mermaid">
+flowchart LR
+    subgraph "OSI vs TCP/IP Mapping"
+    A["7: Application<br/>6: Presentation<br/>5: Session"] --> B["Application Layer"]
+    C["4: Transport"] --> D["Transport Layer"]
+    E["3: Network"] --> F["Internet Layer"]
+    G["2: Data Link<br/>1: Physical"] --> H["Network Access Layer"]
+    end
+    subgraph "Attacks per Layer"
+    I["HTTP attacks, SQLi, XSS, Phishing"]
+    J["SYN Flood, Port Scan, Session Hijack"]
+    K["IP Spoofing, Smurf Attack, Routing Attacks"]
+    L["ARP Spoofing, MAC Flooding, VLAN Hopping"]
+    end
+    B --- I
+    D --- J
+    F --- K
+    H --- L
+    style A fill:#0a1a2a,stroke:#00d4ff,color:#e5e7eb
+    style B fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style C fill:#0a1a2a,stroke:#00d4ff,color:#e5e7eb
+    style D fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style E fill:#0a1a2a,stroke:#00d4ff,color:#e5e7eb
+    style F fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style G fill:#0a1a2a,stroke:#00d4ff,color:#e5e7eb
+    style H fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style I fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style J fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style K fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style L fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+</pre>
+
+<!-- TRYHACKME SECTION -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-flag me-2"></i>TryHackMe Rooms</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Room Name</th><th>Difficulty</th><th>Objectives</th><th>Order</th></tr></thead>
+<tbody>
+<tr><td>Intro to LAN</td><td><span class="badge bg-success">Easy</span></td><td>Understand networking basics: topologies, cables, OSI model, MAC/IP addresses</td><td>1st</td></tr>
+<tr><td>OSI Model</td><td><span class="badge bg-success">Easy</span></td><td>Deep dive into each OSI layer with practical examples</td><td>2nd</td></tr>
+<tr><td>Packets &amp; Frames</td><td><span class="badge bg-success">Easy</span></td><td>TCP/UDP headers, 3-way handshake, packet structure</td><td>3rd</td></tr>
+<tr><td>Extending Your Network</td><td><span class="badge bg-success">Easy</span></td><td>Port forwarding, NAT, VPNs, DMZ architecture</td><td>4th</td></tr>
+<tr><td>Protocols and Servers</td><td><span class="badge bg-success">Easy</span></td><td>DNS, HTTP, SMTP, FTP, and their security implications</td><td>5th</td></tr>
+<tr><td>HTTP in Detail</td><td><span class="badge bg-success">Easy</span></td><td>Request/response structure, status codes, headers, cookies</td><td>6th</td></tr>
+<tr><td>DNS in Detail</td><td><span class="badge bg-success">Easy</span></td><td>Record types, DNS resolution, attacks on DNS</td><td>7th</td></tr>
+<tr><td>Wireshark 101</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Capture filters, display filters, follow streams, statistical analysis</td><td>8th</td></tr>
+<tr><td>Wireshark: Traffic Analysis</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Analyze PCAPs for ARP spoofing, DNS tunneling, and malware traffic</td><td>9th</td></tr>
+<tr><td>Snort</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>IDS/IPS rule writing, alert verification, PCAP analysis with Snort</td><td>10th</td></tr>
+<tr><td>Zeek</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Zeek logs (conn, http, dns, ssl), script writing, threat hunting</td><td>11th</td></tr>
+<tr><td>Network Security Solutions</td><td><span class="badge bg-success">Easy</span></td><td>Firewalls, IDS/IPS, VLANs, network segmentation</td><td>12th</td></tr>
+<tr><td>C2: Command &amp; Control</td><td><span class="badge bg-danger">Hard</span></td><td>Detect C2 beaconing, analyze HTTP/DNS C2 traffic, identify payloads</td><td>13th</td></tr>
+</tbody>
+</table>
 </div>
 
-<h6 class="text-primary mt-3">Key Concepts</h6>
+<!-- HTB ACADEMY -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-laptop me-2"></i>Hack The Box Academy</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Module</th><th>Difficulty</th><th>Outcomes</th></tr></thead>
+<tbody>
+<tr><td>Introduction to Networking</td><td><span class="badge bg-success">Easy</span></td><td>OSI/TCP models, IP addressing, routing fundamentals, common protocols</td></tr>
+<tr><td>Network Enumeration with Nmap</td><td><span class="badge bg-success">Easy</span></td><td>Port scanning techniques, service version detection, NSE scripts, evasion</td></tr>
+<tr><td>Information Gathering - Web Edition</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>DNS enumeration, subdomain discovery, certificate transparency logs</td></tr>
+<tr><td>Using Wireshark for Traffic Analysis</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Protocol analysis, filter syntax, extracting files from PCAPs, statistical analysis</td></tr>
+<tr><td>Introduction to Active Directory</td><td><span class="badge bg-danger">Hard</span></td><td>AD architecture, LDAP, Kerberos, NTLM, enumeration of domain controllers</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- LETSDEFEND -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-check me-2"></i>LetsDefend Investigations</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Investigation</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>SOC001 - Port Scan Detection</td><td>Alert Triage</td><td>Analyze a PCAP with Nmap SYN scan against a critical server</td></tr>
+<tr><td>SOC017 - DNS Tunneling</td><td>Threat Hunting</td><td>Identify DNS exfiltration in Zeek logs from a compromised workstation</td></tr>
+<tr><td>SOC024 - C2 Beaconing</td><td>Network Analysis</td><td>Detect periodic C2 check-ins using netflow data and time-series analysis</td></tr>
+<tr><td>SOC038 - ARP Spoofing</td><td>Incident Response</td><td>Investigate network outage caused by ARP poisoning on LAN segment</td></tr>
+<tr><td>SOC045 - DDoS Attack</td><td>Alert Triage</td><td>Analyze traffic spike and identify volumetric attack patterns</td></tr>
+<tr><td>SOC056 - Data Exfiltration via DNS</td><td>Forensic Analysis</td><td>Examine pDNS and PCAPs for exfiltrated data in TXT records</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- CYBERDEFENDERS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield me-2"></i>CyberDefenders Blue Team Challenges</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Challenge</th><th>Difficulty</th><th>Focus</th></tr></thead>
+<tbody>
+<tr><td>Brutus - Network Analysis</td><td><span class="badge bg-success">Easy</span></td><td>Analyze PCAPs for brute force attack patterns; identify source IP, credentials used, and successful logins</td></tr>
+<tr><td>BlackEnergy - Malware Traffic</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Analyze PCAP of BlackEnergy malware C2 communication; identify IOCs and exfiltrated data</td></tr>
+<tr><td>Mirai - IoT Botnet</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Trace Mirai botnet traffic through PCAP; identify C2 servers, scanning behavior, and DDoS commands</td></tr>
+<tr><td>APT1 - Advanced Traffic Analysis</td><td><span class="badge bg-danger">Hard</span></td><td>Investigate APT1 (Comment Crew) C2 traffic, identify exfiltration patterns, map attacker infrastructure</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- GITHUB RESOURCES -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-github me-2"></i>GitHub Resources</h5>
+<div class="row g-2 mb-3">
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" style="color:#00d4ff;">Blue-Team-Roadmap</a></strong><br>
+<span style="color:#c0d0e0;">A structured learning path for blue team members from beginner to advanced. Covers networking, security monitoring, and incident response. Skills: Network fundamentals, traffic analysis methodology.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" style="color:#00d4ff;">awesome-soc</a></strong><br>
+<span style="color:#c0d0e0;">Curated list of SOC tools, platforms, and resources. Includes NIDS tools (Zeek, Suricata), network monitoring, and detection engineering references. Skills: Tool evaluation, SOC architecture.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/SigmaHQ/sigma" target="_blank" style="color:#00d4ff;">Sigma</a></strong><br>
+<span style="color:#c0d0e0;">Generic signature format for SIEM systems. Write network-based detection rules that translate to Splunk, Elastic, QRadar, etc. Skills: Rule creation, detection engineering for network events.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" style="color:#00d4ff;">Atomic Red Team</a></strong><br>
+<span style="color:#c0d0e0;">Test network detections with atomic tests for each MITRE ATT&CK technique. Skills: Validation of network-based rules, purple team exercises.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" style="color:#00d4ff;">sysmon-config</a></strong><br>
+<span style="color:#c0d0e0;">High-quality Sysmon configuration for Windows endpoint logging. Skills: Understanding process creation events, network connections in Sysmon Event ID 3.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" style="color:#00d4ff;">blueteam_homelabs</a></strong><br>
+<span style="color:#c0d0e0;">Homelab guides for setting up SOC environments with network monitoring. Skills: Deploying Zeek, Suricata, and network visibility infrastructure.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" style="color:#00d4ff;">EVTX-ATTACK-SAMPLES</a></strong><br>
+<span style="color:#c0d0e0;">Windows event log samples mapped to MITRE ATT&CK. Skills: Correlating network events with host logs for complete attack timeline.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/InQuest/awesome-yara" target="_blank" style="color:#00d4ff;">awesome-yara</a></strong><br>
+<span style="color:#c0d0e0;">Curated YARA rules for malware detection in network PCAPs and files. Skills: Writing YARA rules for network-based malware detection.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" style="color:#00d4ff;">BlueTeam-Tools</a></strong><br>
+<span style="color:#c0d0e0;">Collection of blue team tools with installation guides and use cases. Includes Wireshark, Zeek, Snort, and network analysis tools. Skills: Tool setup, configuration, and operational use.</span>
+</div>
+</div>
+</div>
+
+<!-- HANDS-ON LABS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-tools me-2"></i>Hands-On Labs</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner Lab: Analyze a PCAP for Malicious Traffic</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Open a PCAP file in Wireshark, identify the attack type, extract IOCs (source IP, destination IP, port, payload), and document findings.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Download the `m57-pcaps` sample from https://www.malware-traffic-analysis.net/ (select a beginner exercise).</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Open the PCAP in Wireshark: <code>wireshark capture.pcap</code></li>
+<li>Apply display filter: <code>http.request</code> to see only HTTP requests</li>
+<li>Look for suspicious URIs — e.g., <code>/gate.php</code>, <code>/images/</code> files with .exe extensions</li>
+<li>Follow the HTTP stream: Right-click → Follow → HTTP Stream</li>
+<li>Identify the User-Agent string — unusual ones (e.g., <code>Python-requests</code>, <code>curl/7.x</code>) indicate non-browser activity</li>
+<li>Check <code>Statistics → Endpoints</code> for top talkers</li>
+<li>Export objects: <code>File → Export Objects → HTTP</code> and save suspicious files</li>
+<li>Document: Source IP, destination IP, timestamp, protocol, payload summary</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> You'll find HTTP requests to a known malware domain with encoded parameters in the URI. The User-Agent will not match a standard browser. Exporting the object may reveal a PE file or PowerShell script.</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If you see only TLS traffic, look for SSL/TLS handshake details or check with <code>tls.handshake.type == 1</code>. For HTTP/2 traffic, use <code>http2</code> filter.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> This lab teaches you to identify C2 traffic patterns — periodic small requests, unusual URIs, non-standard User-Agents. In a SIEM, you'd create a rule: <code>source=network_logs http_user_agent NOT IN (list_of_known_browsers) | stats count by src_ip, uri</code></p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate Lab: Deploy Zeek and Detect DNS Tunneling</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Install Zeek, capture live traffic, write a detection script for DNS tunneling based on query length and entropy analysis.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Ubuntu/Debian VM or WSL2. Install Zeek: <code>sudo apt-get install zeek</code> or build from source.</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Install Zeek: <code>sudo apt update && sudo apt install zeek -y</code></li>
+<li>Configure monitoring interface: edit <code>/opt/zeek/etc/node.cfg</code> and set <code>interface=eth0</code></li>
+<li>Start Zeek: <code>sudo zeekctl deploy</code></li>
+<li>Check logs are generated: <code>ls -la /opt/zeek/logs/current/</code> (look for dns.log, conn.log, http.log)</li>
+<li>Write a detection script: create <code>/opt/zeek/share/zeek/site/dns-tunneling.zeek</code></li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+module DNS_Tunneling;
+
+export {
+    redef enum Notice::Type += {
+        Long_Query,
+        High_Query_Count,
+        High_Entropy_Query
+    };
+
+    global query_count: table[string] of count &create_expire=1hr;
+    const max_query_length: count = 52;
+    const max_queries_per_hour: count = 1000;
+
+    function entropy(s: string): double {
+        local freq: table[count] of count = table();
+        local len = |s|;
+        local ent = 0.0;
+        for (c in s) {
+            local ch = order(c);
+            if (ch !in freq) freq[ch] = 0;
+            freq[ch] += 1;
+        }
+        for (ch in freq) {
+            local p = freq[ch] / len;
+            ent -= p * log(p) / log(2);
+        }
+        return ent;
+    }
+}
+
+event DNS::log_dns(rec: DNS::Info) {
+    if (! rec?$query) return;
+    local q = rec$query;
+    local qname = q | sub /\.$/ /;
+    if (|qname| > max_query_length) {
+        NOTICE([$note=Long_Query, $msg=fmt("Long DNS query detected: %s (%d chars)", qname, |qname|), $id=rec$id]);
+    }
+    if (qname !in query_count) query_count[qname] = 0;
+    query_count[qname] += 1;
+    if (query_count[qname] > max_queries_per_hour) {
+        NOTICE([$note=High_Query_Count, $msg=fmt("High volume DNS queries: %s (%d)", qname, query_count[qname]), $id=rec$id]);
+    }
+    # Subdomain entropy check
+    local parts = split_string(qname, /\\./);
+    if (|parts| >= 3) {
+        local subdomain = parts[0];
+        if (entropy(subdomain) > 4.0) {
+            NOTICE([$note=High_Entropy_Query, $msg=fmt("High entropy subdomain: %s (entropy=%f)", qname, entropy(subdomain)), $id=rec$id]);
+        }
+    }
+}
+</pre>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> Load the script with <code>zeek -C -r sample.pcap dns-tunneling.zeek</code>. You'll see notices for queries with long subdomains (50+ chars), high frequency (1000+/hr), and high entropy (randomized strings > 4.0 bits).</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If notice.log is empty, verify the PCAP has DNS traffic with <code>zeek -C -r sample.pcap && cat dns.log | zeek-cut query</code>. If entropy threshold is too high, lower it to 3.5.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> Deploy this to your production Zeek instance. Integrate with SIEM via <code>zeek-cut</code> to forward notice.log to Splunk/Elastic. Create an alert for ANY <code>Long_Query</code> notice — it has a very low FP rate.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced Lab: Full C2 Beaconing Detection Pipeline</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Build a pipeline to detect C2 beaconing across Zeek conn.log using beaconing analysis (periodicity detection with jitter tolerance) and deploy detection rules to Suricata.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Docker-based SOC environment with Zeek, Suricata, Elastic Stack, and sample C2 PCAPs from Malware-Traffic-Analysis.net.</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li><strong>Deploy Docker environment:</strong> Use `docker-compose` with `docker-elk` (Elastic + Kibana), Zeek container, and Suricata container.</li>
+<li><strong>Ingest test data:</strong> Pull C2 PCAPs from Malware-Traffic-Analysis (e.g., "2025-03-01-Trickbot-infection.pcap"). Run Zeek: <code>zeek -C -r trickbot.pcap local</code></li>
+<li><strong>Build beaconing detection script (Python):</strong></li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+#!/usr/bin/env python3
+import sys, json, re
+from datetime import datetime
+from collections import defaultdict
+import numpy as np
+
+def detect_beacon(conn_file):
+    flows = defaultdict(list)
+    with open(conn_file) as f:
+        for line in f:
+            fields = line.strip().split('\t')
+            if len(fields) < 12: continue
+            ts = float(fields[0])
+            src = fields[2]
+            dst = fields[4]
+            proto = fields[6]
+            sp = fields[7]
+            dp = fields[8]
+            key = f"{src}:{sp}->{dst}:{dp}"
+            flows[key].append(ts)
+
+    for key, timestamps in flows.items():
+        if len(timestamps) < 5: continue
+        intervals = [timestamps[i+1] - timestamps[i] for i in range(len(timestamps)-1)]
+        mean_int = np.mean(intervals)
+        std_int = np.std(intervals)
+        cv = std_int / mean_int if mean_int > 0 else 0
+
+        # C2 beaconing: low CV (consistent interval), regular period
+        if cv < 0.3 and mean_int > 10 and mean_int < 3600:
+            print(f"[ALERT] Potential C2 beacon: {key}")
+            print(f"        Connections: {len(timestamps)}")
+            print(f"        Mean interval: {mean_int:.1f}s, CV: {cv:.2f}")
+            print(f"        First: {datetime.fromtimestamp(timestamps[0])}")
+            print(f"        Last:  {datetime.fromtimestamp(timestamps[-1])}")
+            print()
+
+if __name__ == "__main__":
+    detect_beacon(sys.argv[1])
+</pre>
+<ol start="4">
+<li style="color:#c0d0e0;"><strong>Run detection:</strong> <code>python3 beacon_detector.py conn.log</code></li>
+<li style="color:#c0d0e0;"><strong>Write Suricata rule</strong> for the C2 domain:</li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+alert http $HOME_NET any -> $EXTERNAL_NET any (
+    msg:"ET TROJAN Trickbot C2 Beacon";
+    content:"/gate.php";
+    http_uri;
+    content:"POST";
+    http_method;
+    sid:2000001;
+    rev:1;
+    reference:url,malware-traffic-analysis.net;
+)
+</pre>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> The Python script outputs beaconing flows with low coefficient of variation (CV). Suricata alerts fire on the HTTP requests to the C2 endpoint. Kibana dashboard shows timeline of connections with periodic spikes.</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If no beacons detected, lower CV threshold to 0.5. Ensure you have enough connections (>10) for statistical significance. Some C2 uses randomized intervals (jitter) — check for time-of-day patterns instead.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> Productionize this by converting the Python script to a Rust-based Zeek plugin for performance. Deploy Suricata ruleset (Emerging Threats + custom rules). Create Elastic Watcher alerts for beaconing flows. Mature SOCs use RITA (Real Intelligence Threat Analyzer) for beaconing detection at scale.</p>
+</div>
+
+<!-- SOC SCENARIOS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-fill-exclamation me-2"></i>SOC Scenarios</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Scenario 1: External Port Scan Targeting Finance Server</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> Suricata alert: "ET SCAN Potential SYN Scan" from external IP 185.220.101.34 to finance-server (10.0.10.50) on ports 1-1024. The scan lasted 3 seconds with 500 SYN packets sent.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Suricata NIDS signature <code>alert tcp $EXTERNAL_NET any -> $HOME_NET 10.0.10.50 (msg:"ET SCAN Potential SYN Scan"; flow:stateless; threshold:type both, track by_src, count 50, seconds 2; sid:2001219;)</code> fires. SIEM shows correlation of 500 events from the same source IP to sequential destination ports.</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Check if any SYN-ACK responses were sent (means port is open) — use Zeek conn.log: <code>zeek-cut id.orig_h id.resp_h id.resp_p proto service conn_state &lt; conn.log | grep 185.220.101.34</code></li>
+<li>Check Suricata fast.log for the full alert details</li>
+<li>Pull PCAP for the 3-second window in Arkime</li>
+<li>Check if port 3389 (RDP) or 445 (SMB) responded — these are high-value targets</li>
+<li>Enrich source IP: check VirusTotal, AbuseIPDB, Shodan for historical badness</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
 <ul style="color:#c0d0e0;">
-  <li><b>CIA Triad:</b> Confidentiality (encryption, access controls) — Integrity (hashing, audit logs) — Availability (redundancy, backups)</li>
-  <li><b>Least Privilege:</b> Users get only the permissions they need to do their job — nothing more</li>
-  <li><b>Defense in Depth:</b> Multiple layers of security (firewall → EDR → SIEM → training) so one failure doesn't compromise everything</li>
+<li>If scan source IP is confirmed malicious: add to firewall blocklist (Palo Alto Dynamic Block List)</li>
+<li>If any ports responded: check those services for vulnerabilities immediately</li>
+<li>Create a SIEM correlation rule: 50+ SYN packets from single external IP to internal host in 5 seconds → auto-block for 24 hours</li>
+<li>Document as reconnaissance — refer to MITRE ATT&CK T1595 (Active Scanning)</li>
 </ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> Ticket summary: "External IP 185.220.101.34 performed SYN scan against finance-server. No services were exposed. Source IP blocked at perimeter firewall. No evidence of successful exploitation. Indicator: 185.220.101.34 (IP), T1595 (MITRE). Severity: Low (reconnaissance only)."</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Scenario 2: DNS Tunneling Exfiltration</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> Zeek notice: "Long_DNS_Query" from host 10.0.2.100 (Sales laptop) to 8.8.8.8. The query <code>ZxBsYXNzd29yZHM9YWRtaW4xMjM=.exfil.evil.com</code> is 63 characters. Over 10,000 queries in the last hour.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Zeek DNS tunneling script (written in the lab section above) generates <code>Long_Query</code> and <code>High_Query_Count</code> notices. SIEM correlation: single source IP generating >1000 DNS queries/hour triggers "Possible DNS Tunneling" alert.</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Check Zeek dns.log for the host in question: <code>zeek-cut ts uid id.orig_h id.resp_h query qtype qclass qrc &lt; dns.log | grep 10.0.2.100 | head -50</code></li>
+<li>Analyze query patterns: are queries base64 encoded? <code>echo "ZxBsYXNzd29yZHM9YWRtaW4xMjM=" | base64 -d</code> decodes to "passwords=admin123" — confirmed exfiltration</li>
+<li>Check what process is making DNS queries using EDR (Sysmon Event ID 3 — network connection from suspicious process)</li>
+<li>Check for DNS TXT record queries: <code>zeek-cut query qtype &lt; dns.log | grep TXT</code></li>
+<li>Check the parent process tree: Is it launched from Office or browser? (phishing vector)</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Immediately isolate the host from the network (network ACL or EDR containment)</li>
+<li>Block DNS queries to external resolvers from internal hosts (enforce corporate DNS policy)</li>
+<li>Add the domain exfil.evil.com to DNS sinkhole</li>
+<li>Capture full memory and disk for forensics</li>
+<li>Determine what data was exfiltrated — check query history for base64/decode patterns</li>
+<li>Notify data owner and legal/compliance team (potential data breach)</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "DNS tunneling detected from Sales-LT-10 (10.0.2.100) to external DNS resolver. 10,342 queries in 1 hour. Decoded queries revealed exfiltration of password manager data. Host isolated, domain sinkholed. EDR identified wscript.exe spawning powershell.exe making DNS queries. Root cause: phishing email with malicious VBA macro. Incident severity: HIGH (data exfiltration confirmed). MITRE ATT&CK: T1048.003 (Exfiltration Over Alternative Protocol - DNS)."</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Scenario 3: Lateral Movement via SMB/PsExec</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> Zeek notice: "SMB_Abnormal_IPC_Access" from workstation 10.0.1.50 to domain controller 10.0.0.10. Event ID 5145 (network share access) shows access to ADMIN$ share followed by service creation (Event ID 7045).</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Zeek smb.log shows IPC$ and ADMIN$ access from a non-admin workstation. Windows Event Logs: Event ID 5145 (network share access to ADMIN$ from non-admin host), Event ID 7045 (service installation — "PsExecSvc" installed on DC).</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Check SMB log in Zeek: <code>zeek-cut ts uid id.orig_h id.resp_h path name &lt; smb.log | grep -E "ADMIN\$|IPC\$"</code></li>
+<li>Correlate with Windows Event Logs: Get-WinEvent -FilterHashtable @{LogName='Security';ID=5145} | Where {$_.Message -match "ADMIN\$"}</li>
+<li>Check which user authenticated — is it a compromised local admin account?</li>
+<li>Trace the attack chain: initial compromise vector → recon → lateral movement</li>
+<li>Check if the attacker created scheduled tasks or services on the target</li>
+<li>Pull the binary/service that was installed and analyze it</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Isolate both source and target hosts</li>
+<li>Reset the compromised user account credentials</li>
+<li>Disable SMBv1 and restrict ADMIN$ access via GPO</li>
+<li>Implement Network Access Control (NAC) for workstations</li>
+<li>Audit all systems the compromised account accessed (lateral movement scope)</li>
+<li>Deploy additional EDR detection rules for PsExec/WMI lateral movement</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "Lateral movement detected via PsExec from workstation MK-WIN10-05 (10.0.1.50) to DC01 (10.0.0.10). User: .\jdoe (local admin on workstation). Service 'PsExecSvc' installed on DC01. Malware binary: svchost_bk.exe (SHA256: a1b2c3...). Initial access: phishing email with malicious macro. Incident severity: CRITICAL (domain controller compromised). Containment: hosts isolated, service removed, credentials rotated. MITRE ATT&CK: T1021.002 (SMB/Windows Admin Shares), T1569.002 (PsExec)."</p>
+</div>
+
+<!-- KNOWLEDGE CHECK -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-question-lg me-2"></i>Knowledge Check</h5>
+
+<p class="fw-bold" style="color:#00d4ff;">Multiple Choice Questions (10)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Which OSI layer is responsible for routing packets across different networks?</strong><br>
+a) Layer 2 - Data Link &nbsp;&nbsp; b) Layer 3 - Network &nbsp;&nbsp; c) Layer 4 - Transport &nbsp;&nbsp; d) Layer 7 - Application<br>
+<em>Answer: b) Layer 3 - Network</em></li>
+
+<li><strong>What does TCP flag combination SYN=1, ACK=0 indicate?</strong><br>
+a) Data transfer &nbsp;&nbsp; b) Connection termination &nbsp;&nbsp; c) Start of a new connection &nbsp;&nbsp; d) Acknowledgment of data<br>
+<em>Answer: c) Start of a new connection</em></li>
+
+<li><strong>Which DNS record type is most commonly used for DNS tunneling?</strong><br>
+a) A &nbsp;&nbsp; b) MX &nbsp;&nbsp; c) TXT &nbsp;&nbsp; d) CNAME<br>
+<em>Answer: c) TXT</em></li>
+
+<li><strong>What is the purpose of JA3 hashing?</strong><br>
+a) Hash the content of malware files &nbsp;&nbsp; b) Fingerprint TLS client implementations &nbsp;&nbsp; c) Encrypt DNS queries &nbsp;&nbsp; d) Authenticate DHCP requests<br>
+<em>Answer: b) Fingerprint TLS client implementations</em></li>
+
+<li><strong>Which HTTP method would an attacker most likely use to upload a web shell?</strong><br>
+a) GET &nbsp;&nbsp; b) HEAD &nbsp;&nbsp; c) POST &nbsp;&nbsp; d) OPTIONS<br>
+<em>Answer: c) POST</em></li>
+
+<li><strong>What does a SYN-ACK packet without a preceding SYN indicate?</strong><br>
+a) Normal TCP handshake &nbsp;&nbsp; b) SYN-ACK scan (spoofed source IP) &nbsp;&nbsp; c) Port is closed &nbsp;&nbsp; d) Connection timeout<br>
+<em>Answer: b) SYN-ACK scan (spoofed source IP)</em></li>
+
+<li><strong>In Wireshark, which display filter shows only HTTP POST requests?</strong><br>
+a) http.request &nbsp;&nbsp; b) http.request.method == POST &nbsp;&nbsp; c) tcp.port == 80 &nbsp;&nbsp; d) http.response.code == 200<br>
+<em>Answer: b) http.request.method == POST</em></li>
+
+<li><strong>What port does SMB typically use for file sharing on Windows?</strong><br>
+a) 137 &nbsp;&nbsp; b) 139 &nbsp;&nbsp; c) 445 &nbsp;&nbsp; d) 3389<br>
+<em>Answer: c) 445</em></li>
+
+<li><strong>Which of the following is a characteristic of DNS tunneling?</strong><br>
+a) Short query names &nbsp;&nbsp; b) Long subdomains with high entropy &nbsp;&nbsp; c) A record queries only &nbsp;&nbsp; d) Low query volume<br>
+<em>Answer: b) Long subdomains with high entropy</em></li>
+
+<li><strong>What is the RFC standard for classifying DNS over HTTPS (DoH) traffic as malicious?</strong><br>
+a) It's never malicious &nbsp;&nbsp; b) DoH from non-browser processes on enterprise-managed hosts &nbsp;&nbsp; c) DoH always uses port 80 &nbsp;&nbsp; d) DoH is only used by malware<br>
+<em>Answer: b) DoH from non-browser processes on enterprise-managed hosts</em></li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Practical Questions (5)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>PCAP Analysis:</strong> You have a PCAP with 50,000 packets. An alert fired for potential data exfiltration. Describe step-by-step how you would isolate the suspicious traffic and identify what data was taken.</li>
+<li><strong>Rule Writing:</strong> Write a Suricata rule that alerts when an internal host makes more than 10 DNS queries per second to the same domain.</li>
+<li><strong>Zeek Log Analysis:</strong> Given the following Zeek conn.log excerpt, identify the anomaly and explain why it's suspicious: <code>10.0.1.5:49152 -> 203.0.113.5:443 proto=tcp duration=1200 orig_bytes=5000 resp_bytes=50 service=ssl</code></li>
+<li><strong>SIEM Query:</strong> Write a Splunk search that detects hosts communicating with IPs from a known threat intelligence feed on non-standard ports.</li>
+<li><strong>Protocol Analysis:</strong> Explain the difference between a TCP RST packet and a TCP FIN packet. In what attack scenario would you see each?</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Investigation Scenarios (2)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Scenario:</strong> Your SIEM shows an alert: "Workstation 10.0.5.100 sent 15MB of data to 198.51.100.20:8080 via HTTP POST at 02:30-02:35 AM. The workstation was locked at the time. User is on PTO." Walk through your investigation from alert receipt to case closure.</li>
+<li><strong>Scenario:</strong> An internal server (192.168.1.10) is receiving SYN packets from 10,000 different external IPs simultaneously. All SYN packets have source port 80 and TTL=255. Identify the attack type and describe your response.</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Interview Questions (3)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li>"Explain the TCP 3-way handshake and how you would detect a port scan at the packet level."</li>
+<li>"How would you differentiate between DNS tunneling and legitimate DNS traffic in a SIEM?"</li>
+<li>"A firewall logs show a connection from an internal IP to a known malicious IP on port 443. When you check the PCAP, the traffic is encrypted. How can you determine if this is a true positive or false positive?"</li>
+</ol>
+</div>
+
+<!-- PORTFOLIO PROJECTS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-folder me-2"></i>Portfolio Projects</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner Project: Build a Network Traffic Analyzer Dashboard</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Create a Python script that reads a PCAP file, extracts key metrics (top talkers, protocols, suspicious connections), and outputs a styled HTML report.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Python + Scapy library → Parse PCAP → Generate statistics → Jinja2 template → HTML report with charts (Plotly).</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> Python, Scapy, Jinja2, Plotly, Wireshark (for validation).</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Install Scapy → Write packet parser → Extract endpoints and protocols → Compute statistics → Create HTML template → Generate report → Open in browser.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> Include README with installation, usage examples, sample PCAP source, and example report screenshot. Upload to GitHub.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate Project: Deploy a Home SOC with Network Monitoring</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Set up a complete network monitoring pipeline: Zeek (log generation) → Elasticsearch (storage) → Kibana (visualization) with custom dashboards for DNS tunneling and port scan detection.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Docker Compose (Zeek → Filebeat → Elasticsearch → Kibana).</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> Docker, Zeek, Filebeat, Elasticsearch, Kibana.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Write docker-compose.yml → Configure Zeek → Set up Filebeat to ship Zeek logs → Create Elasticsearch index templates → Build Kibana dashboards → Run sample PCAPs → Verify detection.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> GitHub repo with docker-compose, config files, screenshots of dashboards, and a walk-through of detecting a C2 beaconing attack.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced Project: C2 Beaconing Detection Engine</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Build a production-grade C2 beaconing detection engine that processes Zeek conn.log in real-time, identifies periodic beaconing using signal processing (FFT), and generates alerts.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Zeek → Kafka → Python consumer (FFT + ML classification) → Elasticsearch → Kibana alerts.</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> Zeek, Apache Kafka, Python (NumPy, SciPy, scikit-learn), Elasticsearch, Kibana, Docker.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Deploy Zeek → Stream conn.log to Kafka → Build Python consumer that computes inter-arrival times per flow → Apply FFT to detect periodic signals → Build ML classifier (Random Forest) on flow features (CV, mean interval, bytes ratio, ports) → Store results in Elasticsearch → Create Kibana alerting → Test with real malware PCAPs.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> Architecture diagram, deployment guide, performance benchmarks, detection accuracy statistics on real malware samples, and contribution guidelines. Publish as open-source.</p>
+</div>
+
 </div>

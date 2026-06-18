@@ -1,73 +1,271 @@
-<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Module 4: Cyber Defence Frameworks</h6>
+﻿<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
+<h4 class="text-primary mb-4"><i class="bi bi-bar-chart-steps me-2"></i>Module 4: Log Analysis &amp; SIEM Operations</h4>
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-eye me-2"></i>Section Overview</h5>
+<p style="color:#c0d0e0;">Log analysis is the core function of a SOC analyst. This module covers SIEM architecture, log ingestion, search and correlation, alert triage, and threat hunting.</p>
+<p style="color:#c0d0e0;"><strong>Skills:</strong> SPL/KQL/ESQL, log integration, alert triage, threat intel, SOAR. <strong>Prerequisites:</strong> Modules 1-3. <strong>Objectives:</strong> Design SIEM, write queries, triage alerts, hunt threats.</p>
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-journal-text me-2"></i>Detailed Notes</h5>
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 1: SIEM Architecture &amp; Log Ingestion</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> SIEM collects, normalizes, analyzes logs. Components: Forwarder, Indexer, Search Head. Splunk, Elastic, Sentinel, QRadar, Wazuh. Log flow: Source to Forwarder to Indexer to Analyst.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> Syslog (UDP 514), WEF (WinRM), HTTP/S API, Agents (UF/Beats/Wazuh), NetFlow. Each requires specific parsing config.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> 1-10 TB/day. Hot 30d SSD, Warm 90d HDD, Cold 1yr S3. CIM normalization. Index segmentation. HA clustering. PCI-DSS Req 10, SOC2, HIPAA.</p>
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 2: Search &amp; Correlation</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> SPL: <code>index=windows EventCode=4625 | stats count by Account_Name | where count > 10</code>. KQL: <code>event.code:"4625"</code>. AND, OR, NOT, *, =, !=.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> Subsearch, Transaction, Lookups, Time-series, Correlation Rules. Example: RDP brute force detection.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> ML baselining (anomalydetection), Clustering, UEBA, Risk-based Alerting, Cross-correlation.</p>
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 3: Alert Triage &amp; IR</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Acknowledge, check FP, gather context, severity, contain, escalate, document. SLA: Critical=15min, High=1hr, Med=4hrs, Low=24hrs.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> Pyramid of Pain: Hash < IP < Domain < Artifacts < Tools < TTPs. CVSS scoring.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> SOAR automation. Enrich with VT/OTX/MISP. Scope patient zero, lateral movement. Post-incident: update rules, track MTTD/MTTR.</p>
+<p style="color:#00d4ff;font-weight:600;">▸ SubTopic 4: Threat Hunting</p>
+<p style="color:#c0d0e0;"><strong>Beginner:</strong> Proactive: Form hypothesis, search, analyze, act. Example: scheduled task persistence hunting.</p>
+<p style="color:#c0d0e0;"><strong>Intermediate:</strong> ATT&CK-based, Intel-based (CISA), Data-driven (outliers), Hypothesis testing.</p>
+<p style="color:#c0d0e0;"><strong>Advanced:</strong> Stack Counting, Baselining, HMM Level 3+, TTP-based hunting, Atomic Red Team validation.</p>
+<p style="color:#00d4ff;font-weight:600;">▸ Common Attacks in SIEM</p>
+<ul style="color:#c0d0e0;">
+<li><strong>Phishing:</strong> Email + process creation + DNS correlation.</li>
+<li><strong>Ransomware:</strong> Mass file creates + C2 + process tree.</li>
+<li><strong>Data Exfiltration:</strong> Large HTTP POST + DLP + UEBA.</li>
+<li><strong>Account Takeover:</strong> Impossible travel + unusual device + spray.</li>
+<li><strong>Web Attack:</strong> WAF signatures + anomalous URLs + child processes.</li>
+</ul>
 
-<p style="color:#c0d0e0;">Frameworks help SOC analysts understand attacker behavior, communicate findings effectively, and improve detection coverage. This module covers five essential frameworks.</p>
+<!-- CONCEPT BOXES -->
+<div class="alert alert-info"><strong><i class="bi bi-info-circle me-1"></i> INFO BOX</strong><br>Master SPL: stats, transaction, eval, rex, lookup, subsearch, timechart, where, table, sort, dedup, eventstats. Covers 90% of SOC queries.</div>
+<div class="alert alert-success"><strong><i class="bi bi-check-circle me-1"></i> REMEMBER BOX</strong><br>GIGO: SIEM only as good as its logs. Map every ATT&CK technique to a log source. Verify ingestion before building rules.</div>
+<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle me-1"></i> WARNING BOX</strong><br>FPs cause burnout. Threshold alerts, deduplicate, track FP ratio (<5%). Use risk-based alerting for low-confidence events.</div>
+<div class="alert alert-info"><strong><i class="bi bi-shield me-1"></i> SOC ANALYST TIP</strong><br>Build a SOC Toolkit dashboard: Top talkers, failed login heatmap, process anomalies, new domains, exfiltration candidates. Reduces MTTD by 50%.</div>
+<div class="alert alert-warning"><strong><i class="bi bi-question-circle me-1"></i> INTERVIEW Q&A</strong><br>Q: "Malicious PowerShell alert — walk through investigation." A: Check Event 4688 command line, decode base64, check parent process (phishing?), process tree, network connections, DNS, VT hash. Block C2, isolate host, escalate.</div>
 
-<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
+<!-- VISUAL DIAGRAMS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-diagram-2 me-2"></i>Visual Diagrams</h5>
+<pre class="mermaid">
+flowchart TD
+    A["Log Sources"] --> B["Forwarder Agents"]
+    B --> C["Kafka / Message Queue"]
+    C --> D["Log Parser / Normalizer"]
+    D --> E["Hot Storage (SSD 30d)"]
+    E --> F["Warm Storage (HDD 90d)"]
+    F --> G["Cold Storage (S3 1yr)"]
+    E --> H["Search Head"]
+    H --> I["Correlation Engine"]
+    I --> J["SOC Queue"]
+    I --> K["SOAR Automation"]
+</pre>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Pyramid of Pain</p>
-<p style="color:#c0d0e0;">Created by David Bianco, this model shows how hard it is for attackers to change different types of indicators. The higher you can detect, the more pain you cause the attacker.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Pyramid Levels (bottom to top):</b><br>
-<b>1. Hash Values (Trivial to change):</b> Blocking a specific file hash. Attacker recompiles — new hash. Pain: None.<br>
-<b>2. IP Addresses (Easy):</b> Blocking a C2 IP. Attacker uses a different IP or CDN. Pain: Minimal.<br>
-<b>3. Domain Names (Simple):</b> Blocking evil.com. Attacker uses Domain Generation Algorithm (DGA) — thousands of domains. Pain: Moderate.<br>
-<b>4. Network/Host Artifacts (Annoying):</b> Detecting specific HTTP headers, TLS fingerprints, or registry keys. Harder to change. Pain: Significant.<br>
-<b>5. Tools (Challenging):</b> Detecting specific tools like Mimikatz, Cobalt Strike, or Metasploit. Attacker must develop custom tools. Pain: High.<br>
-<b>6. TTPs (Tough):</b> Detecting the behavior itself — "adversary uses spear-phishing + PowerShell + living-off-the-land". The attacker must completely change their methodology. Pain: Maximum.<br><br>
-<b>Example:</b> Instead of just blocking hash ABC123 (trivial to bypass), write a YARA rule that detects the specific PowerShell download cradle technique the attacker uses (TTP level). This forces the attacker to completely rewrite their payload delivery.
+<pre class="mermaid">
+flowchart LR
+    A["New Alert"] --> B{"Known FP?"}
+    B -->|Yes| C["Close with Reference"]
+    B -->|No| D["Gather Context"]
+    D --> E["Enrich with Threat Intel"]
+    E --> F{"Malicious?"}
+    F -->|Yes| G["Contain: Block IP, Isolate Host"]
+    G --> H["Escalate to L2"]
+    F -->|No| I{"Correlating Events?"}
+    I -->|Yes| G
+    I -->|No| J["Close as Benign"]
+</pre>
+
+<pre class="mermaid">
+flowchart LR
+    A["Form Hypothesis"] --> B["Write SIEM Query"]
+    B --> C["Run Against Environment"]
+    C --> D{"Evidence Found?"}
+    D -->|No| E["Document Null Result"]
+    D -->|Yes| F["Triage &amp; Confirm"]
+    F -->|Malicious| G["Create Incident"]
+    F -->|Inconclusive| H["Create Detection Rule"]
+    G --> I["Update Detection Content"]
+    H --> I
+    E --> J["Refine Hypothesis"]
+    I --> J
+    J --> A
+</pre>
+
+<!-- TRYHACKME -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-flag me-2"></i>TryHackMe Rooms</h5>
+<div class="table-responsive">
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Room</th><th>Difficulty</th><th>Objectives</th><th>Order</th></tr></thead>
+<tbody>
+<tr><td>Intro to SIEM</td><td><span class="badge bg-success">Easy</span></td><td>SIEM architecture, data ingestion, basic searches</td><td>1st</td></tr>
+<tr><td>Splunk Basics</td><td><span class="badge bg-success">Easy</span></td><td>SPL: search, stats, eval, timechart, table, where</td><td>2nd</td></tr>
+<tr><td>Investigating with Splunk</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Real investigations: brute force, web attacks, exfiltration</td><td>3rd</td></tr>
+<tr><td>ELK Stack</td><td><span class="badge bg-success">Easy</span></td><td>Elasticsearch, Logstash, Kibana queries &amp; dashboards</td><td>4th</td></tr>
+<tr><td>Wazuh</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Open-source SIEM: agents, rules, FIM, alerts</td><td>5th</td></tr>
+<tr><td>Log Analysis &amp; Threat Hunting</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Hunt with Zeek, Windows events, network logs</td><td>6th</td></tr>
+<tr><td>YARA &amp; Sigma for SOC</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Detection engineering workflow</td><td>7th</td></tr>
+<tr><td>Cyber Threat Intelligence</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>STIX/TAXII, MISP, threat intel integration</td><td>8th</td></tr>
+<tr><td>Azure Sentinel</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>KQL, analytics rules, UEBA, SOAR playbooks</td><td>9th</td></tr>
+<tr><td>SOC 1 &amp; SOC 2</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>L1/L2 simulation: triage, escalation, IR in Splunk</td><td>10th</td></tr>
+</tbody>
+</table>
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Cyber Kill Chain</p>
-<p style="color:#c0d0e0;">Developed by Lockheed Martin, the Cyber Kill Chain describes 7 phases of a cyber attack. Understanding each phase helps you detect and stop attacks at different stages.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>7 Phases with Real Example (SolarWinds Breach 2020):</b><br>
-<b>1. Reconnaissance:</b> Attacker researches SolarWinds employees, finds Orion build infrastructure, identifies supply chain opportunity.<br>
-<b>2. Weaponization:</b> Attacker creates malicious update code that looks legitimate, signed with valid digital certificates.<br>
-<b>3. Delivery:</b> Malicious update pushed via SolarWinds' own update mechanism to 18,000 customers.<br>
-<b>4. Exploitation:</b> The Orion update runs with legitimate trust — no exploit needed, the victim runs it willingly.<br>
-<b>5. Installation:</b> Malware (SUNBURST) installs itself, stays dormant for 14 days, then establishes C2.<br>
-<b>6. Command & Control (C2):</b> SUNBURST uses HTTP backdoors to communicate with attacker-controlled domains, disguising traffic as legitimate Orion traffic.<br>
-<b>7. Actions on Objectives:</b> Attackers identify high-value targets (US government agencies, Fortune 500 companies), steal email and documents from compromised systems.<br><br>
-<b>Detection opportunity:</b> At phase 6 (C2), anomalous DNS queries to rarely-used domains could have been detected by network monitoring.
+<!-- HTB ACADEMY -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-laptop me-2"></i>Hack The Box Academy</h5>
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Module</th><th>Difficulty</th><th>Outcomes</th></tr></thead>
+<tbody>
+<tr><td>Introduction to SIEM</td><td><span class="badge bg-success">Easy</span></td><td>SIEM concepts, log collection, basic search, alert triage</td></tr>
+<tr><td>Security Monitoring &amp; SIEM</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Correlation rules, dashboards, threat intel integration</td></tr>
+<tr><td>Detecting Attacks with Splunk</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Real Splunk: detections for brute force, ransomware, C2</td></tr>
+<tr><td>Introduction to Threat Hunting</td><td><span class="badge bg-danger">Hard</span></td><td>Hunting methodology, hypothesis-driven, adversarial emulation</td></tr>
+</tbody>
+</table>
+
+<!-- LETSDEFEND -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-check me-2"></i>LetsDefend Investigations</h5>
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Investigation</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>SOC004 - SIEM Alert Triage</td><td>Alert Triage</td><td>Triage 50 alerts: prioritize, investigate, document, escalate</td></tr>
+<tr><td>SOC010 - Malicious PowerShell</td><td>Log Analysis</td><td>Find encoded PowerShell, decode, analyze payload</td></tr>
+<tr><td>SOC019 - Multi-stage Attack</td><td>Incident Response</td><td>Correlate firewall + Windows + EDR logs</td></tr>
+<tr><td>SOC027 - Threat Hunting</td><td>Threat Hunting</td><td>Find C2 beaconing via time-series analysis</td></tr>
+<tr><td>SOC035 - Phishing Campaign</td><td>Email Security</td><td>Analyze email headers + proxy + Windows logs</td></tr>
+<tr><td>SOC044 - DNS Exfiltration</td><td>Forensic Analysis</td><td>Correlate DNS, proxy, netflow for exfiltration</td></tr>
+<tr><td>SOC052 - SOAR Playbook</td><td>Automation</td><td>Design playbook: auto-block IP, isolate host</td></tr>
+</tbody>
+</table>
+
+<!-- CYBERDEFENDERS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield me-2"></i>CyberDefenders Challenges</h5>
+<table class="table table-dark table-sm small" style="color:#c0d0e0;">
+<thead><tr><th>Challenge</th><th>Difficulty</th><th>Focus</th></tr></thead>
+<tbody>
+<tr><td>Brutus - Windows Logs</td><td><span class="badge bg-success">Easy</span></td><td>Parse Event Logs for brute force, lateral movement, privesc</td></tr>
+<tr><td>Flare - Malware + SIEM</td><td><span class="badge bg-warning" style="color:#000;">Medium</span></td><td>Sandbox malware, extract IOCs, hunt in SIEM</td></tr>
+<tr><td>Chaos - Full SOC Sim</td><td><span class="badge bg-danger">Hard</span></td><td>Triage, investigate, contain, remediate, report</td></tr>
+<tr><td>Odin - Hunting in ELK</td><td><span class="badge bg-danger">Hard</span></td><td>Hunt APT across 90 days of Elastic data</td></tr>
+</tbody>
+</table>
+
+<!-- GITHUB RESOURCES -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-github me-2"></i>GitHub Resources</h5>
+<div class="row g-2 mb-3">
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" style="color:#00d4ff;">Blue-Team-Roadmap</a></strong><br><span style="color:#c0d0e0;">SIEM section: Splunk/ELK guides, Sigma rules, detection methodology.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" style="color:#00d4ff;">awesome-soc</a></strong><br><span style="color:#c0d0e0;">SIEM tools: Splunk apps, ELK stacks, SOAR platforms.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/SigmaHQ/sigma" target="_blank" style="color:#00d4ff;">Sigma</a></strong><br><span style="color:#c0d0e0;">Generic SIEM rules converting to Splunk/Elastic/QRadar/Sentinel.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" style="color:#00d4ff;">Atomic Red Team</a></strong><br><span style="color:#c0d0e0;">Test SIEM detections with atomic tests for each technique.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" style="color:#00d4ff;">sysmon-config</a></strong><br><span style="color:#c0d0e0;">Sysmon feeds endpoint data to SIEM. Essential for detections.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" style="color:#00d4ff;">blueteam_homelabs</a></strong><br><span style="color:#c0d0e0;">Build SIEM lab: Splunk Free or ELK + Wazuh at home.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" style="color:#00d4ff;">EVTX-ATTACK-SAMPLES</a></strong><br><span style="color:#c0d0e0;">Import EVTX into SIEM for practice. Mapped to ATT&CK.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/InQuest/awesome-yara" target="_blank" style="color:#00d4ff;">awesome-yara</a></strong><br><span style="color:#c0d0e0;">YARA for SIEM enrichment and file-based detection.</span></div></div>
+<div class="col-md-6"><div class="bg-dark p-2 rounded small" style="border:1px solid #333;height:100%;"><strong><a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" style="color:#00d4ff;">BlueTeam-Tools</a></strong><br><span style="color:#c0d0e0;">Hayabusa, Chainsaw, Velociraptor — SIEM-adjacent tools.</span></div></div>
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Unified Kill Chain</p>
-<p style="color:#c0d0e0;">The UKC combines multiple frameworks into 18 phases covering the complete attack lifecycle from initial reconnaissance to post-exploitation actions. It's more comprehensive than the original Cyber Kill Chain.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>UKC Phases (simplified):</b><br>
-<b>Phase A (In):</b> Reconnaissance, Weaponization, Delivery, Social Engineering, Exploitation, Persistence, Defense Evasion, C2<br>
-<b>Phase B (Through):</b> Pivoting, Discovery, Privilege Escalation, Execution, Credential Access, Lateral Movement<br>
-<b>Phase C (Out):</b> Collection, Exfiltration, Impact, Objectives<br><br>
-<b>Example:</b> Ransomware attack mapped to UKC:<br>
-Phase A: Spear-phish (Delivery) → macro (Exploitation) → Cobalt Strike (C2)<br>
-Phase B: Dump LSASS (Credential Access) → Move to DC (Lateral Movement) → Domain Admin (Privilege Escalation)<br>
-Phase C: Deploy ransomware (Impact) → Encrypt all servers (Objectives) → $5M ransom demand
+<!-- HANDS-ON LABS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-tools me-2"></i>Hands-On Labs</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner Lab: Splunk Free + Windows Log Ingestion</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Install Splunk Free on Linux, configure Windows Universal Forwarder, ingest Security events, build failed login dashboard.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Install Splunk on Ubuntu → Enable receiving on 9997 → Install UF on Windows → Configure inputs.conf for Security log → Verify data with <code>index=windows_security | stats count</code> → Build timechart dashboard for Event 4625.</p>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> Windows Security events flowing into Splunk. Dashboard shows failed login trends. Save as alert: >10 failed RDP logins from same IP in 5 min.</p>
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 MITRE ATT&CK</p>
-<p style="color:#c0d0e0;">MITRE ATT&CK is a globally accessible knowledge base of adversary tactics and techniques based on real-world observations. It's the industry standard for describing attacker behavior.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>MITRE ATT&CK Structure:</b><br>
-- <b>Tactics (14 columns):</b> The "why" — the goal of the technique. Examples: Initial Access, Execution, Persistence, Defense Evasion, Credential Access, Discovery, Lateral Movement, Collection, Exfiltration, Impact<br>
-- <b>Techniques (hundreds):</b> The "how" — specific methods to achieve the tactic. Examples: T1566 (Phishing), T1059 (Command & Scripting), T1003 (OS Credential Dumping)<br>
-- <b>Procedures:</b> The specific implementation. "APT29 uses spear-phishing with malicious attachments for T1566"<br><br>
-<b>Example Mapping — Ransomware Attack:</b><br>
-| Tactic | Technique ID | Technique Name | Detection |
-|--------|-------------|----------------|-----------|
-| Initial Access | T1566.001 | Spear-phishing Attachment | Email gateway filter |
-| Execution | T1204.002 | User Execution: Malicious File | EDR process monitoring |
-| Persistence | T1547.001 | Registry Run Keys / Startup | Sysmon Event 13 |
-| Defense Evasion | T1055.001 | Process Injection | Sysmon Event 8 |
-| Credential Access | T1003.001 | LSASS Memory | Sysmon Event 10 |
-| Lateral Movement | T1021.006 | Windows Remote Management | Windows Event 5156 |
-| Impact | T1486 | Data Encrypted for Impact | File system audit |
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate Lab: Sigma Rule + Atomic Red Team Validation</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Write Sigma rule for WMI lateral movement, convert to Splunk, deploy as saved search, validate with Atomic Red Team.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Write Sigma rule (WmiPrvSE.exe → cmd.exe) → Convert with sigmac → Deploy in Splunk → Test with <code>Invoke-AtomicTest T1047</code> → Verify alert fires.</p>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> Atomic test generates WMI process creation. Your Sigma detection fires. Extend for LOLBins (mshta, certutil, rundll32).</p>
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Summit & Eviction</p>
-<p style="color:#c0d0e0;">These rooms apply all the frameworks above in hands-on scenarios.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Summit:</b> Analyze a complex real-world attack scenario. You're given PCAPs, logs, and intel reports. You must map the attack to the Cyber Kill Chain, identify the TTPs using MITRE ATT&CK, determine which Pyramid of Pain indicators to block, and recommend defense improvements.<br><br>
-<b>Eviction:</b> You're the incident responder. A threat actor is actively inside your network. Using the frameworks, you must identify their current phase, determine what they've done, and take steps to evict them. You'll block IOCs, identify persistence mechanisms, and implement detection rules to prevent their return.
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced Lab: ML Threat Hunting with Jupyter + Elastic</p>
+<p style="color:#c0d0e0;"><strong>Objectives:</strong> Build Python hunting pipeline: query Elasticsearch, detect C2 beaconing via FFT + statistical analysis, visualize in Kibana.</p>
+<p style="color:#c0d0e0;"><strong>Steps:</strong> Query 7 days of network logs via elasticsearch-py → Compute inter-arrival times per flow → Apply FFT for periodicity → Score flows (CV < 0.3, period 10-3600s = C2 candidate) → Push results to Elastic → Kibana scatter plot dashboard.</p>
+<p style="color:#c0d0e0;"><strong>Expected Results:</strong> Identify beaconing flows with regular intervals. Test with malware-traffic-analysis.net PCAPs. Productionize as daily Jupyter notebook with Watcher alerts.</p>
 </div>
+
+<!-- SOC SCENARIOS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-shield-fill-exclamation me-2"></i>SOC Scenarios</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Scenario 1: Multi-Stage Ransomware Detection</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> Alerts: Sysmon Event 1 (WINWORD→cmd→powershell encoded), Event 3 (powershell→45.33.32.156:443), Event 11 (500+ .encrypted files).</p>
+<p style="color:#c0d0e0;"><strong>Investigate:</strong> Check process tree → Decode PowerShell → Check C2 DNS → Check SMB lateral movement → Check email gateway for phishing.</p>
+<p style="color:#c0d0e0;"><strong>Respond:</strong> Isolate host via EDR, block C2 IP, check file servers, disable user, scan email gateway. <strong>Document:</strong> LockBit ransomware via phishing. MITRE: T1566.001, T1204.002, T1486. Severity: CRITICAL.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Scenario 2: Impossible Travel Account Takeover</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> Sentinel UEBA: User jsmith logged in from NYC (RDP) and Lagos, Nigeria (Azure AD) within 25 min. 5300 miles.</p>
+<p style="color:#c0d0e0;"><strong>Investigate:</strong> Check Azure AD sign-in logs for Nigeria session → MFA method/status → Resources accessed (SharePoint Finance?) → Downloads.</p>
+<p style="color:#c0d0e0;"><strong>Respond:</strong> Disable account, revoke sessions, force password reset, reset MFA, block high-risk countries in CA policy. <strong>Document:</strong> MFA fatigue attack. MITRE: T1078.004, T1537. Severity: CRITICAL.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Scenario 3: Distributed Port Scan Fire Drill</p>
+<p style="color:#c0d0e0;"><strong>What Happened:</strong> SIEM spikes: 200 alerts/min "ET SCAN SYN Scan" from 50 unique external IPs to web farm.</p>
+<p style="color:#c0d0e0;"><strong>Investigate:</strong> Check Shodan for source IPs (cloud VPS?) → Check if exploitation followed → Check WAF blocks.</p>
+<p style="color:#c0d0e0;"><strong>Respond:</strong> Do NOT block 200 IPs individually. Block ASN if malicious. Add Suricata thresholding. Create SIEM aggregation: >50 IPs on same dest → "Distributed Scan" single alert. <strong>Document:</strong> Internet background noise. Severity: LOW.</p>
+</div>
+
+<!-- KNOWLEDGE CHECK -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-question-lg me-2"></i>Knowledge Check</h5>
+
+<p class="fw-bold" style="color:#00d4ff;">Multiple Choice (10)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li><strong>Which SPL command groups related events into sessions?</strong> a) stats b) transaction c) eventstats d) lookup <em>Answer: b</em></li>
+<li><strong>Most impactful Pyramid of Pain level?</strong> a) Hash b) IP c) Domain d) TTPs <em>Answer: d</em></li>
+<li><strong>Which component parses/normalizes logs?</strong> a) Forwarder b) Indexer c) Search Head d) LB <em>Answer: b</em></li>
+<li><strong>Sigma rule field for log source category?</strong> a) title b) detection c) logsource d) references <em>Answer: c</em></li>
+<li><strong>SOAR primary purpose?</strong> a) Store logs b) Automate IR c) Generate reports d) Scan vulns <em>Answer: b</em></li>
+<li><strong>Which command creates calculated fields?</strong> a) where b) table c) eval d) rex <em>Answer: c</em></li>
+<li><strong>HMM Level 3 indicates?</strong> a) No logs b) IOC-only c) Data-driven with stats d) Fully automated <em>Answer: c</em></li>
+<li><strong>Subsearch does what?</strong> a) Groups events b) Dynamic filtering c) Enriches data d) Joins tables <em>Answer: b</em></li>
+<li><strong>Max FP rate per rule?</strong> a) 25% b) 15% c) 5% d) 1% <em>Answer: c</em></li>
+<li><strong>Event ID requiring command-line logging?</strong> a) 4624 b) 4625 c) 4688 d) 7045 <em>Answer: c</em></li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Practical Questions (5)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li>Write a Splunk query finding hosts with successful login within 5 min of 5+ failed logins from same source IP.</li>
+<li>Write a Sigma rule for certutil.exe URL download (LOLBin abuse).</li>
+<li>Design triage workflow: 45 DNS alerts + 3 failed logins + 2 C2 connections. Order and why?</li>
+<li>Design SOAR playbook for Malicious PowerShell alert (enrich, contain, notify).</li>
+<li>Describe a credential dumping hunt (T1003): hypothesis, SIEM query, confirmation criteria.</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Investigation Scenarios (2)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li>HR server sent 500MB via HTTP POST to 103.235.46.89:80 at 2 AM. Process: w3wp.exe. Normal volume: 50MB/day. Investigate.</li>
+<li>Threat hunt finds 15 hosts with schtasks.exe creating "Windows*Update*" tasks. Two point to AppData\Local\Temp\evil.ps1. Next steps?</li>
+</ol>
+</div>
+
+<p class="fw-bold" style="color:#00d4ff;">Interview Questions (3)</p>
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<ol style="color:#c0d0e0;">
+<li>"Explain SIEM vs SOAR vs UEBA. How do they work together?"</li>
+<li>"5 critical alerts, you can investigate 1. Prioritization criteria and decision process?"</li>
+<li>"How would you build a detection engineering pipeline from scratch?"</li>
+</ol>
+</div>
+
+<!-- PORTFOLIO PROJECTS -->
+<h5 class="text-primary mt-4 mb-3"><i class="bi bi-folder me-2"></i>Portfolio Projects</h5>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-1-circle me-1"></i> Beginner: Home SOC Lab</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Splunk Free on Linux + 2 Windows VMs with UFs + Atomic Red Team. Validate 10 detection rules. <strong>Tools:</strong> Splunk, VMware, Atomic Red Team. <strong>Steps:</strong> Deploy VMs → Config forwarders → Build dashboards → Write rules → Test → Document. <strong>Output:</strong> Lab guide + detection catalog + test results.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-2-circle me-1"></i> Intermediate: Detection Engineering CI/CD</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> GitHub → Sigma rules → GitHub Actions (sigmac) → SIEM API → Atomic Red Team validation. <strong>Tools:</strong> GitHub, Sigma CLI, Python, SIEM API. <strong>Steps:</strong> Create repo → Write workflow → Add tests → Deploy rules → Generate coverage map. <strong>Output:</strong> Pipeline + ATT&CK coverage map.</p>
+</div>
+
+<div class="bg-dark p-3 rounded mb-3" style="border:1px solid #333;">
+<p class="fw-bold" style="color:#00d4ff;"><i class="bi bi-3-circle me-1"></i> Advanced: ML-Driven SOC Analytics Platform</p>
+<p style="color:#c0d0e0;"><strong>Objective:</strong> Python platform ingesting Elastic data, applying ML (Isolation Forest, LSTM, Random Forest) for anomaly detection. <strong>Tools:</strong> Python, Jupyter, scikit-learn, TensorFlow, Kafka, Elastic. <strong>Steps:</strong> Collect labeled data → Train models → Deploy as API → Integrate with Elastic → Kibana ML dashboard. <strong>Output:</strong> Notebooks + model metrics + API + demo.</p>
+</div>
+
 </div>

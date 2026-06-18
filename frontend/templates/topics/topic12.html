@@ -1,113 +1,790 @@
-<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-warning mb-3"><i class="bi bi-book me-2"></i>Module 12: Threat Analysis Tools</h6>
+<div class="topic-container">
+  <h2 class="topic-title"><i class="bi bi-diagram-2"></i> Module 12: SOC Projects</h2>
+  <p class="topic-subtitle">Design, build, and improve SOC operations through real-world projects that demonstrate technical and process excellence.</p>
 
-<p style="color:#c0d0e0;">Cyber Threat Intelligence (CTI) helps SOC analysts understand the adversary. This module covers OSINT, VirusTotal, MISP, IP/Domain reputation, and threat intel lifecycle.</p>
+  <!-- SECTION OVERVIEW -->
+  <div class="section-card">
+    <h3><i class="bi bi-eye"></i> SECTION OVERVIEW</h3>
+    <p><strong>What are SOC Projects?</strong> SOC Projects are structured initiatives that design, implement, or improve SOC capabilities. These range from building a new SOC from scratch to deploying specific tools (SIEM, EDR, SOAR), creating playbooks, designing detection rules, establishing threat intelligence programs, and optimizing SOC processes.</p>
+    <p><strong>Why It Matters in a SOC:</strong> SOC maturity is measured by the ability to execute projects that improve detection, response, and prevention capabilities. Analysts who can lead or contribute to such projects demonstrate value beyond alert triage — they show architecture, engineering, and program management skills essential for career advancement.</p>
+    <p><strong>Real-World Use Cases:</strong> Building a SOC for a mid-size company, migrating from on-prem SIEM to cloud-native SIEM (e.g., Splunk to Sentinel), deploying EDR across 5000 endpoints, creating a threat intelligence sharing program with ISAC partners, designing a SOAR automation workflow for phishing response, implementing SOC metrics and KPIs dashboards.</p>
+    <p><strong>Skills Gained:</strong> SOC architecture design, tool evaluation and deployment, project management (Agile/Scrum), process design and documentation (playbooks, SOPs), detection engineering, SOAR automation, threat intelligence integration, metric design and reporting, stakeholder management.</p>
+    <p><strong>Prerequisites:</strong> Understanding of SOC operations (Modules 1-8), networking, operating systems, security tools, and the incident response lifecycle.</p>
+    <p><strong>Learning Objectives:</strong>
+      <ul>
+        <li>Design a SOC architecture for a given organization size and risk profile</li>
+        <li>Plan and execute a SIEM implementation project</li>
+        <li>Create a complete detection engineering pipeline</li>
+        <li>Design SOC metrics and reporting dashboards</li>
+        <li>Build a SOAR playbook for automated incident response</li>
+      </ul>
+    </p>
+  </div>
 
-<h6 class="text-warning mt-3">Sub-Domains / Rooms</h6>
+  <!-- DETAILED NOTES -->
+  <div class="section-card">
+    <h3><i class="bi bi-journal-text"></i> DETAILED NOTES</h3>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Intro to Cyber Threat Intel</p>
-<p style="color:#c0d0e0;">CTI is evidence-based knowledge about threats to inform defensive decisions. There are four types of CTI:</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>The Four Types of Threat Intelligence:</b><br><br>
-<b>1. Strategic CTI (Executive Level):</b> High-level reports for CISOs and board members<br>
-Example: "Ransomware-as-a-Service groups increased 45% this year. LockBit is the most active, targeting manufacturing and healthcare. Recommend: increase offline backup frequency, implement network segmentation, deploy EDR on all endpoints."<br><br>
-<b>2. Tactical CTI (SOC Manager Level):</b> TTPs, tools, and techniques of specific adversaries<br>
-Example: "APT29 (Cozy Bear) uses T1566.001 (Spear-phishing), T1059.003 (PowerShell), T1003.001 (LSASS dumping). They're actively targeting vaccine researchers. Deploy detections for these specific techniques."<br><br>
-<b>3. Operational CTI (SOC Analyst Level):</b> Specific upcoming attacks, campaigns, and threat actor activity<br>
-Example: "A new phishing campaign using fake DocuSign emails is targeting your industry. Subject: 'Document Ready for Signature'. C2: docusign-verify[.]com (185.130.5.201). Update your email gateway rules to block."<br><br>
-<b>4. Technical CTI (Analysis Level):</b> IOCs — hashes, IPs, domains, YARA rules<br>
-Example: "Block these IOCs: SHA256 3f5b8c2a..., IP 45.33.32.156, domain evil-update.com"<br><br>
-<b>The CTI Lifecycle:</b><br>
-Direction (what to prioritize) → Collection (gather data) → Processing (analyze, extract IOCs) → Analysis (produce intelligence) → Dissemination (share with stakeholders) → Feedback (improve future collection)
-</div>
+    <h4>Subtopic 1: SOC Architecture & Design</h4>
+    <p><strong>Technical Breakdown:</strong> SOC architecture defines how people, processes, and technology interact to detect and respond to threats. Key design considerations:</p>
+    <ul>
+      <li><strong>SOC Tiers (People):</strong>
+        <ul>
+          <li><strong>Tier 1 (Triage):</strong> Monitor SIEM alerts, perform initial triage, verify true/false positives, escalate to Tier 2. 24/7 shift coverage required. Skills: basic log analysis, customer service, follow playbooks.</li>
+          <li><strong>Tier 2 (Investigation):</strong> Deep investigation of escalated alerts, threat hunting, forensic analysis, containment actions. Normal business hours with on-call rotation. Skills: advanced log analysis, forensics, malware analysis, script writing.</li>
+          <li><strong>Tier 3 (Advanced):</strong> Reverse engineering, advanced forensics, tool customization, vulnerability research, threat intelligence. Normal business hours. Skills: programming, exploit analysis, deep protocol knowledge, adversary simulation.</li>
+          <li><strong>SOC Manager:</strong> Hiring, training, shift scheduling, escalation point for major incidents, reporting to CISO. Skills: management, communication, metric-driven operations.</li>
+        </ul>
+      </li>
+      <li><strong>SOC Models:</strong>
+        <ul>
+          <li><strong>Internal SOC:</strong> Company employees run all operations. Pros: full control, deep business knowledge. Cons: expensive, hard to staff 24/7. Best for: large enterprises (5000+ employees), regulated industries.</li>
+          <li><strong>MSSP (Managed Security Service Provider):</strong> Outsource to a provider that monitors multiple clients. Pros: cost-effective, 24/7 coverage, broad tool knowledge. Cons: generic alerts, less context, slower response. Best for: SMBs without security budget.</li>
+          <li><strong>Co-Managed SOC:</strong> Hybrid model — internal + MSSP. MSSP handles Tier 1 triage 24/7, internal team handles Tier 2/3 during business hours. Pros: balance of cost and control. Best for: mid-size enterprises (500-5000 employees).</li>
+          <li><strong>Virtual SOC:</strong> Distributed team with remote monitoring. Pros: global talent pool, lower overhead. Cons: communication challenges, timezone coordination. Growing trend post-COVID.</li>
+        </ul>
+      </li>
+      <li><strong>Technology Stack:</strong> SIEM (Splunk/ELK/Sentinel), EDR (CrowdStrike/Defender/SentinelOne), SOAR (Splunk SOAR/Shuffle/Palo Alto XSOAR), TIP (MISP/ThreatConnect), Vulnerability Scanner (Qualys/Tenable/Nessus), Email Security (Mimecast/Proofpoint), NTA (Zeek/Security Onion), UEBA (integrated with SIEM), ASM (Censys/Shodan/Attack Surface Management).</li>
+    </ul>
+    <p><strong>Architecture Example:</strong> A typical mid-size SOC (co-managed) architecture: MSSP provides 24/7 Tier 1 using Splunk ES as the primary SIEM. Customer internal team handles Tier 2/3 during business hours. Log sources: Windows Events via Winlogbeat + WEF, Sysmon, Linux Syslog, Firewall/Proxy/DNS via syslog, CloudTrail + Azure AD via API collectors, EDR via CrowdStrike API. SOAR (Splunk Phantom) automates phishing triage. MISP for threat intel. TheHive for case management.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 File and Hash Threat Intel</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>VirusTotal Deep Analysis:</b><br>
-When you submit a file to VirusTotal, you get:<br><br>
-<b>Detection Tab:</b> Shows which of 70+ AV engines detected the file as malicious<br>
-- <code>Microsoft: Trojan:Win32/AgentTesla.A!MTB</code><br>
-- <code>Kaspersky: Trojan-PSW.MSIL.AgentTesla.gen</code><br>
-- <code>CrowdStrike: malware_confidence_100%</code><br>
-→ 18/70 detections — highly likely malicious<br><br>
-<b>Details Tab:</b> File metadata<br>
-- File type: PE32 executable (GUI) Intel 80386, for MS Windows<br>
-- Size: 245,760 bytes<br>
-- First Submission: 2026-05-19 14:23:15<br>
-- Last Analysis: 2026-05-21 08:15:44<br>
-- Compile Time: 2026-05-15 03:14:00 (likely faked)<br>
-- Entropy: 7.8 (high — packed/encrypted)<br><br>
-<b>Relations Tab:</b> Connections to other data<br>
-- Contacted IPs: 45.33.32.156 (malicious), 185.130.5.201 (malicious)<br>
-- Contacted Domains: evil-update.com (registered 2 days ago)<br>
-- Dropped Files: outlookhelper.dll (detected as malicious)<br>
-- Similar Files: 5 files with similar behavior (variant detection)<br><br>
-<b>Behavior Tab:</b> Sandbox analysis results<br>
-- Created process svchost.exe (injected)<br>
-- Modified registry Run key<br>
-- Connected to SMTP server on port 587<br>
-- Captured browser credentials<br><br>
-<b>Community Tab:</b> Analyst comments<br>
-- "This is AgentTesla variant 3.2.1 — targets Chrome, Firefox, Outlook"<br>
-- "C2: mail.evil.com:587 — sends stolen data via SMTP"<br>
-- "Persistence: HKCU\...\Run\OutlookUpdate"
-</div>
+    <h4>Subtopic 2: SIEM Implementation</h4>
+    <p><strong>Technical Breakdown:</strong> A SIEM implementation project involves planning, deployment, configuration, tuning, and ongoing maintenance.</p>
+    <ul>
+      <li><strong>Phase 1 — Requirements & Planning (2-4 weeks):</strong>
+        <ul>
+          <li>Identify log sources: which systems, in what format, at what volume (EPS — Events Per Second). Calculate storage requirements: EPS x 86400 x retention days = total events. Example: 5000 EPS, 365 days retention = ~5000 x 86400 x 365 = 157 billion events. Each event averages 500 bytes = ~80 TB of storage.</li>
+          <li>Define use cases: top detection scenarios based on business risk (e.g., ransomware detection, insider threat, account compromise). Map to MITRE ATT&CK.</li>
+          <li>Select SIEM platform: evaluate Splunk, Elastic Security, Microsoft Sentinel, LogRhythm, Sumo Logic, QRadar based on budget, skill availability, cloud vs on-prem, scaling needs.</li>
+        </ul>
+      </li>
+      <li><strong>Phase 2 — Deployment (4-8 weeks):</strong>
+        <ul>
+          <li>Infrastructure setup: servers/cloud instances, networking (log collector ports, load balancing), storage (hot/warm/cold tiers), HA configuration.</li>
+          <li>Log ingestion: deploy log forwarders (Universal Forwarder for Splunk, Logstash/Filebeat for ELK, Azure Monitor Agent for Sentinel). Configure parsing (index-time vs search-time). Test sample logs.</li>
+          <li>Parsing and normalization: extract key fields (timestamp, source IP, dest IP, user, event ID, action). CIM (Common Information Model) compliance for Splunk or ECS (Elastic Common Schema) for ELK.</li>
+          <li>Alert creation: start with 10-20 critical alerts from Sigma rules (e.g., account lockout, service install, AdminSDHolder modification). Tune thresholds based on initial noise.</li>
+        </ul>
+      </li>
+      <li><strong>Phase 3 — Tuning & Validation (ongoing):</strong>
+        <ul>
+          <li>False positive reduction: every alert should be reviewed weekly. High FP rules are tuned or disabled. Tune by: adjusting thresholds, adding exceptions (whitelists), narrowing scope (specific subnets/users).</li>
+          <li>Detection validation: use Atomic Red Team to test that rules trigger correctly. Run monthly purple team exercises.</li>
+          <li>Content development: weekly new rule creation based on threat intelligence, CVEs, and incident findings. Maintain a backlog of detection ideas.</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Enterprise Example:</strong> A financial institution migrates from on-prem QRadar to Microsoft Sentinel. Architecture: All log sources send to Azure Event Hubs -> Sentinel ingests via Data Connectors. Azure Arc extends on-prem servers for log collection. Workbooks for executive dashboards, Analytics Rules for detection, Playbooks (Azure Logic Apps) for SOAR automation. SIEM migration completed in 3 months with 200 log sources and 150 detection rules.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 IP and Domain Threat Intel</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>IP Reputation Check — AbuseIPDB:</b><br>
-<code>IP: 45.33.32.156<br>
-Category: Scanning, Brute-Force, C2<br>
-Reports: 47 from 23 users<br>
-Confidence: 100%<br>
-Last Report: 2026-05-21 (2 hours ago)<br>
-ISP: M247 Ltd (Russia)<br>
-Usage Type: Hosting Provider</code><br><br>
-<b>Domain Reputation Check — VirusTotal:</b><br>
-<code>Domain: evil-update.com<br>
-Detections: 5/90 (malicious)<br>
-Categories: C2, Phishing, Malware<br>
-Registrar: Namecheap (privacy enabled)<br>
-Creation Date: 2026-05-19 (2 days ago)<br>
-IP History: 45.33.32.156, 185.130.5.201<br>
-Subdomains: mail.evil-update.com, update.evil-update.com</code><br><br>
-<b>Passive DNS (SecurityTrails):</b><br>
-<code>45.33.32.156 resolves to:<br>
-- evil-update.com (2 days)<br>
-- docusign-verify.com (3 days — phishing)<br>
-- secure-login.net (4 days — credential harvesting)<br>
-- update-msft.com (5 days — fake Microsoft update)</code><br>
-→ The same IP hosts 4 different malicious domains — all recently registered. This is a known malicious infrastructure cluster.
-</div>
+    <h4>Subtopic 3: Playbook Development & SOAR Automation</h4>
+    <p><strong>Technical Breakdown:</strong> Playbooks are step-by-step guides for handling specific scenarios. SOAR platforms execute these steps automatically with human approval gates.</p>
+    <ul>
+      <li><strong>Playbook Structure:</strong>
+        <ul>
+          <li>Metadata: Name, ID, Version, Date, Owner, MITRE ATT&CK mapping, Severity.</li>
+          <li>Trigger: Alert type, SIEM rule name, log source, threshold.</li>
+          <li>Triage: Determine true/false positive (check IOCs, context checks).</li>
+          <li>Investigation: Log queries to run (SPL/KQL), enrichment steps (VirusTotal, AbuseIPDB, Shodan), artifact collection (process dump, PCAP).</li>
+          <li>Containment: Steps to contain (isolate host, disable user, block IP/domain).</li>
+          <li>Eradication: Remove malware, reset credentials, patch vulnerability.</li>
+          <li>Recovery: Verify systems are clean, restore from backup, monitor for reinfection.</li>
+          <li>Reporting: Documentation requirements, incident report template.</li>
+        </ul>
+      </li>
+      <li><strong>SOAR Automation Flow Examples:</strong>
+        <ul>
+          <li><strong>Phishing Playbook:</strong> User reports email -> SOAR extracts email headers and URLs -> enriches URLs via VirusTotal/URLScan.io -> checks if URL is known phishing -> if yes, removes email from all users' mailboxes, blocks domain in email gateway, creates case in TheHive, notifies SOC. Human reviews before blocking action.</li>
+          <li><strong>Brute Force Playbook:</strong> SIEM detects 20 failed logins + 1 successful from IP -> SOAR enriches IP via AbuseIPDB -> checks if the user's account is admin or sensitive -> if successful login found, resets user's password, enables MFA, blocks source IP in firewall, sends alert to user and SOC. Human approves firewall block.</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Real-World Example:</strong> A large healthcare organization builds 50 SOAR playbooks in Splunk SOAR over 6 months. The phishing playbook alone saves 400 analyst hours per month by automating URL enrichment, email deletion, and case creation. Analyst time dropped from 15 minutes per incident to 3 minutes (mainly review and approval). SOC SLA for phishing response improved from 2 hours to 15 minutes.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Invite Only — Advanced CTI Platforms</p>
-<p style="color:#c0d0e0;">Some advanced threat intelligence platforms require membership or sponsorship:</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Professional CTI Platforms:</b><br>
-- <b>MISP (Malware Information Sharing Platform):</b> Open-source platform for sharing, storing, and correlating IOCs within a trusted community<br>
-- <b>ThreatConnect:</b> Commercial SOAR-integrated TIP with case management<br>
-- <b>Anomali ThreatStream:</b> Enterprise threat intel platform with real-time feeds<br>
-- <b>Recorded Future:</b> AI-powered threat intel with predictive scoring<br>
-- <b>Intel471:</b> Focused on criminal underground forums and threat actor tracking<br><br>
-<b>MISP Example:</b><br>
-A partner organization shares an event via MISP:<br>
-<code>Event: APT29 Phishing Campaign Targeting NGOs<br>
-Date: 2026-05-20<br>
-TLP: Amber<br>
-IOCs: 12 hashes, 5 domains, 8 IPs, 3 YARA rules<br>
-Tags: apt29, spear-phishing, T1566.001<br>
-Galaxies: MITRE ATT&CK T1566.001, T1059.003</code><br>
-Your SOC automatically ingests these IOCs into your SIEM and firewall. Within 30 minutes, you detect matching traffic from 2 hosts in your environment — potential compromise.
-</div>
+    <h4>Subtopic 4: SOC Metrics, Reporting & Maturity</h4>
+    <p><strong>Technical Breakdown:</strong> SOC KPIs and maturity models drive continuous improvement and demonstrate value to stakeholders.</p>
+    <ul>
+      <li><strong>Key SOC Metrics (KPIs):</strong>
+        <ul>
+          <li><strong>Time to Detect (TTD):</strong> Time from compromise to detection. Goal: < 1 hour for critical, < 24 hours for high. Measure via: SIEM alert timestamp vs. actual incident start time (from forensics).</li>
+          <li><strong>Time to Respond (TTR):</strong> Time from detection to containment. Goal: < 30 min for critical, < 4 hours for high. Measure via: alert time to containment action timestamp.</li>
+          <li><strong>Mean Time to Acknowledge (MTTA):</strong> How quickly analysts pick up alerts. Goal: < 5 minutes for P1, < 15 minutes for P2.</li>
+          <li><strong>Alert Triage Rate:</strong> Percentage of alerts triaged within SLA. Goal: > 95%.</li>
+          <li><strong>False Positive Rate:</strong> Percentage of alerts that are benign. Goal: < 30%. High FP rate indicates poor detection engineering.</li>
+          <li><strong>Mean Time to Resolve (MTTR):</strong> Total time from detection to incident closure. Varies by severity.</li>
+          <li><strong>Detection Coverage:</strong> Percentage of MITRE ATT&CK techniques covered by detection rules. Goal: > 50% coverage for relevant techniques.</li>
+        </ul>
+      </li>
+      <li><strong>SOC Maturity Models:</strong>
+        <ul>
+          <li><strong>SSE-CMM (Systems Security Engineering Capability Maturity Model):</strong> Levels 1-5 from "Performed Informally" to "Continuously Improving."</li>
+          <li><strong>SOC-CMM (SOC Capability Maturity Model):</strong> Focused on SOC specifically. Levels: Initial, Standardized, Rationalized, Integrated, Optimized.</li>
+          <li><strong>Gartner SOC Maturity Model:</strong> 3 stages: Stage 1 (Reactive) — ad-hoc processes, no automation. Stage 2 (Proactive) — threat hunting, threat intel integration. Stage 3 (Mature) — predictive analytics, automated response, continuous improvement.</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Enterprise Example:</strong> A SOC manager presents monthly dashboard to CISO: TTD average = 2.3 hours (goal 1 hour — showing gap), TTR critical = 18 minutes (meeting goal), FP rate = 22% (below 30% target), alert SLA = 97% (exceeding 95%). Action items: improve TTD by adding DNS tunneling detection rules, reduce FP rate on Windows Defender alerts via exception list. A 6-month roadmap to move from Gartner Stage 2 to Stage 3 by implementing SOAR for automated containment.</p>
+  </div>
 
-<h6 class="text-warning mt-3">Threat Intel Integration with SOC</h6>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>How to Operationalize Threat Intel:</b><br>
-1. <b>Ingest feeds:</b> Subscribe to threat intel feeds relevant to your industry (e.g., healthcare, finance)<br>
-2. <b>Automate enrichment:</b> Configure SOAR to automatically check IPs/domains/hashes against threat intel when alerts fire<br>
-3. <b>Block known bad:</b> Firewall rules for known malicious IP ranges, DNS sinkhole for known malicious domains<br>
-4. <b>Detection rules:</b> Create SIEM rules that match against known TTPs of threat actors targeting your industry<br>
-5. <b>Proactive hunting:</b> Use threat intel to proactively search for signs of specific threat actors in your environment<br>
-6. <b>Sharing:</b> Share your own IOCs with trusted partners via MISP or FS-ISAC
-</div>
+  <!-- CONCEPT BOXES -->
+  <div class="section-card">
+    <h3><i class="bi bi-boxes"></i> CONCEPT BOXES</h3>
+
+    <div class="alert alert-info">
+      <strong>INFO BOX</strong><br>
+      The three pillars of SOC success are People, Process, and Technology — in that order. You can buy the best SIEM, EDR, and SOAR, but without skilled analysts and well-documented processes, the technology will underperform. According to SANS, 60% of SOC failures are due to process gaps, not technology gaps.
+    </div>
+
+    <div class="alert alert-success">
+      <strong>REMEMBER BOX</strong><br>
+      SOC projects should follow the "crawl, walk, run" approach. Start with 10 well-tuned detection rules before expanding to 100. Deploy EDR before SIEM (you need endpoint telemetry first). Create 5 critical playbooks before automating anything. Measure everything from day 1 — you can't improve what you don't measure.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>WARNING BOX</strong><br>
+      Alert fatigue is the #1 SOC killer. If your SIEM generates 10,000 alerts per day and you have 5 analysts, each analyst must triage 2000 alerts/day = one alert every 14 seconds. That's impossible. Focus on quality over quantity: 50 high-fidelity, well-tuned alerts are better than 5000 noisy rules. Deploy alert deduplication and aggregation to reduce volume.
+    </div>
+
+    <div class="alert alert-info">
+      <strong>SOC ANALYST TIP</strong><br>
+      When building a SIEM from scratch, use the "MITRE ATT&CK Coverage Matrix" approach: list the top 10 techniques relevant to your industry, build detection rules for each, and track your coverage score. A good starting target is 60% coverage for the 14 enterprise tactics. Use DeTT&CT or ATT&CK Navigator to visualize gaps and prioritize new rule development.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>INTERVIEW Q&A</strong><br>
+      <strong>Q:</strong> "Tell me about a SOC project you led or contributed to. What was the outcome?"<br>
+      <strong>A:</strong> "I led the deployment of CrowdStrike Falcon across 2000 endpoints at my previous company. The project involved: (1) Evaluating EDR vendors (CrowdStrike, Defender, SentinelOne) with a POC on 50 endpoints. (2) Creating a deployment plan with IT — phased rollout over 4 weeks (500 endpoints/week). (3) Configuring detection rules and exclusion lists — 3 weeks of tuning to reduce FPs. (4) Training the SOC team on EDR workflows — new playbooks for alert triage. Result: 95% deployment coverage in 6 weeks, detection time improved from 24 hours to under 1 hour for critical alerts. Mean time to contain malware dropped from 4 hours to 20 minutes. The project saved an estimated $500K in potential ransomware damages during a simulated test."</strong>
+    </div>
+  </div>
+
+  <!-- VISUAL DIAGRAMS -->
+  <div class="section-card">
+    <h3><i class="bi bi-diagram-3"></i> VISUAL DIAGRAMS</h3>
+    <p><strong>SOC Architecture Diagram (Co-Managed):</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        subgraph Customers [Customer Environment]
+          Win[Windows Servers]:::customer
+          Lin[Linux Servers]:::customer
+          Fw[Firewalls]:::customer
+          Proxy[Web Proxy]:::customer
+          DNS[DNS Servers]:::customer
+          Cloud[Azure / AWS]:::customer
+          EDR[EDR Agents]:::customer
+        end
+        subgraph SOC [Co-Managed SOC]
+          subgraph MSSP [MSSP Tier 1 - 24/7]
+            SIEM[SIEM - Splunk ES]
+            T1[Tier 1 Analysts]
+          end
+          subgraph Internal [Internal Team - Business Hours]
+            T2[Tier 2 - Investigation]
+            T3[Tier 3 - Advanced]
+            TH[Threat Hunting]
+            MGR[SOC Manager]
+          end
+          SOAR[SOAR Automation]
+          TIP[Threat Intel - MISP]
+          CASE[Case Mgmt - TheHive]
+        end
+        Customers -->|Log Forwarding| SIEM
+        SIEM -->|Alerts| T1
+        T1 -->|Escalate| T2
+        T1 -->|Enrich| SOAR
+        SOAR -->|Automation| TIP
+        SOAR -->|Create Case| CASE
+        T2 -->|Deep Dive| T3
+        T2 -->|Hunt| TH
+        T3 -->|Intel| TIP
+        MGR -->|Reports| CISO[CISO]
+        classDef customer fill:#ffaa00,color:#000
+    </pre>
+
+    <p><strong>SIEM Implementation Project Plan (Gantt-style):</strong></p>
+    <pre class="mermaid">
+      flowchart LR
+        subgraph Phase1 [Phase 1: Planning - Weeks 1-4]
+          P1A[Requirements Gathering]
+          P1B[Log Source Inventory]
+          P1C[Vendor Selection]
+          P1D[Architecture Design]
+        end
+        subgraph Phase2 [Phase 2: Deployment - Weeks 5-12]
+          P2A[Infrastructure Setup]
+          P2B[Log Forwarder Deployment]
+          P2C[Parsing & Normalization]
+          P2D[Dashboards & Reports]
+        end
+        subgraph Phase3 [Phase 3: Detection - Weeks 13-20]
+          P3A[Top 20 Detection Rules]
+          P3B[Use Case Validation]
+          P3C[Playbook Creation]
+          P3D[SOAR Integration]
+        end
+        subgraph Phase4 [Phase 4: Maturity - Ongoing]
+          P4A[Tuning & Optimization]
+          P4B[False Positive Reduction]
+          P4C[Threat Intel Integration]
+          P4D[Metrics & KPIs]
+        end
+        Phase1 --> Phase2
+        Phase2 --> Phase3
+        Phase3 --> Phase4
+    </pre>
+
+    <p><strong>SOC Maturity Levels:</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        L1[Level 1: Initial<br/>Reactive, Ad-hoc, No automation]:::init
+        L2[Level 2: Standardized<br/>Basic tools, Defined processes, Some monitoring]:::std
+        L3[Level 3: Rationalized<br/>SIEM+EDR, Playbooks, Metrics, 24/7 coverage]:::rat
+        L4[Level 4: Integrated<br/>SOAR automation, Threat hunting, TI integration]:::int
+        L5[Level 5: Optimized<br/>Predictive analytics, ML, Continuous improvement]:::opt
+        L1 --> L2
+        L2 --> L3
+        L3 --> L4
+        L4 --> L5
+        classDef init fill:#ff4444,color:#fff
+        classDef std fill:#ff8800,color:#fff
+        classDef rat fill:#ffaa00,color:#000
+        classDef int fill:#88cc00,color:#000
+        classDef opt fill:#00d4ff,color:#000
+    </pre>
+  </div>
+
+  <!-- TRYHACKME SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-activity"></i> TRYHACKME</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Room Name</th>
+            <th>Difficulty</th>
+            <th>Objectives</th>
+            <th>Completion Order</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SOC Fundamentals</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Understand SOC operations, tiers, and basic incident handling workflow</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>SIEM Fundamentals</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Deploy a SIEM, ingest logs, create correlation rules, build dashboards</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>SOAR with Shuffle</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Build SOAR workflows using Shuffle (free SOAR platform)</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>Active Directory Lab</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Build a practice AD environment for SOC project testing</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td>SOC Project: Build Your Own SIEM</td>
+            <td><span class="badge bg-danger">Hard</span></td>
+            <td>Full project: deploy ELK, ingest logs, create rules, build dashboard</td>
+            <td>5</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HACK THE BOX ACADEMY SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-cpu"></i> HACK THE BOX ACADEMY</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Module Name</th>
+            <th>Difficulty</th>
+            <th>Outcomes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SOC Operations Principles</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Understand SOC tiers, deployment models, staffing requirements, shift scheduling</td>
+          </tr>
+          <tr>
+            <td>SIEM Deployment & Configuration</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Install and configure ELK/Wazuh, ingest Windows and Linux logs, create detection rules</td>
+          </tr>
+          <tr>
+            <td>SOAR Automation & Orchestration</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Build SOAR playbooks, integrate SIEM+EDR+Firewall, automate containment workflows</td>
+          </tr>
+          <tr>
+            <td>Detection Engineering & Threat Intel</td>
+            <td><span class="badge bg-danger">Hard</span></td>
+            <td>Build a complete detection pipeline: Sigma -> SIEM rules -> VTG (Validation Test Generation)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LETSDEFEND SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-shield-check"></i> LETSDEFEND</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Scenario Name</th>
+            <th>Description</th>
+            <th>Skills Tested</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SOC Setup Project</td>
+            <td>Design and document a SOC architecture for a mid-size company (5000 employees)</td>
+            <td>SOC architecture, requirements gathering, tool selection, budget planning</td>
+          </tr>
+          <tr>
+            <td>SIEM Implementation Exercise</td>
+            <td>Deploy Wazuh (OSSEC fork), ingest sample logs, create 10 correlation rules</td>
+            <td>SIEM deployment, log parsing, rule creation, dashboard creation</td>
+          </tr>
+          <tr>
+            <td>Playbook Development Project</td>
+            <td>Write 5 playbooks for common SOC scenarios with clear workflows</td>
+            <td>Playbook structuring, workflow design, documentation standards</td>
+          </tr>
+          <tr>
+            <td>SOC Metrics Dashboard Project</td>
+            <td>Design a SOC KPI dashboard with 10+ metrics and data sources</td>
+            <td>Metric definition, data visualization, stakeholder reporting</td>
+          </tr>
+          <tr>
+            <td>Detection Engineering Pipeline</td>
+            <td>Build a Sigma-to-SIEM pipeline with CI/CD integration</td>
+            <td>Detection as Code, CI/CD, Sigma, rule validation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CYBERDEFENDERS SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-lock"></i> CYBERDEFENDERS</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Lab Name</th>
+            <th>Description</th>
+            <th>Focus Area</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SOC Design Lab</td>
+            <td>Design end-to-end SOC architecture for a given scenario with budget constraints</td>
+            <td>SOC Architecture, Budget Planning, Tool Selection</td>
+          </tr>
+          <tr>
+            <td>SIEM Engineering Lab</td>
+            <td>Full SIEM deployment with custom parsers, rules, and dashboards</td>
+            <td>SIEM Engineering, Log Management, Correlation</td>
+          </tr>
+          <tr>
+            <td>SOAR Automation Lab</td>
+            <td>Build and test SOAR playbooks for phishing and malware containment</td>
+            <td>SOAR, Automation, API Integration</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GITHUB RESOURCES -->
+  <div class="section-card">
+    <h3><i class="bi bi-github"></i> GITHUB RESOURCES</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>Description</th>
+            <th>Purpose</th>
+            <th>Skills Learned</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" class="text-cyan">Blue-Team-Roadmap</a></td>
+            <td>Blue team roadmap for SOC skill development and project planning</td>
+            <td>SOC team skill mapping, training plans</td>
+            <td>SOC team development planning</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" class="text-cyan">awesome-soc</a></td>
+            <td>Curated SOC tools and resources — essential for project planning</td>
+            <td>Tool evaluation and selection for projects</td>
+            <td>Tool ecosystem knowledge, vendor evaluation</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SigmaHQ/sigma" target="_blank" class="text-cyan">Sigma</a></td>
+            <td>Detection rule format — central to detection engineering projects</td>
+            <td>Create detection pipeline, convert to SIEM rules</td>
+            <td>Detection engineering, rule management</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" class="text-cyan">Atomic Red Team</a></td>
+            <td>Detection validation tests — critical for SOC project testing</td>
+            <td>Validate detection rules, test SOC capabilities</td>
+            <td>Detection validation, purple team exercises</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" class="text-cyan">sysmon-config</a></td>
+            <td>Sysmon config for endpoint visibility projects</td>
+            <td>Deploy Sysmon as part of SOC endpoint project</td>
+            <td>Endpoint telemetry, Sysmon tuning</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" class="text-cyan">blueteam_homelabs</a></td>
+            <td>Blue team homelabs — build SOC test environments</td>
+            <td>Build lab SOC for practice projects</td>
+            <td>Lab deployment, SOC environment design</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" class="text-cyan">EVTX-ATTACK-SAMPLES</a></td>
+            <td>Windows event log attack samples — test SOC detection rules</td>
+            <td>Feed sample attack data into SIEM for testing</td>
+            <td>Detection testing, rule validation</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/InQuest/awesome-yara" target="_blank" class="text-cyan">awesome-yara</a></td>
+            <td>YARA resources — integrate into SOC toolchain</td>
+            <td>Add YARA scanning capability to SOC</td>
+            <td>YARA rule management, IOC scanning</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" class="text-cyan">BlueTeam-Tools</a></td>
+            <td>Blue team tool collection — evaluate for SOC toolchain</td>
+            <td>Tool evaluation and integration projects</td>
+            <td>Tool integration, workflow optimization</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HANDS-ON LABS -->
+  <div class="section-card">
+    <h3><i class="bi bi-laptop"></i> HANDS-ON LABS</h3>
+
+    <div class="lab-section">
+      <h4 class="text-success">Beginner Lab: Deploy a Basic SIEM (Wazuh) on Docker</h4>
+      <p><strong>Objective:</strong> Deploy a fully functional SIEM (Wazuh) using Docker, ingest Windows event logs, and create 3 detection rules.</p>
+      <p><strong>Setup:</strong> A Linux VM (Ubuntu 22.04) or Windows with Docker Desktop. Minimum 8GB RAM, 4 vCPUs, 50GB storage. Docker and Docker Compose installed.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Clone the Wazuh Docker repository: `git clone https://github.com/wazuh/wazuh-docker.git -b v4.8.0`</li>
+          <li>Navigate to `single-node` directory and run `docker-compose up -d`</li>
+          <li>Wait for all containers to start (5-10 minutes). Check: `docker-compose ps`</li>
+          <li>Access Wazuh dashboard: `https://<IP>:5601`. Default credentials: admin/admin</li>
+          <li>On a Windows test VM, download and install Wazuh Agent from the dashboard.</li>
+          <li>Configure agent to connect to the Wazuh manager IP. Start the agent service.</li>
+          <li>In Wazuh dashboard, verify the agent is active (Agents -> Active).</li>
+          <li>Create 3 custom rules in `/var/ossec/etc/rules/local_rules.xml`:
+            <ul>
+              <li>Rule 1: Detect multiple failed logins (Event ID 4625 > 10 in 5 min)</li>
+              <li>Rule 2: Detect service installation (Event ID 7045)</li>
+              <li>Rule 3: Detect PowerShell execution (-EncodedCommand flag)</li>
+            </ul>
+          </li>
+          <li>Restart Wazuh manager: `docker-compose restart wazuh.manager`</li>
+          <li>Generate test events on Windows: simulate a failed login, install a service, run encoded PowerShell.</li>
+          <li>Verify alerts appear in the Wazuh dashboard (Modules -> Security Events).</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Wazuh SIEM fully operational with 1 Windows agent, 3 custom detection rules firing on test events.</p>
+      <p><strong>Troubleshooting:</strong> If agent doesn't connect, check firewall ports: UDP 1514 (event forwarding), TCP 55000 (API). If rules don't trigger, check Wazuh rule syntax at `/var/ossec/bin/verify_rules`.</p>
+      <p><strong>Detection Opportunities:</strong> Extend this lab: add more log sources (Linux via syslog, firewall via syslog), create more rules, build dashboards for executive reporting.</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-warning">Intermediate Lab: Build a SOAR Phishing Response Playbook</h4>
+      <p><strong>Objective:</strong> Build a SOAR playbook using Shuffle (free SOAR platform) that automatically triages phishing emails, enriches URLs, creates a case in TheHive, and sends Slack notifications.</p>
+      <p><strong>Setup:</strong> Shuffle (cloud or docker), TheHive (docker), Slack workspace (free). A test phishing email .eml file. API keys for VirusTotal and URLScan.io.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Deploy Shuffle: `docker run -d -p 3001:3001 ghcr.io/shuffler/shuffle` (or use cloud.shuffler.io free tier)</li>
+          <li>Deploy TheHive: `docker run -d -p 9000:9000 thehiveproject/thehive:latest`</li>
+          <li>In Shuffle, create a new workflow named "Phishing Incident Response".</li>
+          <li>Add trigger: Webhook (or Email trigger) that receives phishing report data.</li>
+          <li>Add action: Parse email headers using a custom Python script in Shuffle to extract sender, subject, recipient, and URLs.</li>
+          <li>Add action: For each URL, call VirusTotal API (`/api/v3/urls/{url}`) to check detection ratio.</li>
+          <li>Add action: For each URL, call URLScan.io API to submit URL for analysis. Wait for result.</li>
+          <li>Add condition: If VirusTotal detections > 0 OR URLScan.io verdict is "malicious" -> proceed to containment.</li>
+          <li>Add action: Send Slack message to #soc-alerts with phishing details (sender, subject, malicious URL, VT detections).</li>
+          <li>Add action: Create case in TheHive via API with all findings as observables.</li>
+          <li>Add action: Call email gateway API (e.g., Microsoft Graph) to delete the email from all users' mailboxes.</li>
+          <li>Add manual approval: Slack button for analyst to approve email deletion or reject.</li>
+          <li>Test with a sample phishing email containing EICAR test URL.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> A fully functional SOAR playbook that takes a phishing email, enriches indicators, creates a case, notifies the team, and with approval, removes the email from all inboxes.</p>
+      <p><strong>Troubleshooting:</strong> If Shuffle API calls fail, check API key formatting and rate limits. VirusTotal free tier has 4 requests/minute limit. Slack webhook requires proper authentication.</p>
+      <p><strong>Detection Opportunities:</strong> Extend the playbook: add IP enrichment (AbuseIPDB), domain enrichment (WhoisXML), attachment analysis (sandbox API), and automated user notification email.</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-danger">Advanced Lab: Build a Full Detection Engineering Pipeline</h4>
+      <p><strong>Objective:</strong> Build a complete Detection-as-Code pipeline: write Sigma rules, convert to Elasticsearch rules, deploy via CI/CD, test with Atomic Red Team, and measure coverage.</p>
+      <p><strong>Setup:</strong> GitHub repository, Docker with Elastic Stack, Atomic Red Team, Python 3.8+, Sigma CLI, GitHub Actions (free tier).</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li><strong>GitHub Repo Setup:</strong>
+            <ol>
+              <li>Create repo "detection-pipeline" with folders: `sigma/` (Sigma rules), `tests/` (Atomic tests), `scripts/` (conversion scripts), `config/` (sigma configs).</li>
+              <li>Create `.github/workflows/deploy.yml` for CI/CD pipeline.</li>
+            </ol>
+          </li>
+          <li><strong>Sigma Rule Creation:</strong>
+            <ol>
+              <li>Write 10 Sigma rules for common techniques: PowerShell encoded command (T1059.001), LSASS dump (T1003.001), service install (T1543.003), scheduled task create (T1053.005), WMI persistence (T1546.003), Kerberoasting (T1558.003), DCSync (T1003.006), Pass-the-Hash (T1550.002), RDP brute force (T1110.001), DNS tunneling (T1572).</li>
+              <li>Each rule includes: title, id, description, references, author, logsource (product, service), detection (selection keywords, condition), falsepositives, level (high/critical).</li>
+            </ol>
+          </li>
+          <li><strong>CI/CD Pipeline (GitHub Actions):</strong>
+            <ol>
+              <li>Step 1 — Validate: `sigmac --validate rules/sigma/*.yml` — check all rules have valid syntax.</li>
+              <li>Step 2 — Convert: `sigmac -t elastalert -c config/elastalert-config.yml -o output/ rules/sigma/*.yml` — convert to Elasticsearch rules.</li>
+              <li>Step 3 — Deploy to test ES: use Elasticsearch API to upload converted rules to test cluster.</li>
+              <li>Step 4 — Run Atomic Tests: use Invoke-AtomicRedTeam to execute corresponding tests. Example: for PS encoded command rule, run T1059.001 test.</li>
+              <li>Step 5 — Verify detection: check ES if alert triggered within 5 minutes of Atomic test.</li>
+              <li>Step 6 — Report: generate coverage report showing which rules passed/failed testing.</li>
+              <li>Step 7 — Manual approval gate: require SOC manager approval before merging to main (production deployment).</li>
+            </ol>
+          </li>
+          <li><strong>Measurement & Coverage:</strong>
+            <ol>
+              <li>Use ATT&CK Navigator to create a heatmap of covered techniques.</li>
+              <li>Track coverage score: number of techniques with detection rules / total relevant techniques.</li>
+              <li>Create a dashboard showing: total rules, rules passing tests, coverage %, false positive rate in production.</li>
+            </ol>
+          </li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> A fully automated detection pipeline: write Sigma rule -> push to GitHub -> auto-validate -> convert -> deploy to test SIEM -> test with Atomic -> report coverage -> approve for production.</p>
+      <p><strong>Troubleshooting:</strong> If Sigma conversion fails due to missing field mappings, update the config YAML files. If Atomic tests are blocked by antivirus, configure exclusions for the test directory. If rule doesn't trigger, check ES rule format and test with known-good log generator.</p>
+      <p><strong>Detection Opportunities:</strong> This IS the detection opportunity — the pipeline itself. Extend by adding: Splunk backend (Sigma -> SPL), Sentinel backend (Sigma -> KQL), automated false positive feedback loop, and ML-based anomaly detection rules.</p>
+    </div>
+  </div>
+
+  <!-- SOC SCENARIOS -->
+  <div class="section-card">
+    <h3><i class="bi bi-bullseye"></i> SOC SCENARIOS</h3>
+
+    <div class="scenario-box">
+      <h4>Scenario 1: SOC Startup — Building from Scratch</h4>
+      <p><strong>What Happened:</strong> A rapidly growing fintech startup (200 employees, cloud-first) has no SOC. After a minor security incident (phishing that compromised one account), the CISO approves a budget to build a SOC. You are hired as the first SOC lead.</p>
+      <p><strong>How to Detect:</strong> Currently no detection capability exists. First, deploy basic logging: enable CloudTrail, Azure AD audit logs, Microsoft 365 audit logs, and deploy an EDR (Microsoft Defender for Endpoint) across all endpoints. Set up a basic SIEM (Microsoft Sentinel) with free data connectors.</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Start with the "Crown Jewels" approach: protect the most critical assets first (production database, source code repositories, financial systems).</li>
+          <li>Build a 30-60-90 day plan: Month 1 — deploy EDR + basic SIEM with top 10 detection rules. Month 2 — add log sources + create 5 playbooks. Month 3 — establish 24/7 alert review (co-managed with MSSP or on-call rotation).</li>
+          <li>Document everything: architecture diagrams, data flow, tool configurations, playbooks, incident response plan.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> When incidents occur, follow the NIST framework. Prioritize containment over perfection. Use the "break glass" procedure for critical issues (isolate host, disable user, block IP). After incident, update playbooks and improve detection.</p>
+      <p><strong>How to Document:</strong> Create a SOC Charter document: SOC mission, scope, services provided, operating hours, escalation matrix, SLA targets, reporting cadence, and budget. Present monthly to CISO with metrics: alerts triaged, incidents handled, time to detect/respond, coverage improvement.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 2: SIEM Migration — On-Prem to Cloud</h4>
+      <p><strong>What Happened:</strong> A 10-year-old on-premises QRadar SIEM is end-of-life. The company decides to migrate to Microsoft Sentinel (cloud-native). The project has 6 months to complete. 500 log sources, 300 detection rules, 50 dashboards must be migrated.</p>
+      <p><strong>How to Detect:</strong> Parallel running: ingest logs to both QRadar and Sentinel for 30 days to validate detection coverage. Use Atomic Red Team to test that top 20 critical alerts fire identically in both systems.</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Inventory existing QRadar: all log sources, custom parsing rules, custom properties, rules, building blocks, reference sets, dashboards, reports.</li>
+          <li>Map QRadar rules to Sigma rules where possible, then convert to KQL (Sentinel Analytics Rules).</li>
+          <li>For custom QRadar rules that don't have Sigma equivalents, write them manually in KQL.</li>
+          <li>Build Sentinel workbooks that match the QRadar dashboards.</li>
+          <li>Phase migration: Phase 1 (Month 1-2): deploy Sentinel, ingest all logs, validate parsing. Phase 2 (Month 3-4): migrate top 50 critical rules, validate with Atomic Red Team. Phase 3 (Month 5-6): migrate remaining rules, decommission QRadar.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Do NOT lose detection coverage during migration. Run both SIEMs in parallel until all rules are validated. Maintain a "golden test" list of 20 atomic tests that must pass in Sentinel before QRadar is turned off. Train SOC analysts on Sentinel (KQL vs AQL) before migration.</p>
+      <p><strong>How to Document:</strong> Migration plan document: architecture diagrams (pre/post), log source inventory, rule migration mapping (QRadar rule ID -> Sigma -> Sentinel rule ID), validation test results, rollback plan, training materials for analysts. Final closeout report with lessons learned.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 3: SOC Maturity Improvement</h4>
+      <p><strong>What Happened:</strong> A SOC is stuck at Gartner Stage 1 (Reactive). The SOC manager wants to reach Stage 3 (Mature) in 12 months. Current state: all alerts triaged, but no threat hunting, no SOAR automation, no threat intel integration, and metrics are limited to "alerts closed."</p>
+      <p><strong>How to Detect:</strong> Assess current maturity using SOC-CMM framework across 6 domains: Detection, Response, Intelligence, Tooling, People, Process. Each domain gets a score of 1-5. Current scores are all around 1.5-2.0.</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li><strong>Quarter 1 — Foundation:</strong> Improve telemetry (deploy Sysmon across all endpoints, enable PowerShell logging, add Zeek network monitoring). Create 10 new playbooks. Establish 5 key metrics (TTD, TTR, FP rate, alert SLA, coverage %). Build a daily KPI dashboard.</li>
+          <li><strong>Quarter 2 — Automation:</strong> Deploy Shuffle (SOAR) with 5 automation playbooks: phishing triage, IP enrichment, domain enrichment, alert deduplication, auto-case creation. Target: reduce analyst manual effort by 30%.</li>
+          <li><strong>Quarter 3 — Proactive:</strong> Start threat hunting program — 2 hours per week per analyst. Deploy MISP for threat intelligence. Integrate intel feeds into SIEM for automated IOC matching. Create bi-weekly threat brief for CISO.</li>
+          <li><strong>Quarter 4 — Optimization:</strong> Implement Detection-as-Code pipeline. Establish purple team exercises (monthly). Run SOC tabletop exercises quarterly. Achieve Stage 3 maturity scores (3.5+ across all domains).</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> This is a strategic project, not an incident. Regular reporting to CISO: monthly progress against roadmap, quarterly re-assessment of SOC-CMM scores. Celebrate wins publicly (e.g., "SOAR playbook saved 200 analyst hours this quarter").</p>
+      <p><strong>How to Document:</strong> Maturity improvement roadmap document: current state assessment, target state definitions, quarterly objectives, resource requirements, budget estimates, risk factors, success criteria. After 12 months: updated SOC-CMM scores, ROI calculation (hours saved, incidents prevented, detection improvement).</p>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE CHECK -->
+  <div class="section-card">
+    <h3><i class="bi bi-question-circle"></i> KNOWLEDGE CHECK</h3>
+
+    <h4>Multiple Choice Questions</h4>
+    <ol class="mcq-list">
+      <li>Which SOC model uses an external provider for 24/7 Tier 1 while keeping internal Tiers 2/3?
+        <br><strong>Options:</strong> A) Internal SOC B) MSSP C) Co-Managed SOC D) Virtual SOC
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the recommended maximum false positive rate for a mature SOC?
+        <br><strong>Options:</strong> A) 10% B) 30% C) 50% D) 70%
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which metric measures the time from compromise to detection?
+        <br><strong>Options:</strong> A) MTTR B) MTTA C) TTD D) SLA
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the first phase of a SIEM implementation project?
+        <br><strong>Options:</strong> A) Rule creation B) Log ingestion C) Requirements & Planning D) Dashboard creation
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>Which of the following is NOT a standard SOC tier role?
+        <br><strong>Options:</strong> A) Tier 1 — Triage B) Tier 2 — Investigation C) Tier 3 — Penetration Testing D) SOC Manager
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the primary purpose of a SOAR platform?
+        <br><strong>Options:</strong> A) Log storage B) Automated incident response C) Network monitoring D) Vulnerability scanning
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which Gartner SOC maturity stage includes proactive threat hunting?
+        <br><strong>Options:</strong> A) Stage 1 — Reactive B) Stage 2 — Proactive C) Stage 3 — Mature D) Stage 4 — Predictive
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>What is the typical EPS (Events Per Second) retention calculation for SIEM storage?
+        <br><strong>Options:</strong> A) EPS x 3600 x retention days B) EPS x 86400 x retention days C) EPS x 86400 x 30 D) EPS x 1024 x retention days
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which maturity model is specifically designed for SOC capabilities?
+        <br><strong>Options:</strong> A) SSE-CMM B) CMMI C) SOC-CMM D) ISO 27001
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the recommended approach for SOC tool deployment?
+        <br><strong>Options:</strong> A) Deploy all tools simultaneously B) Crawl, Walk, Run — phased deployment C) Deploy SIEM first, everything else later D) Deploy only open source tools
+        <br><strong>Answer:</strong> B
+      </li>
+    </ol>
+
+    <h4>Practical Questions</h4>
+    <ol>
+      <li>Design a SOC architecture for a 3000-employee healthcare company. Include: tier structure, tools, log sources, and staffing. Budget: $500K/year.</li>
+      <li>You have 10,000 alerts per day and 5 analysts. Calculate the alerts-per-analyst rate. Is this sustainable? What would you recommend?</li>
+      <li>Write a project plan for deploying EDR across 2000 endpoints. Include timeline, milestones, risks, and success criteria.</li>
+      <li>Define 10 SOC KPIs and explain why each matters. What dashboard would you create for the CISO?</li>
+      <li>Your SIEM has a 60% false positive rate. Create a plan to reduce it to 30% within 3 months.</li>
+    </ol>
+
+    <h4>Investigation Scenarios</h4>
+    <ol>
+      <li><strong>Scenario A:</strong> You are the SOC lead for a company that just experienced a ransomware attack. Post-incident review reveals that the SOC missed early warning signs (failed RDP logins from an unusual IP a week before). How do you turn this into a SOC improvement project?</li>
+      <li><strong>Scenario B:</strong> Your SOC is migrating SIEMs. During parallel run, you discover that 15% of detection rules in the old SIEM don't have equivalents in the new SIEM. What is your decision process — rewrite them, skip them, or modify them?</li>
+    </ol>
+
+    <h4>Interview Questions</h4>
+    <ol>
+      <li>Describe a SOC improvement project you would prioritize if joining my team tomorrow. How would you approach it?</li>
+      <li>How do you measure the ROI of SOC operations to justify budget to the board?</li>
+      <li>Your SOC is overwhelmed with alerts. Analysts are burning out. Present your plan to fix this situation — include people, process, and technology changes.</li>
+    </ol>
+  </div>
+
+  <!-- PORTFOLIO PROJECTS -->
+  <div class="section-card">
+    <h3><i class="bi bi-folder"></i> PORTFOLIO PROJECTS</h3>
+
+    <div class="project-box">
+      <h4 class="text-success">Beginner: SOC Documentation Repository</h4>
+      <p><strong>Objective:</strong> Create a comprehensive SOC documentation repository with architecture diagrams, playbooks, SOPs, and reference materials.</p>
+      <p><strong>Architecture:</strong> GitHub-hosted Markdown site (GitHub Pages or Docusaurus). Organized by: SOC Overview, Architecture, Playbooks, SOPs, Tool Guides, Runbooks, Metrics.</p>
+      <p><strong>Tools:</strong> GitHub, Markdown, Mermaid (for diagrams), Docusaurus or MkDocs.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Create GitHub repository with folder structure: `docs/`, `playbooks/`, `sops/`, `diagrams/`, `metrics/`.</li>
+          <li>Write SOC charter document: mission, scope, services, hours, escalation matrix.</li>
+          <li>Create architecture diagrams in Mermaid or Draw.io: network topology, data flow, tool integration.</li>
+          <li>Write 5 playbooks: Phishing, Ransomware, BEC, Data Exfiltration, Insider Threat.</li>
+          <li>Write 5 SOPs: Shift handover, Alert triage, Evidence handling, Escalation procedure, Incident reporting.</li>
+          <li>Create metrics dashboard design (not live — just the template with formulas).</li>
+          <li>Publish via GitHub Pages or MkDocs.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> Complete SOC documentation set that could be used by a real SOC team. Demonstrates ability to design and document SOC operations.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-warning">Intermediate: Custom Detection Rules Repository with Validation</h4>
+      <p><strong>Objective:</strong> Build a GitHub repository of 20+ Sigma detection rules with automated validation and testing.</p>
+      <p><strong>Architecture:</strong> GitHub repo with: `sigma/` (rules), `tests/` (validation scripts), `config/` (Sigma configs), `.github/workflows/` (CI/CD). Rules cover 8+ MITRE ATT&CK tactics.</p>
+      <p><strong>Tools:</strong> Sigma CLI, Python, GitHub Actions, PySigma, pytest.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Research the MITRE ATT&CK framework. Identify top 20 techniques relevant to enterprise environments.</li>
+          <li>Write 20+ Sigma rules following Sigma specification. Cover these tactics: Initial Access, Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Lateral Movement, Command & Control.</li>
+          <li>Create GitHub Actions workflow: on push/PR -> validate Sigma syntax -> convert to multiple backends (Elasticsearch, Splunk, Sentinel) -> run unit tests (does rule have required fields? is level set?).</li>
+          <li>Create a coverage matrix (CSV) showing which MITRE techniques are covered.</li>
+          <li>Create README with: rule index by category, coverage statistics, contribution guidelines.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> A professional detection rule repository demonstrating: Sigma rule writing, CI/CD knowledge, MITRE ATT&CK understanding, and quality assurance practices.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-danger">Advanced: Enterprise SOC Migration Project</h4>
+      <p><strong>Objective:</strong> Design and document a complete SOC transformation project — from reactive SOC (Stage 1) to proactive, automated SOC (Stage 3). This is a portfolio-worthy program management artifact.</p>
+      <p><strong>Architecture:</strong> A multi-phase program with: current state assessment, target architecture, implementation roadmap, budget model, risk register, and success metrics.</p>
+      <p><strong>Tools:</strong> Project management (MS Project/Gantt), draw.io (architecture), Mermaid (workflows), Excel (budget), PowerPoint (presentation), SOC-CMM framework.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Define current state: use SOC-CMM to score current maturity across all domains. Create "as-is" architecture diagram.</li>
+          <li>Define target state: 18-month future state with Stage 3 maturity. Create "to-be" architecture diagram showing new tools, processes, and automation.</li>
+          <li>Create 18-month phased roadmap:
+            <ul>
+              <li>Phase 1 (Months 1-3): Foundation — Enhanced logging, Sysmon deployment, first 10 playbooks, SIEM tuning, metric baseline.</li>
+              <li>Phase 2 (Months 4-9): Automation — SOAR deployment, 10 automation playbooks, threat intel integration, new SIEM (if applicable).</li>
+              <li>Phase 3 (Months 10-14): Proactive — Threat hunting program, MISP deployment, Detection-as-Code pipeline, purple team exercises.</li>
+              <li>Phase 4 (Months 15-18): Optimization — ML/UEBA deployment, predictive analytics, continuous improvement program, SOC-CMM re-assessment.</li>
+            </ul>
+          </li>
+          <li>Create budget model: headcount, tool licensing, infrastructure, training, professional services. Show ROI projections.</li>
+          <li>Create risk register: migration risks, tool integration risks, staffing risks, budget risks. Mitigation strategies for each.</li>
+          <li>Define success metrics: TTD reduction (from hours to minutes), TTR improvement, FP rate reduction, coverage improvement, employee retention.</li>
+          <li>Executive presentation: current challenges, proposed solution, timeline, budget, ROI, and risks.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> A complete SOC transformation program plan suitable for CISO/Board approval. Includes everything needed to execute the transformation. Demonstrates strategic thinking, project management, and SOC domain expertise.</p>
+    </div>
+  </div>
+
+  <!-- TOPIC NAVIGATION -->
+  <div class="d-flex justify-content-between mt-4">
+    <a href="/topics/topic11" class="btn btn-outline-cyan"><i class="bi bi-arrow-left"></i> Previous: Digital Forensics</a>
+    <a href="/topics/topic13" class="btn btn-cyan">Next: Career Preparation <i class="bi bi-arrow-right"></i></a>
+  </div>
 </div>

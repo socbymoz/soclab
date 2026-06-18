@@ -1,118 +1,674 @@
-<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-primary mb-3"><i class="bi bi-book me-2"></i>Module 9: Windows Security Monitoring</h6>
+<div class="topic-container">
+  <h2 class="topic-title"><i class="bi bi-shield-exclamation"></i> Module 9: Incident Response</h2>
+  <p class="topic-subtitle">Master the structured approach to handling cybersecurity incidents in a SOC environment.</p>
 
-<p style="color:#c0d0e0;">Windows is the most targeted OS in enterprise environments. SOC analysts must master Windows Event Logs and Sysmon to detect breaches, malware, and lateral movement.</p>
+  <!-- SECTION OVERVIEW -->
+  <div class="section-card">
+    <h3><i class="bi bi-eye"></i> SECTION OVERVIEW</h3>
+    <p><strong>What is Incident Response?</strong> Incident Response (IR) is a structured methodology for handling security breaches, cyberattacks, and data breaches. The goal is to detect incidents quickly, minimize damage, reduce recovery time and costs, and prevent future occurrences.</p>
+    <p><strong>Why It Matters in a SOC:</strong> SOC analysts are the first line of defense. When alerts fire, analysts must triage, investigate, escalate, and respond within SLA. A well-drilled IR process separates a mature SOC from a reactive one.</p>
+    <p><strong>Real-World Use Cases:</strong> Ransomware outbreaks (e.g., Colonial Pipeline, WannaCry), data exfiltration (e.g., SolarWinds), insider threats, credential stuffing attacks, supply chain compromises.</p>
+    <p><strong>Skills Gained:</strong> Alert triage, malware analysis basics, forensic acquisition, chain of custody, evidence handling, playbook execution, communication during incidents, root cause analysis, remediation planning.</p>
+    <p><strong>Prerequisites:</strong> Understanding of networking (OSI model, TCP/IP), familiarity with Windows/Linux operating systems, basic log analysis, SIEM fundamentals (Module 1-4).</p>
+    <p><strong>Learning Objectives:</strong>
+      <ul>
+        <li>Describe the 6 phases of the NIST Incident Response Lifecycle</li>
+        <li>Execute a phishing investigation from alert to closure</li>
+        <li>Perform malware triage using sandbox analysis</li>
+        <li>Create and maintain incident response playbooks</li>
+        <li>Conduct post-incident reviews and lessons learned</li>
+      </ul>
+    </p>
+  </div>
 
-<h6 class="text-primary mt-3">Sub-Domains / Rooms</h6>
+  <!-- DETAILED NOTES -->
+  <div class="section-card">
+    <h3><i class="bi bi-journal-text"></i> DETAILED NOTES</h3>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Windows Logging for SOC</p>
-<p style="color:#c0d0e0;">Windows Event Log is the primary source of forensic data on Windows. There are three main log channels plus Sysmon for advanced monitoring.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Critical Windows Event IDs Every SOC Analyst Must Know:</b><br><br>
-| Event ID | Description | Why It Matters |
-|----------|-------------|----------------|
-| 4624 | Successful Logon | Correlate with failed attempts before it = brute force success |
-| 4625 | Failed Logon | Brute force attacks, password guessing |
-| 4634 | Logoff | Track session duration |
-| 4648 | Logon with Explicit Credentials | Runas or scheduled task — possible lateral movement |
-| 4672 | Admin Logon | Someone got admin rights |
-| 4688 | Process Creation | See every process launched |
-| 4698 | Scheduled Task Created | Persistence mechanism |
-| 4700 | Scheduled Task Enabled | Attacker activates backdoor |
-| 4720 | User Account Created | Possible backdoor account |
-| 4732 | User Added to Group | Privilege escalation (added to Admin) |
-| 4776 | Credential Validation | Domain authentication — track NTLM usage |
-| 5140 | SMB Share Accessed | Lateral movement via SMB |
-| 5156 | Windows Filtering Platform | Connection allowed — network whitelist enforcement |
-| 7045 | Service Installed | Backdoor installed as a service |
-</div>
+    <h4>Subtopic 1: Preparation Phase</h4>
+    <p><strong>Technical Breakdown:</strong> Preparation is the most critical phase. It involves building IR capabilities before an incident occurs. Key components include:</p>
+    <ul>
+      <li><strong>IR Policy & Plan:</strong> Documented incident response policy approved by management. Defines severity levels (P1-P5), escalation paths, communication plans.</li>
+      <li><strong>IR Team (CSIRT):</strong> Core team (analysts, responders, forensics, management) and extended team (legal, PR, HR, IT). Defined roles and 24/7 on-call rotation.</li>
+      <li><strong>Tools & Infrastructure:</strong> SIEM (Splunk/ELK), EDR (CrowdStrike/Defender), Sandbox (Cuckoo/Falcon), TIP (MISP/ThreatConnect), forensic workstations, jump boxes, network captures.</li>
+      <li><strong>Playbooks:</strong> Runbooks for common scenarios: phishing, ransomware, DDoS, data exfiltration, insider threat, account compromise. Each playbook contains step-by-step TTPs for detection, analysis, containment, eradication, recovery.</li>
+      <li><strong>Training & Drills:</strong> Tabletop exercises, purple team exercises, red/blue team drills. Annual compliance training for all staff.</li>
+    </ul>
+    <p><strong>Architecture:</strong> A typical IR infrastructure includes a secure management network, jump hosts with RDP/SSH logging, network taps/SPAN ports, centralized log aggregation, off-network backup storage (immutable), and out-of-band communication channels (e.g., Signal/Teams).</p>
+    <p><strong>Enterprise Example:</strong> A Fortune 500 company maintains a dedicated CSIRT with 24/7 coverage, Splunk ES for SIEM, CrowdStrike Falcon for EDR, and ServiceNow for case management. They run quarterly tabletop exercises simulating ransomware and business email compromise scenarios.</p>
 
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Sysmon Event IDs:</b><br>
-| Event ID | Description | Detection Example |
-|----------|-------------|-------------------|
-| 1 | Process creation | Office spawning PowerShell |
-| 3 | Network connection | Malware connecting to C2 |
-| 7 | Image loaded | DLL loaded into process (potential DLL hijacking) |
-| 8 | CreateRemoteThread | Process injection detected |
-| 10 | Process access | LSASS access — potential credential dumping |
-| 11 | File create | Malware dropped to disk |
-| 12/13 | Registry modification | Persistence via Run key |
-| 15 | FileCreateStreamHash | Zone.Identifier — downloaded from internet |
-| 22 | DNS query | C2 domain resolution |
-</div>
+    <h4>Subtopic 2: Detection & Analysis</h4>
+    <p><strong>Technical Breakdown:</strong> This phase involves identifying potential incidents through monitoring, alerting, and analysis.</p>
+    <ul>
+      <li><strong>Alert Sources:</strong> SIEM correlation rules (e.g., 10 failed logins in 5 minutes), EDR behavioral detections (e.g., PowerShell executing encoded commands), IDS/IPS signatures, threat intelligence feeds, user reports (phishing mailbox), anomaly detection baselines.</li>
+      <li><strong>Triage Process:</strong> Validate the alert (true positive vs. false positive), determine severity, check for IOCs (IPs, hashes, domains), scope the impact (number of hosts/users affected), escalate if necessary.</li>
+      <li><strong>Analysis Techniques:</strong> Log analysis (Event Logs, Sysmon, DNS logs, proxy logs), file analysis (hash lookup in VirusTotal, static analysis in pestudio/PEStudio), dynamic analysis (sandbox execution), memory analysis (Volatility), network analysis (PCAP with Wireshark).</li>
+      <li><strong>Indicators of Compromise (IOCs):</strong> File hashes (MD5, SHA1, SHA256), IP addresses (C2 servers), domain names (DGA domains), registry keys, mutexes, YARA rules, Sigma rules.</li>
+    </ul>
+    <p><strong>Real-World Example:</strong> During a phishing investigation, a SOC analyst receives an alert for "Suspicious Email Forwarding Rule." The analyst checks the user's mailbox via O365 audit logs, finds an auto-forwarding rule to an external domain, extracts the forwarded emails to check for data exfiltration, checks the user for other compromised activity, and escalates to Tier 2 for credential reset and user notification.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Windows Threat Detection 1: Brute Force & Account Misuse</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Brute Force Detection:</b><br>
-<code>index=windows EventID=4625 | stats count by Account_Name, Source_IP | where count > 20 | sort -count</code><br>
-→ Find accounts with 20+ failed logins. If followed by EventID 4624 (success), the attacker cracked the password.<br><br>
-<b>Example — RDP Brute Force:</b><br>
-EventID 4625 × 500 on account "admin" from IP 45.33.32.156 over 5 minutes<br>
-Then EventID 4624 — successful login on same account from same IP<br>
-Then EventID 4688 — cmd.exe → powershell.exe → turned off Windows Defender<br>
-Then EventID 4698 — scheduled task created to run malware every hour<br>
-Then EventID 3 (Sysmon) — network connection to 45.33.32.156:4444<br><br>
-<b>Timeline of the attack:</b><br>
-14:32:00 — Start of brute force (500 attempts in 5 min)<br>
-14:37:15 — Successful login (password was "Admin@123")<br>
-14:37:30 — Disabled Windows Defender via PowerShell<br>
-14:38:00 — Downloaded Cobalt Strike beacon<br>
-14:38:30 — Created persistence (scheduled task)<br>
-14:39:00 — C2 beacon established
-</div>
+    <h4>Subtopic 3: Containment, Eradication & Recovery</h4>
+    <p><strong>Technical Breakdown:</strong> Once an incident is confirmed, the goal shifts to stopping the attack and removing the threat.</p>
+    <ul>
+      <li><strong>Containment Strategies:</strong> Short-term: isolate host from network (via EDR or firewall ACL), disable compromised accounts, block C2 IPs/domains on perimeter firewall. Long-term: apply patches, rebuild systems, rotate credentials, implement additional monitoring.</li>
+      <li><strong>Eradication:</strong> Remove malware (antivirus scan, reimage), delete malicious artifacts (scheduled tasks, registry keys, startup items), revoke compromised certificates, reset all affected credentials. Verify eradication via additional scans.</li>
+      <li><strong>Recovery:</strong> Restore from clean backups (tested!), bring systems back online in a staged manner, monitor for re-infection, validate that security controls are operating correctly.</li>
+    </ul>
+    <p><strong>Common Attacks – Detection/Investigation/Response:</strong>
+      <ul>
+        <li><strong>Ransomware:</strong> Detect via file encryption alerts (EDR), mass file renames, SMB connections. Investigate by identifying patient zero, determining propagation method (PSExec, PowerShell, SMB spread). Respond by isolating infected hosts immediately, blocking ransomware extensions on email gateways, restoring from offline backups.</li>
+        <li><strong>Phishing:</strong> Detect via user reports, email gateway alerts, URL detonation. Investigate by analyzing email headers, checking URLs against threat intel, reviewing mailbox rules. Respond by deleting malicious emails from all inboxes, blocking sender domain, resetting affected user credentials.</li>
+        <li><strong>Data Exfiltration:</strong> Detect via DLP alerts, unusual outbound traffic, DNS tunneling signatures (large TXT records). Investigate by reviewing proxy logs for unusual uploads, checking for unauthorized PowerShell/curl usage, inspecting cloud access logs. Respond by blocking outbound IPs, implementing DLP rules, rotating API keys.</li>
+      </ul>
+    </p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Windows Threat Detection 2: Process Injection & Persistence</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Common Process Injection Detection:</b><br><br>
-<b>1. CreateRemoteThread (Sysmon Event 8):</b><br>
-<code>RuleName: technique_id=T1055.001, technique_name=Process Injection<br>
-UtcTime: 2026-05-21 14:45:12.345<br>
-SourceProcessGUID: {A1B2C3...}<br>
-SourceImage: C:\Users\victim\AppData\Local\Temp\malware.exe<br>
-TargetImage: C:\Windows\System32\svchost.exe<br>
-NewThreadId: 4567</code><br>
-→ Malware injected code into svchost.exe to hide its activity<br><br>
-<b>2. DLL Hijacking Detection:</b><br>
-Check Sysmon Event 7 (Image Loaded) for DLLs loaded from unusual paths:<br>
-<code>ImageLoaded: C:\Users\victim\AppData\Local\Temp\version.dll</code><br>
-→ Normally version.dll loads from C:\Windows\System32 — loading from Temp is abnormal<br><br>
-<b>3. Persistence Detection (Sysmon Event 12/13):</b><br>
-Registry Run Key modification:<br>
-<code>EventType: SetValue<br>
-TargetObject: HKLM\Software\Microsoft\Windows\CurrentVersion\Run\MalwareService<br>
-Details: C:\Users\victim\AppData\Local\Temp\malware.exe</code><br>
-→ Common persistence — malware adds itself to Run key to start on boot
-</div>
+    <h4>Subtopic 4: Post-Incident Activity</h4>
+    <p><strong>Technical Breakdown:</strong> The final phase focuses on learning and improvement.</p>
+    <ul>
+      <li><strong>Lessons Learned Meeting:</strong> Conduct within 1-2 weeks of incident closure. Review the timeline: what went well, what went wrong, what could be improved. No blame — focus on process improvement.</li>
+      <li><strong>Incident Report:</strong> Executive summary (non-technical), detailed technical timeline, root cause analysis, evidence list, remediation actions, recommendations, SLA compliance. Approved by legal before distribution.</li>
+      <li><strong>Playbook Updates:</strong> Update existing playbooks with new TTPs, IOCs, detection rules. Create new playbooks if a novel attack type was encountered.</li>
+      <li><strong>Rule Tuning:</strong> Add/update SIEM correlation rules, EDR detection rules, IDS signatures based on the incident. Reduce false positives and improve detection coverage.</li>
+    </ul>
+    <p><strong>Enterprise Example:</strong> After a ransomware incident, the SOC team discovers that the initial access was via an unpatched VPN appliance. The lessons learned result in: (1) automated patch management for all edge devices, (2) VPN MFA enforcement, (3) network segmentation for critical servers, (4) immutable backup solution deployment, (5) new SIEM rules to detect VPN connection anomalies.</p>
+  </div>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Windows Threat Detection 3: Ransomware & Lateral Movement</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Ransomware Detection Indicators:</b><br>
-1. File creation events — massive number of .encrypted, .locked, .crypted files<br>
-2. Ransom note dropped — "README_TO_DECRYPT.txt" or similar in every directory<br>
-3. Volume Shadow Copy deletion — <code>vssadmin.exe delete shadows /all /quiet</code><br>
-4. Boot configuration modification — <code>bcdedit.exe /set {default} recoveryenabled No</code><br>
-5. Process tree: explorer.exe → cmd.exe → vssadmin.exe<br><br>
-<b>Lateral Movement Detection (Pass-the-Hash):</b><br>
-<code>EventID 4624 (Logon Type 3 — Network) from IP 10.0.1.50 to 10.0.1.100<br>
-Logon Process: NtLmSsp<br>
-Authentication Package: NTLM</code><br>
-When combined with Event 4776 and Event 4672 (admin logon), this indicates potential pass-the-hash attack — attacker captured a hash and reused it to authenticate to another server.<br><br>
-<b>Detection Query (Splunk):</b><br>
-<code>index=windows (EventID=4624 LogonType=3) OR (EventID=4776)<br>
-| stats count by Account_Name, Source_IP, dest_ip<br>
-| where count > 1 AND count < 10</code><br>
-→ Shows accounts that authenticated from one host to multiple destinations — lateral movement pattern
-</div>
+  <!-- CONCEPT BOXES -->
+  <div class="section-card">
+    <h3><i class="bi bi-boxes"></i> CONCEPT BOXES</h3>
 
-<h6 class="text-primary mt-3">Windows Security Checklist</h6>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Daily Monitoring Queries for Windows SOC:</b><br>
-1. <b>Brute force:</b> EventID=4625 count > 10 in 5 min → alert<br>
-2. <b>Admin activity:</b> EventID=4672 during off-hours (22:00-06:00) → investigate<br>
-3. <b>Suspicious processes:</b> EventID=4688 where ParentImage contains WINWORD, EXCEL, OUTLOOK and Image contains powershell, cmd, wscript, cscript<br>
-4. <b>New accounts:</b> EventID=4720 → review for unauthorized account creation<br>
-5. <b>New services:</b> EventID=7045 → review for unauthorized service installation<br>
-6. <b>Group membership changes:</b> EventID=4732 where TargetUserName=Administrators → privilege escalation
-</div>
+    <div class="alert alert-info">
+      <strong>INFO BOX</strong><br>
+      The NIST SP 800-61 Incident Response Lifecycle consists of 4 phases: Preparation, Detection & Analysis, Containment/Eradication/Recovery, and Post-Incident Activity. The SANS PICERL model expands this to 6 phases: Preparation, Identification, Containment, Eradication, Recovery, and Lessons Learned. Most enterprises follow NIST or a hybrid model.
+    </div>
+
+    <div class="alert alert-success">
+      <strong>REMEMBER BOX</strong><br>
+      "The first 24 hours of an incident are the most critical." This is known as the "Golden Hour" of incident response. Quick containment can prevent a single compromised workstation from becoming a full network-wide ransomware outbreak. Always prioritize containment over eradication in the early stages.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>WARNING BOX</strong><br>
+      NEVER power off a compromised system unless absolutely necessary. Doing so destroys volatile forensics evidence (memory, running processes, network connections). Instead, perform live forensics: capture memory dump first, then acquire disk image, then shut down. Document every action with timestamps for legal admissibility.
+    </div>
+
+    <div class="alert alert-info">
+      <strong>SOC ANALYST TIP</strong><br>
+      Build a "jump bag" or IR kit: a forensic workstation with pre-loaded tools (FTK Imager, Volatility, Wireshark, Autopsy, KAPE, Eric Zimmerman tools). Keep a USB with portable tools (Sysinternals Suite, Process Explorer, Autoruns, TCPView). In cloud environments, have pre-provisioned forensic instances ready in your cloud accounts.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>INTERVIEW Q&A</strong><br>
+      <strong>Q:</strong> "Walk me through how you handle a ransomware alert from start to finish."<br>
+      <strong>A:</strong> "First, I validate the alert — confirming it's not a false positive. I check EDR telemetry for file encryption events, examine the process tree to find patient zero, and isolate the affected host via EDR network containment. I check for lateral movement by reviewing RDP/SMB connections from the affected host. I scope the incident: how many hosts, what data is affected. I report to the Incident Commander with my findings. I assist with identifying the initial access vector (phishing? vulnerable service?). After containment, I help with eradication — credential rotation, backup restoration — and participate in the lessons learned meeting to improve detection rules."</strong>
+    </div>
+  </div>
+
+  <!-- VISUAL DIAGRAMS -->
+  <div class="section-card">
+    <h3><i class="bi bi-diagram-3"></i> VISUAL DIAGRAMS</h3>
+    <p><strong>NIST Incident Response Lifecycle:</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        A[Preparation] --> B[Detection & Analysis]
+        B --> C{Incident Confirmed?}
+        C -->|Yes| D[Containment / Eradication / Recovery]
+        C -->|No| B
+        D --> E[Post-Incident Activity]
+        E --> A
+        E --> F[Lessons Learned]
+        F --> G[Playbook Updates]
+        G --> H[Rule Tuning]
+        H --> A
+    </pre>
+
+    <p><strong>Incident Triage & Escalation Flow:</strong></p>
+    <pre class="mermaid">
+      flowchart LR
+        A[SIEM Alert] --> B[Tier 1 Triage]
+        B --> C{Valid Incident?}
+        C -->|No| D[Close as FP]
+        C -->|Yes| E{Severity?}
+        E -->|Low/Med| F[Tier 1 Investigation]
+        E -->|High/Critical| G[Escalate to Tier 2/3]
+        F --> H[Contain & Document]
+        G --> H
+        H --> I[Incident Commander]
+        I --> J[Full Response]
+        J --> K[Closure & Lessons Learned]
+    </pre>
+
+    <p><strong>Kill Chain & Detection Mapping:</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        A[Reconnaissance] --> B[Weaponization]
+        B --> C[Delivery]
+        C --> D[Exploitation]
+        D --> E[Installation]
+        E --> F[C2 Communication]
+        F --> G[Actions on Objectives]
+        A -.->|Detect via| H[Proxy/DNS Logs]
+        C -.->|Detect via| I[Email Gateway / EDR]
+        D -.->|Detect via| J[EDR / Sysmon]
+        F -.->|Detect via| K[Network Forensics / DNS Sinkhole]
+        G -.->|Detect via| L[DLP / EDR / Damballa]
+    </pre>
+  </div>
+
+  <!-- TRYHACKME SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-activity"></i> TRYHACKME</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Room Name</th>
+            <th>Difficulty</th>
+            <th>Objectives</th>
+            <th>Completion Order</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Intro to Incident Response</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Understand IR phases, NIST framework, basic playbook execution</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>Phishing Analysis</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Analyze email headers, extract indicators, track phishing campaign</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>Investigating Windows</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Use Sysinternals, analyze Event Logs, detect persistence mechanisms</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>Investigating with Splunk</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>SPL queries, correlation searches, incident investigation in Splunk</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td>Wazuh Investigation</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Analyze Wazuh alerts, perform host-based investigation, root cause analysis</td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td>Incident Response Playbooks</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Create and execute playbooks for phishing, ransomware, BEC scenarios</td>
+            <td>6</td>
+          </tr>
+          <tr>
+            <td>Ransomware Analysis</td>
+            <td><span class="badge bg-danger">Hard</span></td>
+            <td>Reverse-engineer ransomware samples, track encryption routines, build IOCs</td>
+            <td>7</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HACK THE BOX ACADEMY SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-cpu"></i> HACK THE BOX ACADEMY</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Module Name</th>
+            <th>Difficulty</th>
+            <th>Outcomes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Incident Response Process</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Understand IR frameworks, build incident response plans, create escalation matrices</td>
+          </tr>
+          <tr>
+            <td>Windows Event Log Analysis</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Analyze Event ID 4624/4625/4688/7045, detect pass-the-hash, kerberoasting, scheduled task creation</td>
+          </tr>
+          <tr>
+            <td>Linux Log Analysis for IR</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Auth.log, syslog, auditd, detect privilege escalation, SSH brute force, file integrity violations</td>
+          </tr>
+          <tr>
+            <td>Malware Analysis for Responders</td>
+            <td><span class="badge bg-danger">Hard</span></td>
+            <td>Static and dynamic analysis, unpacking, persistence analysis, C2 extraction, YARA rule generation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LETSDEFEND SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-shield-check"></i> LETSDEFEND</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Scenario Name</th>
+            <th>Description</th>
+            <th>Skills Tested</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Phishing Incident Response</td>
+            <td>Investigate a phishing email reported by a user, extract IOCs, check other mailboxes, block indicators</td>
+            <td>Email analysis, IOC extraction, playbook execution</td>
+          </tr>
+          <tr>
+            <td>Ransomware Investigation</td>
+            <td>Respond to a ransomware outbreak on Windows endpoints, identify patient zero, contain spread</td>
+            <td>EDR analysis, log correlation, containment procedures</td>
+          </tr>
+          <tr>
+            <td>Data Exfiltration via DNS</td>
+            <td>Detect and investigate data exfiltration using DNS tunneling techniques</td>
+            <td>Network forensics, DNS log analysis, threat hunting</td>
+          </tr>
+          <tr>
+            <td>Insider Threat Detection</td>
+            <td>Investigate unusual database access patterns indicating potential insider data theft</td>
+            <td>UEBA, database audit logs, user behavior analysis</td>
+          </tr>
+          <tr>
+            <td>Web Application Incident</td>
+            <td>Respond to a SQL injection attack on a public-facing web application</td>
+            <td>Web server logs, WAF analysis, application forensics</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CYBERDEFENDERS SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-lock"></i> CYBERDEFENDERS</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Lab Name</th>
+            <th>Description</th>
+            <th>Focus Area</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Blue Team Incident Response Lab</td>
+            <td>Full IR scenario with forensics acquisition, malware analysis, report writing</td>
+            <td>Incident Response, Forensics, Reporting</td>
+          </tr>
+          <tr>
+            <td>Windows Forensics Lab</td>
+            <td>Analyze compromised Windows system, recover artifacts, timeline analysis</td>
+            <td>Windows Forensics, Triage</td>
+          </tr>
+          <tr>
+            <td>Phishing Simulation Lab</td>
+            <td>Set up phishing campaign, analyze results, build detection rules</td>
+            <td>Phishing, Detection Engineering</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GITHUB RESOURCES -->
+  <div class="section-card">
+    <h3><i class="bi bi-github"></i> GITHUB RESOURCES</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>Description</th>
+            <th>Purpose</th>
+            <th>Skills Learned</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" class="text-cyan">Blue-Team-Roadmap</a></td>
+            <td>Comprehensive roadmap for blue team skills development</td>
+            <td>Career planning, skills gap analysis</td>
+            <td>Roadmap navigation, skill prioritization</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" class="text-cyan">awesome-soc</a></td>
+            <td>Curated list of SOC tools, resources, and best practices</td>
+            <td>Tool discovery, SOC setup reference</td>
+            <td>SOC toolchain knowledge</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SigmaHQ/sigma" target="_blank" class="text-cyan">Sigma</a></td>
+            <td>Generic signature format for SIEM systems</td>
+            <td>Detection rule creation, threat detection</td>
+            <td>Sigma rule writing, SIEM rule translation</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" class="text-cyan">Atomic Red Team</a></td>
+            <td>Test detection coverage with atomic tests mapped to MITRE ATT&CK</td>
+            <td>Detection validation, purple team exercises</td>
+            <td>Attack simulation, detection testing</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" class="text-cyan">sysmon-config</a></td>
+            <td>High-quality Sysmon configuration file</td>
+            <td>Windows endpoint telemetry enhancement</td>
+            <td>Sysmon deployment, event filtering</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" class="text-cyan">blueteam_homelabs</a></td>
+            <td>Blue team home lab setup guides</td>
+            <td>Building practice environments</td>
+            <td>Lab architecture, SIEM setup</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" class="text-cyan">EVTX-ATTACK-SAMPLES</a></td>
+            <td>Windows event log samples for various attacks</td>
+            <td>Practice log analysis, rule development</td>
+            <td>Event log analysis, detection engineering</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/InQuest/awesome-yara" target="_blank" class="text-cyan">awesome-yara</a></td>
+            <td>Curated list of YARA resources and rules</td>
+            <td>Malware detection, IOC scanning</td>
+            <td>YARA rule writing, malware classification</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" class="text-cyan">BlueTeam-Tools</a></td>
+            <td>Collection of blue team tools for SOC operations</td>
+            <td>Tool familiarity, operational use</td>
+            <td>Tool proficiency, workflow optimization</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HANDS-ON LABS -->
+  <div class="section-card">
+    <h3><i class="bi bi-laptop"></i> HANDS-ON LABS</h3>
+
+    <div class="lab-section">
+      <h4 class="text-success">Beginner Lab: Phishing Alert Triage</h4>
+      <p><strong>Objective:</strong> Triage a phishing email reported by a user, extract IOCs, determine if additional users are affected, and follow the phishing playbook.</p>
+      <p><strong>Setup:</strong> Use a lab environment with a mock email server (MailHog), a SIEM (Splunk Free or ELK), and sample phishing emails (provided in EVTX-ATTACK-SAMPLES). Recommended VM: Remnux or Kali for email analysis tools.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Receive a phishing report from a user. Note the timestamp, user details, and email subject.</li>
+          <li>Download the .eml file from the user's quarantine or Journal mailbox.</li>
+          <li>Open the email in Thunderbird with raw view or use `eml2txt` to extract headers.</li>
+          <li>Analyze email headers: check Return-Path, Received-SPF, DKIM-Signature, DMARC. Identify the real sender IP.</li>
+          <li>Extract URLs from the email body using `url_extractor` or manual inspection.</li>
+          <li>Submit URLs to VirusTotal and URLScan.io. Check for phishing/malware detections.</li>
+          <li>Extract file attachments (if any). Submit file hashes to VirusTotal.</li>
+          <li>Search SIEM for any users who clicked the same URL or received the same email.</li>
+          <li>Block the sender domain and URLs on the email gateway and web proxy.</li>
+          <li>Document findings in the incident report template.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Successfully identified phishing indicators, blocked malicious infrastructure, no compromised accounts. Incident report completed.</p>
+      <p><strong>Troubleshooting:</strong> If headers show SPF/DKIM/DMARC pass, the sender may be a compromised legitimate domain. If no users clicked, document as "no impact — users reported proactively."</p>
+      <p><strong>Detection Opportunities:</strong> Create a SIEM rule for "Multiple users reporting similar phishing email within short timeframe" and a rule for "User clicks phishing link after reporting" (insider threat or compromised account).</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-warning">Intermediate Lab: Ransomware Outbreak Investigation</h4>
+      <p><strong>Objective:</strong> Investigate a ransomware outbreak affecting 5 Windows workstations. Identify patient zero, determine propagation method, contain the spread, and recommend remediation.</p>
+      <p><strong>Setup:</strong> Use a lab with 1 Windows Server 2019 (DC), 5 Windows 10 workstations. Install Sysmon + Winlogbeat forwarding to ELK. Simulate ransomware using Atomic Red Team's T1486 (Data Encrypted for Impact).</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Receive the alert: "Mass file encryption detected on 5 hosts" from EDR or SIEM.</li>
+          <li>Check EDR console: confirm file rename events (.encrypted extension) across multiple hosts.</li>
+          <li>Identify patient zero: locate the first host with encryption events. Check timeline.</li>
+          <li>On patient zero, review process tree: how did ransomware execute? (Phishing download? Drive-by? RDP brute force? USB?)</li>
+          <li>Check Sysmon Event ID 1 (Process Creation) and Event ID 3 (Network Connection) on patient zero.</li>
+          <li>Identify lateral movement: check Event ID 4624 (Logon) with Logon Type 3 (Network) from patient zero to other hosts. Check Event ID 5140 (SMB share access).</li>
+          <li>Check for PSExec usage (Event ID 4688 with Image = PSExec.exe) or PowerShell remoting.</li>
+          <li>Isolate all affected hosts via EDR network containment. Block ransomware C2 IP on firewall.</li>
+          <li>Check backup status: are there clean offline backups? When was the last good backup?</li>
+          <li>Document initial access vector, propagation method, scope, and recommended eradication steps.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Identify patient zero, confirm propagation method (e.g., SMB spread using compromised domain admin), scope of 5 hosts affected, containment successful.</p>
+      <p><strong>Troubleshooting:</strong> If EDR doesn't show network containment option, use Windows Firewall rules or ACLs on the switch. If backups are encrypted too, recommend immutable backup solution.</p>
+      <p><strong>Detection Opportunities:</strong> Create SIEM rules for "PSExec usage from non-admin workstation", "SMB file write spikes across multiple hosts", "PowerShell with -EncodedCommand flag followed by file rename events".</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-danger">Advanced Lab: Multi-Stage APT Investigation</h4>
+      <p><strong>Objective:</strong> Investigate a multi-stage APT attack involving initial access via spear-phishing, persistence via scheduled task, C2 communication over HTTPS, and data exfiltration via cloud storage API.</p>
+      <p><strong>Setup:</strong> Full enterprise lab with Active Directory, Exchange, Azure AD, CrowdStrike Falcon or Wazuh, Splunk SIEM, network forwarder with Zeek, and pcap capture. Use Cobalt Strike or Sliver as the simulated C2 framework (in isolated network).</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Initial alert: "Suspicious PowerShell execution from executive user." Review EDR telemetry for the PowerShell command.</li>
+          <li>Extract decoded PowerShell script: identify download cradle for Cobalt Strike beacon.</li>
+          <li>Review process tree: parent process is Outlook (spear-phishing). Child process is PowerShell executing encoded command. Grandchild is rundll32.exe (DLL sideloading).</li>
+          <li>Check registry for persistence: Run keys, Scheduled Tasks, Startup folder. Find scheduled task named "TeamsUpdate" executing hourly.</li>
+          <li>Check network connections: rundll32.exe making HTTPS connections to a suspicious domain (cloudfront.net lookalike).</li>
+          <li>Perform memory forensics on the affected host: capture memory dump using FTK Imager. Use Volatility to extract beacon configuration, C2 domains, encryption keys.</li>
+          <li>Review Zeek logs: check HTTP, SSL, DNS logs for the affected host. Identify DNS TXT query to suspicious domain (possible C2 heartbeat).</li>
+          <li>Check cloud access logs (Azure AD sign-ins): attacker used stolen session token to access SharePoint and download sensitive documents.</li>
+          <li>Scope the compromise: check all users who received similar phishing emails, all hosts with similar scheduled tasks, all cloud API access from non-company IPs.</li>
+          <li>Contain: revoke OAuth tokens, disable compromised user accounts, block C2 domains, isolate affected hosts.</li>
+          <li>Eradicate: rebuild affected hosts, rotate all credentials, implement conditional access policies in Azure AD, deploy additional email security.</li>
+          <li>Write detailed incident report with MITRE ATT&CK mappings, timeline, evidence list, and executive summary.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Full mapping of attack chain from initial access to exfiltration. Containment and eradication of threat. Lessons learned drive new detection rules and email security improvements.</p>
+      <p><strong>Troubleshooting:</strong> If beacon memory extraction fails, try different Volatility profile or use Rekall. If cloud logs are insufficient, enable Azure AD diagnostic settings for future investigations.</p>
+      <p><strong>Detection Opportunities:</strong> Deploy Sigma rules for "Suspicious Rundll32 without Command Line Arguments", "Cobalt Strike Named Pipe Patterns", "Scheduled Task Created by Outlook Process". Create KQL queries for Azure AD sign-ins from anonymous IP addresses.</p>
+    </div>
+  </div>
+
+  <!-- SOC SCENARIOS -->
+  <div class="section-card">
+    <h3><i class="bi bi-bullseye"></i> SOC SCENARIOS</h3>
+
+    <div class="scenario-box">
+      <h4>Scenario 1: Business Email Compromise (BEC)</h4>
+      <p><strong>What Happened:</strong> An executive receives an email appearing to be from the CEO requesting an urgent wire transfer to a vendor for a "confidential acquisition." The email uses a lookalike domain (ceo@cornpany.com vs ceo@company.com). The executive authorized a $50,000 wire transfer.</p>
+      <p><strong>How to Detect:</strong> Email gateway flags the lookalike domain (DMARC failure). User reports via "Report Phishing" button. SIEM correlation on "Wire transfer requested via email" combined with "New external email forwarding rule created."</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Check email headers: SPF fails, DMARC policy not enforced (p=none).</li>
+          <li>Search for similar emails sent to other executives. Check if any other users received it.</li>
+          <li>Check the finance system: is the wire transfer processed? If yes, begin recovery with bank.</li>
+          <li>Check if the executive's account shows any other suspicious activity (login from unusual location, mailbox rules created).</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Block the sender domain at email gateway. Add DMARC reject policy for your own domain. Contact bank to reverse wire transfer. Implement payment verification process (phone confirmation for all wire transfers over $5K). Deploy DMARC enforcement for your domain.</p>
+      <p><strong>How to Document:</strong> Create incident report with email headers, wire transfer details, financial impact ($50,000), detection timeline, DMARC policy gap, remediation actions. Update BEC playbook with lookalike domain detection rules.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 2: Insider Threat — Data Exfiltration</h4>
+      <p><strong>What Happened:</strong> A departing employee downloads 50GB of source code from the company GitLab repository to their personal laptop over 3 days. They also emailed several sensitive documents to their personal email address.</p>
+      <p><strong>How to Detect:</strong> DLP alerts: "Large download from GitLab by departing employee." SIEM correlation: "User accessed HR system (performance review) followed by GitLab bulk download." UEBA anomaly: "User activity 3x above baseline for file downloads."</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Check DLP logs: what files were downloaded? Match against GitLab audit logs.</li>
+          <li>Review HR records: is the employee in notice period? Access termination date.</li>
+          <li>Check email logs: personal email recipient flagged by DLP.</li>
+          <li>Check cloud access logs: OneDrive/SharePoint access patterns.</li>
+          <li>Check USB device logs (if endpoint DLP enabled).</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Immediately revoke all access (GitLab, VPN, email, cloud apps). Disable Active Directory account. Collect device forensics from company laptop. Contact legal for guidance on data recovery and potential legal action. Escalate to HR for separation process.</p>
+      <p><strong>How to Document:</strong> Incident report with evidence of download patterns, HR termination date, data classification of exfiltrated material, legal guidance received. Recommend enhanced DLP monitoring during notice periods and automated account suspension upon HR termination notice.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 3: Web Application SQL Injection</h4>
+      <p><strong>What Happened:</strong> An attacker uses SQL injection on the company's public-facing web application login page. The WAF blocks the initial attempt, but the attacker bypasses using encoded payload. Customer database (50K records) is extracted via `UNION SELECT` queries.</p>
+      <p><strong>How to Detect:</strong> WAF alerts: "SQL Injection Attempt Bypassed - Anomaly Score High." Web server logs: unusual `UNION SELECT` patterns in HTTP requests. Database audit logs: bulk SELECT queries from web application user from unusual IP. SIEM correlation: "Web app error spike + database query spike."</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Review WAF logs: identify the bypassed payload. Which rule allowed it?</li>
+          <li>Analyze web server access logs: identify the attacker IP, User-Agent, requested URLs.</li>
+          <li>Check database audit logs: what tables were queried? What data was extracted?</li>
+          <li>Check if extracted data includes PII (credit cards, SSNs, passwords).</li>
+          <li>Review application code: identify the vulnerable parameter and lack of parameterized queries.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Take the application offline or implement virtual patching via WAF. Block attacker IPs. Rotate all database credentials. Notify impacted customers (legal requirement for PII breach). Deploy hotfix with parameterized queries. Conduct full code review for similar vulnerabilities.</p>
+      <p><strong>How to Document:</strong> Incident report with WAF bypass technique, number of records exfiltrated, PII classification, regulatory notification timeline, code fix deployed, WAF rule improvement. Report to relevant data protection authority if required (GDPR, CCPA).</p>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE CHECK -->
+  <div class="section-card">
+    <h3><i class="bi bi-question-circle"></i> KNOWLEDGE CHECK</h3>
+
+    <h4>Multiple Choice Questions</h4>
+    <ol class="mcq-list">
+      <li>Which NIST SP 800-61 phase involves removing malicious artifacts from affected systems?
+        <br><strong>Options:</strong> A) Preparation B) Detection & Analysis C) Containment, Eradication & Recovery D) Post-Incident Activity
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the primary purpose of the "Golden Hour" in incident response?
+        <br><strong>Options:</strong> A) The first hour of detection when containment is most effective B) The hour before backups run C) The hour after business hours D) The hour when attackers are most active
+        <br><strong>Answer:</strong> A
+      </li>
+      <li>Which Windows Event ID tracks successful logon events?
+        <br><strong>Options:</strong> A) 4624 B) 4625 C) 4688 D) 7045
+        <br><strong>Answer:</strong> A
+      </li>
+      <li>What does the acronym PICERL stand for?
+        <br><strong>Options:</strong> A) Preparation, Identification, Containment, Eradication, Recovery, Lessons Learned B) Planning, Investigation, Control, Elimination, Restoration, Logging C) Prevention, Intrusion, Containment, Extraction, Restoration, Learning D) Prepare, Isolate, Clean, Examine, Report, Log
+        <br><strong>Answer:</strong> A
+      </li>
+      <li>During a ransomware investigation, what is the FIRST containment action?
+        <br><strong>Options:</strong> A) Power off the affected host B) Isolate the affected host from the network C) Restore from backups D) Notify law enforcement
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which log source is BEST for detecting PowerShell-based attacks?
+        <br><strong>Options:</strong> A) Windows Event ID 4688 with command-line logging B) Windows Event ID 4624 C) DNS logs D) DHCP logs
+        <br><strong>Answer:</strong> A
+      </li>
+      <li>What is the appropriate escalation path when a Tier 1 analyst discovers a P1 incident?
+        <br><strong>Options:</strong> A) Close the ticket and move on B) Escalate immediately to Tier 2/3 and Incident Commander C) Send an email to IT support D) Wait for the next shift
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>What is DMARC used for in email security?
+        <br><strong>Options:</strong> A) Encrypting email content B) Authenticating email sender domain C) Blocking all external email D) Encrypting email attachments
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which tool is BEST for memory forensics acquisition?
+        <br><strong>Options:</strong> A) FTK Imager B) Volatility C) Wireshark D) Autopsy
+        <br><strong>Answer:</strong> A (for acquisition), B (for analysis)
+      </li>
+      <li>What is the purpose of a lessons learned meeting after an incident?
+        <br><strong>Options:</strong> A) Assign blame to responsible parties B) Identify process improvements and update playbooks C) Close all remaining tickets D) Calculate the total cost of the incident
+        <br><strong>Answer:</strong> B
+      </li>
+    </ol>
+
+    <h4>Practical Questions</h4>
+    <ol>
+      <li>You receive a SIEM alert: "Multiple failed login attempts (20 in 2 minutes) followed by successful login for user jsmith from IP 185.220.101.x." What is your triage process?</li>
+      <li>Given a sample phishing email with these headers: SPF=FAIL, DKIM=neutral, DMARC=none. What does this tell you about the email's legitimacy?</li>
+      <li>A user clicked a phishing link and entered their credentials on a fake login page. List 5 immediate containment actions you would take.</li>
+      <li>You find a scheduled task named "BrowserUpdate" running PowerShell on a user's workstation. How do you investigate this further?</li>
+      <li>During an incident, you need to preserve evidence for potential legal action. What steps must you take to maintain chain of custody?</li>
+    </ol>
+
+    <h4>Investigation Scenarios</h4>
+    <ol>
+      <li><strong>Scenario A:</strong> A SIEM alert triggers for "File deletion events" on a critical file server at 3 AM. 500 files were deleted. No scheduled tasks were active. How do you investigate? What is your priority?</li>
+      <li><strong>Scenario B:</strong> An EDR alert shows a workstation making outbound connections to a known Cobalt Strike C2 server. The user reports their computer is slow. How do you handle this from first alert to incident closure?</li>
+    </ol>
+
+    <h4>Interview Questions</h4>
+    <ol>
+      <li>Explain the difference between a SIEM alert, a confirmed incident, and a breach. Provide examples of each.</li>
+      <li>Describe a time you had to handle a high-pressure incident. What was the situation, what was your role, and what was the outcome? (Use the STAR method)</li>
+      <li>How would you improve the incident response process in an organization that has never experienced a major security incident?</li>
+    </ol>
+  </div>
+
+  <!-- PORTFOLIO PROJECTS -->
+  <div class="section-card">
+    <h3><i class="bi bi-folder"></i> PORTFOLIO PROJECTS</h3>
+
+    <div class="project-box">
+      <h4 class="text-success">Beginner: Build an IR Playbook Collection</h4>
+      <p><strong>Objective:</strong> Create a set of 5 incident response playbooks for common SOC scenarios: Phishing, Ransomware, BEC, Data Exfiltration, Insider Threat.</p>
+      <p><strong>Architecture:</strong> Document-based (Markdown/PDF/HTML). Each playbook follows the same structure: Purpose, Scope, Roles, Detection Criteria, Triage Steps, Containment, Eradication, Recovery, Reporting, Escalation Matrix.</p>
+      <p><strong>Tools:</strong> Markdown editor (VS Code), Mermaid for diagrams, GitHub Pages for hosting.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Research NIST SP 800-61 and SANS PICERL frameworks for structure.</li>
+          <li>Create a playbook template in Markdown.</li>
+          <li>Write the Phishing playbook: detection through user report + email gateway, triage via header analysis, containment via email deletion + block sender.</li>
+          <li>Write the Ransomware playbook: detection via EDR, triage via process tree, containment via network isolation, eradication via reimage.</li>
+          <li>Write 3 additional playbooks. Include Mermaid diagrams for each workflow.</li>
+          <li>Host on GitHub Pages as a reference site for your portfolio.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> Include a README explaining each playbook, the frameworks used, and how to use playbooks during an incident.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-warning">Intermediate: Simulated SOC IR Platform</h4>
+      <p><strong>Objective:</strong> Build a fully functional SOC investigation environment with simulated alerts, log sources, and a case management system.</p>
+      <p><strong>Architecture:</strong> ELK Stack (Elasticsearch, Logstash, Kibana) for SIEM, TheHive for case management, MinIO for evidence storage, custom Python scripts for log generation, Atomic Red Team for attack simulation.</p>
+      <p><strong>Tools:</strong> Docker/Docker Compose, ELK Stack, TheHive, Cortex, MinIO, Python, Atomic Red Team.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Deploy ELK Stack via Docker Compose with canned data ingestion pipeline.</li>
+          <li>Deploy TheHive and Cortex for case management and observable analysis.</li>
+          <li>Create Python scripts that generate realistic logs: Windows Event Logs, Sysmon logs, web server logs, firewall logs.</li>
+          <li>Write detection rules (Sigma) and import into ElastAlert or Elastic Rules.</li>
+          <li>Simulate attacks using Atomic Red Team: T1078 (Valid Accounts), T1059 (Command and Scripting Interpreter), T1566 (Phishing).</li>
+          <li>Build TheHive case templates for each attack type.</li>
+          <li>Test: ingest logs, trigger rules, create cases, perform investigation, document findings.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> Architecture diagram, deployment guide, detection rules documentation, sample investigation walkthrough with screenshots.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-danger">Advanced: Full Incident Response Automation Platform</h4>
+      <p><strong>Objective:</strong> Build an automated IR platform that ingests alerts, enriches IOCs, creates cases, runs automated containment actions, and generates incident reports — all with human approval gates.</p>
+      <p><strong>Architecture:</strong> SIEM (Splunk/ELK) -> SOAR (Shuffle/Splunk SOAR/Custom Python) -> TheHive -> Slack/Teams notifications -> Email gateway API -> Firewall API -> EDR API. Use MITRE ATT&CK as the common taxonomy.</p>
+      <p><strong>Tools:</strong> Splunk or ELK, TheHive, Shuffle (SOAR), Python, Docker, VirusTotal API, AbuseIPDB, Shodan, MISP (Threat Intel), GitHub Actions for CI/CD of detection rules.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Design the automation workflow: Alert -> Enrichment -> Triage -> Containment -> Notification -> Reporting.</li>
+          <li>Build enrichment playbooks: IP -> VirusTotal + AbuseIPDB + Shodan. Hash -> VirusTotal + YARA. Domain -> URLScan.io + VirusTotal.</li>
+          <li>Build containment actions: EDR isolation (API call), Firewall block (API call), Email deletion (Graph API). All with manual approval step.</li>
+          <li>Integrate with TheHive: create case with all enriched data, auto-assign severity, notify on-call analysts via Slack/Teams.</li>
+          <li>Build automated incident report generator: pull all case data, timeline, IOCs, actions taken, and generate PDF report.</li>
+          <li>Implement CI/CD pipeline for detection rules: Sigma rules via GitHub -> Sigma CLI -> SIEM rules (Elastic rules or Splunk saved searches).</li>
+          <li>Test with Atomic Red Team attacks: verify automation responds as expected.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> Full architecture documentation, API integration guides, playbooks for each automation flow, test results, incident report template. Include a demo video for your portfolio.</p>
+    </div>
+  </div>
+
+  <!-- TOPIC NAVIGATION -->
+  <div class="d-flex justify-content-between mt-4">
+    <a href="/topics/topic8" class="btn btn-outline-cyan"><i class="bi bi-arrow-left"></i> Previous: Threat Intelligence</a>
+    <a href="/topics/topic10" class="btn btn-cyan">Next: Threat Hunting <i class="bi bi-arrow-right"></i></a>
+  </div>
 </div>

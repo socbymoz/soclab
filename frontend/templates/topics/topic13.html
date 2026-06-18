@@ -1,117 +1,839 @@
-<div class="p-4 rounded mb-4" style="background:rgba(17,24,39,0.9);border:1px solid #1f2937;">
-<h6 class="text-info mb-3"><i class="bi bi-book me-2"></i>Module 13: SIEM Triage for SOC</h6>
+<div class="topic-container">
+  <h2 class="topic-title"><i class="bi bi-rocket-takeoff"></i> Module 13: Career Preparation</h2>
+  <p class="topic-subtitle">Build your SOC career with certifications, portfolio projects, resume strategies, and interview preparation.</p>
 
-<p style="color:#c0d0e0;">SIEM triage is the core SOC L1 skill. This module teaches you to investigate SIEM alerts, perform log analysis across multiple sources, and determine whether alerts are true or false positives through hands-on challenge rooms.</p>
+  <!-- SECTION OVERVIEW -->
+  <div class="section-card">
+    <h3><i class="bi bi-eye"></i> SECTION OVERVIEW</h3>
+    <p><strong>What is SOC Career Preparation?</strong> This module provides a structured approach to building a successful career in SOC operations and cybersecurity. It covers career pathways, certifications, hands-on skill building, resume optimization, portfolio creation, networking, and interview preparation specific to SOC analyst roles.</p>
+    <p><strong>Why It Matters:</strong> Cybersecurity has a global workforce shortage of 4 million professionals. However, breaking in requires more than just technical knowledge — you need to navigate certifications, demonstrate practical skills, tell your story effectively, and connect with the right opportunities. The most technically skilled analyst can lose a job offer due to poor interview preparation or a weak resume.</p>
+    <p><strong>Real-World Use Cases:</strong> Transitioning from IT support to SOC analyst, advancing from Tier 1 to Tier 3, pivoting from red team to blue team, moving from MSSP to internal SOC, becoming a SOC manager, specializing in DFIR, threat hunting, or detection engineering.</p>
+    <p><strong>Skills Gained:</strong> Career planning, certification roadmapping, resume writing (ATS-optimized), portfolio building (GitHub, blog, labs), interview techniques (behavioral + technical), salary negotiation, professional networking, personal branding.</p>
+    <p><strong>Prerequisites:</strong> Completion of Modules 1-12 or equivalent SOC knowledge. This module is about packaging and presenting your skills.</p>
+    <p><strong>Learning Objectives:</strong>
+      <ul>
+        <li>Create a personalized 12-month career roadmap with certification targets</li>
+        <li>Write an ATS-optimized SOC analyst resume with quantified achievements</li>
+        <li>Build a portfolio showcasing 3-5 SOC projects with documentation</li>
+        <li>Answer common SOC interview questions using the STAR method</li>
+        <li>Develop a professional network and personal brand strategy</li>
+      </ul>
+    </p>
+  </div>
 
-<h6 class="text-info mt-3">Sub-Domains / Rooms</h6>
+  <!-- DETAILED NOTES -->
+  <div class="section-card">
+    <h3><i class="bi bi-journal-text"></i> DETAILED NOTES</h3>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Log Analysis with SIEM</p>
-<p style="color:#c0d0e0;">Every investigation starts with log analysis. The key is knowing what logs to look at and how to correlate them.</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Multi-Source Log Correlation — Example:</b><br>
-Alert: "Suspicious outbound connection from 10.0.1.50 to 45.33.32.156:4444"<br><br>
-<b>Step 1 — Firewall Log:</b><br>
-<code>May 21 14:32:15 firewall: ALLOW TCP 10.0.1.50:54321 → 45.33.32.156:4444 (OUTBOUND)</code><br>
-→ Connection was allowed — not blocked<br><br>
-<b>Step 2 — EDR Log:</b><br>
-<code>Process: powershell.exe (PID 1234) established connection to 45.33.32.156:4444<br>
-Parent: WINWORD.EXE (PID 1111)<br>
-User: j.smith@company.com</code><br>
-→ PowerShell was spawned by Microsoft Word — classic phishing infection chain<br><br>
-<b>Step 3 — Windows Event Log:</b><br>
-<code>EventID 4688: Process WINWORD.EXE created process powershell.exe<br>
-EventID 4698: Scheduled task "OneDriveUpdate" created by j.smith<br>
-Sysmon Event 1: powershell.exe -enc IQBFAFgAIAAoAE4AZQB3...</code><br>
-→ Confirmed: Word spawned PowerShell with encoded command<br><br>
-<b>Step 4 — Proxy Log:</b><br>
-<code>GET http://evil.com/payload.ps1 → 200 OK (2.3 KB downloaded)<br>
-Source: 10.0.1.50, Time: 14:31:45<br>
-User-Agent: Mozilla/5.0 (Windows NT 6.1) — outdated, suspicious</code><br>
-→ Before the C2 connection, PowerShell downloaded a payload from evil.com<br><br>
-<b>Step 5 — DNS Log:</b><br>
-<code>10.0.1.50 → evil.com → 45.33.32.156 (resolved at 14:31:44)</code><br>
-→ DNS resolution just before the download — confirming the attack chain<br><br>
-<b>Complete Timeline:</b><br>
-14:31:44 — DNS query for evil.com<br>
-14:31:45 — Download payload.ps1 from 45.33.32.156<br>
-14:32:10 — User opened phishing document in Word<br>
-14:32:12 — Word spawned PowerShell (macro execution)<br>
-14:32:15 — PowerShell connected to 45.33.32.156:4444 (C2 established)
-</div>
+    <h4>Subtopic 1: SOC Career Pathways</h4>
+    <p><strong>Technical Breakdown:</strong> SOC careers follow multiple trajectories depending on your interests and skills. Understanding the landscape helps you make informed decisions.</p>
+    <ul>
+      <li><strong>Traditional SOC Career Ladder:</strong>
+        <ul>
+          <li><strong>Entry-Level (0-2 years):</strong> Security Analyst L1 (Triage). Salary range: $50K-$75K USD. Responsibilities: monitor SIEM, triage alerts, escalate to L2, basic reporting. Entry paths: recent cybersecurity graduate, IT support transition, military/veteran transition, bootcamp graduate.</li>
+          <li><strong>Mid-Level (2-4 years):</strong> Security Analyst L2 (Investigator). Salary range: $75K-$100K USD. Responsibilities: deep investigation, forensic analysis, threat hunting, playbook optimization, mentoring L1. Requirements: 2+ years SOC experience, one advanced certification (GCIA/GCIH/SC-200).</li>
+          <li><strong>Senior (4-7 years):</strong> Security Analyst L3 / Senior Analyst. Salary range: $100K-$135K USD. Responsibilities: advanced forensics, malware analysis, tool customization, detection engineering, purple team exercises. Requirements: expert-level certification (GCFA/GMON/GREM), programming skills.</li>
+          <li><strong>Lead/Manager (7+ years):</strong> SOC Lead / SOC Manager / CSIRT Lead. Salary range: $130K-$180K+ USD. Responsibilities: team management, process improvement, metrics reporting, budget planning, stakeholder communication. Requirements: management experience, CISSP/CISM, business acumen.</li>
+        </ul>
+      </li>
+      <li><strong>Alternative Pathways (after 2-4 years in SOC):</strong>
+        <ul>
+          <li><strong>Detection Engineer:</strong> Focus on creating and maintaining detection rules (Sigma, KQL, SPL). Combines security knowledge with software engineering (Python, CI/CD, Git). Salary: $110K-$150K.</li>
+          <li><strong>Threat Intelligence Analyst:</strong> Research threat actors, analyze campaigns, produce intelligence reports. Skills: OSINT, writing, threat research, ATT&CK mapping. Salary: $90K-$130K.</li>
+          <li><strong>DFIR Specialist:</strong> Digital forensics and incident response. Deep forensic analysis, evidence handling, legal testimony. Skills: forensics tools, memory analysis, network forensics. Salary: $100K-$150K.</li>
+          <li><strong>Security Engineer:</strong> Deploy and maintain security tools (SIEM, EDR, SOAR). More engineering than operations. Skills: scripting, infrastructure, API integration. Salary: $110K-$150K.</li>
+          <li><strong>Security Architect:</strong> Design overall security architecture. Requires broad knowledge across all security domains. Salary: $140K-$200K+.</li>
+          <li><strong>Red Team / Penetration Testing:</strong> Transition from blue to red team. Requires offensive security skills (OSCP, GPEN). Salary: $120K-$180K.</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Architecture:</strong> Your career is a system — design it with intention. Use a "Career Canvas" approach: Define your values, strengths, weaknesses, opportunities, threats. Create a 1-year, 3-year, and 5-year plan with specific milestones. Review and adjust quarterly.</p>
+    <p><strong>Enterprise Example:</strong> An analyst starts at an MSSP (Tier 1) processing 100+ alerts per shift. After 18 months, they earn their Security+ and SC-200, moving to an internal SOC as Tier 2. They spend 2 years there, earning GCFA (SANS) and developing deep forensic skills. They move to a DFIR role at a consulting firm at 4 years experience. By year 7, they become a DFIR team lead with a $150K+ salary.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Alert Triage with Splunk</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Splunk Triage Queries for SOC:</b><br><br>
-<b>1. Investigate a Compromised Account:</b><br>
-<code>index=windows EventID=4625 Account_Name=j.smith<br>
-| timechart span=1h count by Source_IP</code><br>
-→ Show failed login attempts over time, grouped by source IP<br><br>
-<b>2. Find Lateral Movement:</b><br>
-<code>index=windows EventID=4624 Account_Name=j.smith LogonType=3<br>
-| stats values(Computer) by Account_Name</code><br>
-→ List all machines the account accessed (network logon = lateral movement)<br><br>
-<b>3. Detect Data Exfiltration:</b><br>
-<code>index=proxy src_ip=10.0.1.50 action=ALLOW<br>
-| stats sum(bytes) by url, dest_ip<br>
-| where sum(bytes) > 5000000</code><br>
-→ Show URLs with > 5MB uploaded from a specific host<br><br>
-<b>4. Threat Hunting — Suspicious Processes:</b><br>
-<code>index=windows EventID=4688<br>
-| search (ParentImage=*WINWORD* OR ParentImage=*EXCEL* OR ParentImage=*OUTLOOK*)<br>
-  AND (Image=*powershell* OR Image=*cmd.exe* OR Image=*wscript*)<br>
-| stats count by Computer, ParentImage, Image<br>
-| sort -count</code><br>
-→ Find Office apps spawning shell processes — classic malware indicator<br><br>
-<b>5. Brute Force Alert Investigation:</b><br>
-<code>index=windows EventID=4625 Source_IP=45.33.32.156<br>
-| stats count by Account_Name<br>
-| where count > 10<br>
-| eval threshold="PASSED"<br>
-| join type=left Account_Name [search index=windows EventID=4624 Source_IP=45.33.32.156 | stats values(Account_Name) as passed_accounts]</code><br>
-→ Shows which accounts had 10+ failed attempts AND eventual success
-</div>
+    <h4>Subtopic 2: Certifications Roadmap</h4>
+    <p><strong>Technical Breakdown:</strong> Certifications validate your knowledge and increase interview chances. However, they must be strategically chosen — not all certs are equal for SOC roles.</p>
+    <ul>
+      <li><strong>Foundation Certifications (Entry-Level):</strong>
+        <ul>
+          <li><strong>CompTIA Security+ (SY0-701):</strong> The baseline cybersecurity certification. Covers: network security, threats, cryptography, identity management, risk management. Cost: $392. Prep time: 2-3 months. Required by many government contractor roles.</li>
+          <li><strong>EC-Council Certified Ethical Hacker (CEH):</strong> Controversial in the industry (often criticized for outdated content and multiple-choice only format), but still requested by HR filters. Cost: $1,199 (exam) + $500 (training recommended). Prep: 3-4 months.</li>
+          <li><strong>Microsoft SC-200 (Security Operations Analyst):</strong> Microsoft's SOC analyst certification. Covers: Microsoft Defender suite, Sentinel, KQL, incident response in Microsoft ecosystem. Cost: $165. Prep: 2-3 months. Highly recommended for Microsoft shops.</li>
+          <li><strong>Splunk Core Certified Power User:</strong> Validates Splunk search skills critical for SOC roles using Splunk SIEM. Cost: $150. Prep: 1-2 months.</li>
+        </ul>
+      </li>
+      <li><strong>Intermediate Certifications (Mid-Level — 2-4 years):</strong>
+        <ul>
+          <li><strong>CompTIA CySA+ (Cybersecurity Analyst):</strong> Blue-team focused: threat detection, vulnerability management, incident response. Cost: $392. Prep: 2-3 months. Good next step after Security+.</li>
+          <li><strong>GIAC Certified Incident Handler (GCIH):</strong> Hands-on incident handling exam from SANS. Practical component plus multiple choice. Cost: $949. Prep: 3-4 months with SANS course. Industry respect is high.</li>
+          <li><strong>GIAC Certified Intrusion Analyst (GCIA):</strong> Focus on network traffic analysis, IDS/IPS tuning, packet analysis. Cost: $949. Prep: 3-4 months.</li>
+          <li><strong>(ISC)² SSCP (Systems Security Certified Practitioner):</strong> Operational security (access controls, monitoring, incident response). Cost: $249. Prep: 2-3 months.</li>
+        </ul>
+      </li>
+      <li><strong>Advanced Certifications (Senior Level — 4+ years):</strong>
+        <ul>
+          <li><strong>GIAC Certified Forensic Analyst (GCFA):</strong> Advanced forensics — memory analysis, MFT analysis, timeline construction. Cost: $949. Prep: 4-6 months.</li>
+          <li><strong>GIAC Continuous Monitoring (GMON):</strong> Security monitoring, SIEM architecture, threat hunting. Cost: $949.</li>
+          <li><strong>GIAC Reverse Engineering Malware (GREM):</strong> Malware analysis and reverse engineering. Cost: $949.</li>
+          <li><strong>Certified Information Systems Security Professional (CISSP):</strong> The gold standard for security management. Requires 5 years experience in 2+ domains. Cost: $749. Prep: 4-6 months. Not typically needed for SOC analyst roles but important for SOC manager/lead roles.</li>
+          <li><strong>Offensive Security Certified Professional (OSCP):</strong> For those transitioning to red team or wanting purple team roles. Hardest entry-level cert. Cost: $1,499. Prep: 3-6 months of intense lab work.</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Recommended Order for SOC Analyst:</strong> Security+ (entry) -> SC-200 or CySA+ (intermediate) -> GCIH or GCIA (advanced). Total investment: ~$1,500-$2,000 in exam fees. Add GCFA for DFIR specialization or GREM for malware analysis focus.</p>
+    <p><strong>Enterprise Example:</strong> An analyst working at a Microsoft-focused organization follows: SC-200 (3 months) -> AZ-500 (Azure Security — 2 months) -> MS-500 (Microsoft 365 Security — 2 months). Within 8 months, they have 3 Microsoft security certifications and are promoted to Tier 2 with a 15% raise.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Alert Triage with Elastic</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>Elastic/Kibana Triage Queries:</b><br><br>
-<b>Same investigations in Elastic EQL:</b><br>
-<code>process where event.code == "1" and process.parent.name in ("WINWORD.EXE", "EXCEL.EXE", "OUTLOOK.EXE") and process.name in ("powershell.exe", "cmd.exe", "wscript.exe")</code><br>
-→ Office spawning shell processes (same as Splunk query above)<br><br>
-<b>Network connection after process creation:</b><br>
-<code>sequence by process.entity_id<br>
-  [process where event.code == "1" and process.name == "powershell.exe"]<br>
-  [network where process.name == "powershell.exe" and destination.port == 443]</code><br>
-→ PowerShell that makes an outbound HTTPS connection — classic C2 pattern<br><br>
-<b>Kibana Dashboard Creation:</b><br>
-Create a "SOC L1 Daily Triage" dashboard with:<br>
-1. Failed logins over time (line chart)<br>
-2. Top 10 source IPs by failed attempts (data table)<br>
-3. Suspicious process creation alerts (tag cloud)<br>
-4. Latest alerts (real-time table)<br>
-5. Geo-map of external connection destinations
-</div>
+    <h4>Subtopic 3: Resume & Portfolio Building</h4>
+    <p><strong>Technical Breakdown:</strong> Your resume and portfolio are your primary marketing tools. ATS systems, HR screeners, and technical hiring managers each look for different things.</p>
+    <ul>
+      <li><strong>ATS-Optimized Resume Structure:</strong>
+        <ul>
+          <li><strong>Header:</strong> Name, phone, email, LinkedIn URL, GitHub URL, location (city, state). No objective statement (waste of space).</li>
+          <li><strong>Professional Summary (2-3 lines):</strong> Not an objective — a value proposition. Example: "SOC Analyst with 3+ years of experience monitoring enterprise SIEM, triaging 200+ alerts daily, and reducing false positive rate by 40% through rule tuning. Proficient in Splunk, CrowdStrike, and Microsoft Defender. CompTIA Security+ and SC-200 certified."</li>
+          <li><strong>Core Competencies:</strong> 3 columns of 8-10 keywords each. Include SIEM tools, EDR, operating systems, frameworks. Must match job description keywords for ATS passing.</li>
+          <li><strong>Professional Experience (use STAR format for bullets):</strong> Instead of "Monitored SIEM alerts" -> "Triaged 250+ SIEM alerts daily, reducing mean time to detect from 4 hours to 45 minutes by creating 15 custom correlation rules." Quantify everything: number of alerts, % improvement, dollar amounts, tools used.</li>
+          <li><strong>Certifications:</strong> List with dates. Include in-progress certs with expected completion date.</li>
+          <li><strong>Education:</strong> Degree, school, graduation year. GPA only if > 3.5.</li>
+        </ul>
+      </li>
+      <li><strong>Portfolio Projects (GitHub + Blog):</strong>
+        <ul>
+          <li><strong>Home Lab Documentation:</strong> Detailed documentation of your SOC home lab (ELK/Wazuh, Windows AD, Sysmon, TheHive). Include architecture diagrams, deployment steps, and sample investigations.</li>
+          <li><strong>Write-ups of CTF/Lab Solutions:</strong> Detailed walkthroughs of TryHackMe, HTB, CyberDefenders labs. Show your analytical process, not just answers. Focus on quality over quantity — 5 excellent write-ups > 20 shallow ones.</li>
+          <li><strong>Detection Rules (Sigma/YARA):</strong> Showcase your rule-writing skills. A repository of Sigma rules with documentation is highly valued by detection engineering hiring managers.</li>
+          <li><strong>Scripting/Automation Projects:</strong> Python/PowerShell scripts that automate SOC tasks: log parsing, IOC enrichment, report generation, custom alerting.</li>
+          <li><strong>Blog Posts:</strong> Write about security topics you've investigated. Example: "How I Hunted for DNS Tunneling in My Home Lab" or "Building a Phishing SOAR Playbook with Shuffle." Shows communication skills and subject matter passion.</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Real-World Example:</strong> A career changer (from IT support) builds a home lab over 3 months: Wazuh SIEM + Windows 10 + Kali Linux + Atomic Red Team. Documents everything on GitHub with screenshots and architecture diagrams. Writes 5 blog posts on Medium about specific investigations (average 2000 views each). Their resume shows a "SOC Home Lab Project" that demonstrates SIEM deployment, rule creation, attack simulation, and incident investigation. This portfolio gets them their first SOC job offer despite no formal SOC experience.</p>
 
-<p style="color:#00d4ff;font-weight:600;">🔹 Challenge Rooms: ItsyBitsy, Benign, Monday Monitor, Friday Overtime, Retracted</p>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>ItsyBitsy Challenge:</b><br>
-Investigate a web application breach. Logs show SQL injection attempts, data extraction queries, and outbound data transfers. Your task: identify the attacker, determine what data was stolen, find the vulnerability, and recommend remediation.<br><br>
-<b>Benign Challenge:</b><br>
-Multiple alerts fire overnight. Some are false positives from legitimate IT maintenance, others are real threats. Your task: classify each alert (TP vs FP vs BP), document your reasoning, and escalate genuine incidents.<br><br>
-<b>Monday Monitor Challenge:</b><br>
-The Monday morning shift hands off 47 uninvestigated alerts from the weekend. Your task: triage all alerts within 4 hours. Prioritize by severity, investigate systematically, and document findings in the SOC workbook.<br><br>
-<b>Friday Overtime Challenge:</b><br>
-It's 4:55 PM on Friday. A critical alert fires — possible ransomware on the finance department server. Your task: quickly determine if it's real, contain the threat, and document before the weekend. Time pressure adds to the realism.<br><br>
-<b>Retracted Challenge:</b><br>
-An L1 analyst dismissed an alert as Benign Positive yesterday. Today, the user reports unusual system behavior. Your task: re-investigate the dismissed alert, determine if it was a False Negative (missed detection), find what additional evidence was missed, and correct the classification.
-</div>
+    <h4>Subtopic 4: Interview Preparation</h4>
+    <p><strong>Technical Breakdown:</strong> SOC interviews typically have 3 rounds: HR screen, technical interview, and behavioral/cultural fit. Each requires different preparation.</p>
+    <ul>
+      <li><strong>HR Screen (30 min):</strong> Focus on: salary expectations, availability, location, work authorization, why cybersecurity, why this company. Prepare: research company's industry, recent security incidents, SOC size, and tools used. Have a 30-second "elevator pitch" ready: who you are, what you do, what you want.</li>
+      <li><strong>Technical Interview (60-90 min):</strong> Three types of questions:
+        <ol>
+          <li><strong>Knowledge Questions:</strong>
+            <ul>
+              <li>"Explain MITRE ATT&CK and how you use it." — Discuss its role as a common taxonomy, how you map alerts to techniques, and how you use ATT&CK Navigator to track coverage.</li>
+              <li>"What's the difference between IDS and IPS?" — IDS detects and alerts, IPS detects and blocks inline.</li>
+              <li>"Explain the OSI model as it relates to security." — Which attacks happen at which layers, where to inspect.</li>
+              <li>"How does a SIEM correlation rule work?" — Explain aggregation windows, threshold conditions, suppression.</li>
+            </ul>
+          </li>
+          <li><strong>Scenario Questions:</strong>
+            <ul>
+              <li>"You receive an alert for 'Suspicious PowerShell Execution from User X.' Walk me through your triage." — See Module 10 for detailed process.</li>
+              <li>"A user reports their machine is acting strangely and antivirus detected a Trojan but couldn't remove it. What do you do?" — Isolate, capture memory, analyze, determine scope.</li>
+              <li>"You see outbound traffic to a known malicious IP. What's your next step?" — Validate the alert, check other hosts, check for data exfiltration, block IP.</li>
+            </ul>
+          </li>
+          <li><strong>Hands-On/Practical:</strong>
+            <ul>
+              <li>"Here's a PCAP file. What do you see?" — Use Wireshark in interview or describe analysis steps.</li>
+              <li>"Write a Sigma rule to detect this attack." — Given an attack description, write a rule.</li>
+              <li>"Here's a SIEM query — what does it do?" — Read and explain a given SPL/KQL query.</li>
+            </ul>
+          </li>
+        </ol>
+      </li>
+      <li><strong>Behavioral Interview (45-60 min):</strong> Use the STAR method (Situation, Task, Action, Result) for every answer.
+        <ul>
+          <li>"Tell me about a time you handled a difficult incident." — STAR: Situation (major ransomware), Task (contain and investigate), Action (isolated hosts, analyzed patient zero, identified initial access vector), Result (contained in 30 minutes, no data loss, implemented new firewall rules).</li>
+          <li>"How do you handle working under pressure?" — Discuss prioritization, playbook usage, escalation, communication.</li>
+          <li>"Tell me about a time you made a mistake. What did you learn?" — Be honest but show growth. Example: "I mis-triaged an alert as a false positive. It turned out to be a real credential theft. I learned to always verify before closing and now follow a strict verification checklist."</li>
+        </ul>
+      </li>
+      <li><strong>Interview Questions You Should Ask:</strong>
+        <ul>
+          <li>"What does a typical day look like for an analyst on your team?"</li>
+          <li>"What tools are currently in your SOC stack? Are there plans to change or upgrade any?"</li>
+          <li>"How is the SOC structured (tiers, shifts, on-call)?"</li>
+          <li>"What opportunities are there for professional development and training?"</li>
+          <li>"What's the biggest challenge the SOC is currently facing?"</li>
+          <li>"How does the SOC measure success? What KPIs matter most?"</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Common Mistakes:</strong> Not asking questions, not quantifying achievements on resume, not having a portfolio, not preparing for hands-on exercises, not understanding the company's industry or specific tools, badmouthing previous employers, being too passive in behavioral answers (no STAR structure).</p>
+  </div>
 
-<h6 class="text-info mt-3">SIEM Triage Methodology</h6>
-<div class="bg-dark p-2 rounded small mb-2" style="border:1px solid #333;">
-<b>The 5-Step SIEM Triage Process:</b><br>
-1. <b>Initial Assessment (30 seconds):</b> Read the alert title/description. Is this a well-known FP? Does it match a known threat pattern?<br>
-2. <b>Quick Enrichment (2 minutes):</b> Check the source/destination IPs in threat intel. Check if the user has a history of incidents. Look at the asset criticality.<br>
-3. <b>Deep Investigation (5-15 minutes):</b> Query the SIEM for all related events in the past 24 hours. Build a timeline. Correlate with other data sources.<br>
-4. <b>Classification (1 minute):</b> TP — investigate further / escalate. FP — document why and close. BP — note the expected behavior and close.<br>
-5. <b>Documentation & Action (2 minutes):</b> Write the report with all evidence. Take containment actions if needed. Update the alert if it needs tuning.
-</div>
+  <!-- CONCEPT BOXES -->
+  <div class="section-card">
+    <h3><i class="bi bi-boxes"></i> CONCEPT BOXES</h3>
+
+    <div class="alert alert-info">
+      <strong>INFO BOX</strong><br>
+      The "Experience Paradox" is the biggest barrier for entry-level cybersecurity candidates: jobs require experience, but you need a job to get experience. Solution: Build a home lab, document everything, contribute to open-source security projects (Sigma rules, YARA rules), participate in CTFs, write blog posts. A well-documented home lab counts as "practical experience" on your resume. TryHackMe's "SOC Level 1" career path is a structured alternative to 6 months of real SOC experience.
+    </div>
+
+    <div class="alert alert-success">
+      <strong>REMEMBER BOX</strong><br>
+      Cybersecurity hiring managers care about three things: (1) Can you do the job? (skills assessment, home lab, certifications), (2) Can you communicate? (resume quality, interview answers, blog/write-ups), (3) Will you fit the team? (culture, motivation, passion). Your resume gets you the interview. Your portfolio proves you can do the work. Your interview answers determine if you get hired.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>WARNING BOX</strong><br>
+      Certification alone will NOT get you a job. The industry calls it "paper tigers" — certified but unable to perform in real scenarios. Always pair certification attempts with practical lab work. For every certification topic, create a lab exercise that applies the concept. Example: while studying for SC-200, deploy Microsoft 365 E5 trial, configure Defender, simulate attacks, and practice investigating in the real console.
+    </div>
+
+    <div class="alert alert-info">
+      <strong>SOC ANALYST TIP</strong><br>
+      Build your personal brand early. Create a LinkedIn profile optimized for SOC roles: banner image (cybersecurity themed), detailed experience with keywords, certifications section with dates, portfolio links in featured section. Post weekly about your learning journey — write about a lab you completed, a tool you learned, or an article you read. Recruiters actively search LinkedIn for cybersecurity talent. 60% of SOC jobs are filled through recruiter outreach on LinkedIn.
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>INTERVIEW Q&A</strong><br>
+      <strong>Q:</strong> "What do you think you'll be doing in 5 years?"<br>
+      <strong>A:</strong> "In 5 years, I see myself as a senior detection engineer. In the next 12 months, I plan to earn my SC-200 and deepen my KQL and Sigma skills. By year 3, I want to be leading detection engineering projects and mentoring junior analysts. By year 5, I aim to be designing detection-as-code pipelines and contributing to open-source detection frameworks. I'm passionate about the intersection of security operations and software engineering, and I see detection engineering as the area where I can have the most impact." — This answer shows ambition, a plan, self-awareness, and alignment with the company's likely needs.
+    </div>
+  </div>
+
+  <!-- VISUAL DIAGRAMS -->
+  <div class="section-card">
+    <h3><i class="bi bi-diagram-3"></i> VISUAL DIAGRAMS</h3>
+    <p><strong>SOC Career Pathway Options:</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        Entry[Entry Level<br/>0-2 years] --> T1[Tier 1 SOC Analyst]
+        T1 --> T2[Tier 2 SOC Analyst]
+        T2 --> T3[Tier 3 / Senior SOC Analyst]
+        T1 --> DE[Detection Engineer]
+        T2 --> ThreatIntel[Threat Intelligence]
+        T2 --> DFIR[DFIR Specialist]
+        T2 --> SecEng[Security Engineer]
+        T3 --> SOCLead[SOC Lead / Manager]
+        T3 --> SecArch[Security Architect]
+        DFIR --> DFIRLead[DFIR Team Lead]
+        DE --> DESenior[Sr. Detection Engineer]
+        SecEng --> SecArch
+        SOCLead --> CISO[CISO / Security Director]
+        SecArch --> CISO
+        classDef entry fill:#44ff44,color:#000
+        classDef mid fill:#ffaa00,color:#000
+        classDef senior fill:#ff8800,color:#fff
+        classDef exec fill:#00d4ff,color:#000
+        class Entry,T1 entry
+        class T2,DE,DFIR,ThreatIntel,SecEng mid
+        class T3,SOCLead,SecArch,DFIRLead,DESenior senior
+        class CISO exec
+    </pre>
+
+    <p><strong>Certification Roadmap Timeline:</strong></p>
+    <pre class="mermaid">
+      flowchart LR
+        Y1[Year 1] --> SecPlus[CompTIA Security+]
+        Y1 --> SC200[Microsoft SC-200]
+        Y2[Year 2] --> CySA[CompTIA CySA+]
+        Y2 --> Splunk[Splunk Power User]
+        Y3[Year 3] --> GCIH[GIAC GCIH]
+        Y3 --> GCIA[GIAC GCIA]
+        Y4[Year 4+] --> GCFA[GIAC GCFA - DFIR Path]
+        Y4 --> GREM[GIAC GREM - Malware Path]
+        Y4 --> CISSP[CISSP - Management Path]
+        Y4 --> OSCP[OSCP - Red Team Path]
+        classDef cert fill:#00d4ff,color:#000
+        class SecPlus,SC200,CySA,Splunk,GCIH,GCIA,GCFA,GREM,CISSP,OSCP cert
+    </pre>
+
+    <p><strong>Interview Preparation Framework (STAR):</strong></p>
+    <pre class="mermaid">
+      flowchart TD
+        Q[Behavioral Question] --> S[Situation: Context]
+        S --> T[Task: What needed to be done]
+        T --> A[Action: What YOU specifically did]
+        A --> R[Result: Measurable outcome]
+        R --> L[Lesson: What you learned]
+        L --> Done[Strong Answer]
+        Q -.->|Avoid| Vague[Vague: "We did this..."]
+        Q -.->|Avoid| Blame["Blame: 'My coworker dropped the ball...'"]
+        classDef good fill:#00d4ff,color:#000
+        classDef bad fill:#ff4444,color:#fff
+        class S,T,A,R,L,Done good
+        class Vague,Blame bad
+    </pre>
+  </div>
+
+  <!-- TRYHACKME SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-activity"></i> TRYHACKME</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Room Name</th>
+            <th>Difficulty</th>
+            <th>Objectives</th>
+            <th>Completion Order</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Pre Security</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Networking, web basics, Linux/Windows fundamentals — foundational knowledge for SOC</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>Intro to Cyber Security</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Overview of security domains, career paths, essential terminology</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>SOC Level 1 (Career Path)</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Complete SOC L1 path: SIEM, threat intelligence, incident response, digital forensics, phishing analysis</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>Jr Penetration Tester (Career Path)</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Understanding offensive techniques helps blue team analysis — learn to think like an attacker</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td>Cyber Defense (Path)</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Advanced blue team skills: threat hunting, malware analysis, forensics, SOC investigations</td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td>Industry Cert Prep Rooms</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Dedicated rooms for Security+, CySA+, and other certification preparation</td>
+            <td>6</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HACK THE BOX ACADEMY SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-cpu"></i> HACK THE BOX ACADEMY</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Module Name</th>
+            <th>Difficulty</th>
+            <th>Outcomes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Getting Started with HTB Academy</td>
+            <td><span class="badge bg-success">Easy</span></td>
+            <td>Understand learning methodology, take notes, structure study time for certifications</td>
+          </tr>
+          <tr>
+            <td>Certification Study Paths</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Structured study paths for Security+, CySA+, and other SOC-relevant certs with hands-on labs</td>
+          </tr>
+          <tr>
+            <td>Job Role Paths: SOC Analyst</td>
+            <td><span class="badge bg-warning text-dark">Medium</span></td>
+            <td>Complete learning path for SOC analyst role with 30+ modules covering all SOC domains</td>
+          </tr>
+          <tr>
+            <td>Advanced SOC Skills</td>
+            <td><span class="badge bg-danger">Hard</span></td>
+            <td>Master-level modules in DFIR, threat hunting, SIEM engineering, and malware analysis</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LETSDEFEND SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-shield-check"></i> LETSDEFEND</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Scenario Name</th>
+            <th>Description</th>
+            <th>Skills Tested</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SOC Analyst Assessment</td>
+            <td>Full SOC simulation testing all skills from triage to investigation to reporting</td>
+            <td>Comprehensive SOC skills assessment, time management, documentation</td>
+          </tr>
+          <tr>
+            <td>Blue Team Fundamentals Assessment</td>
+            <td>Baseline assessment of blue team knowledge across all domains</td>
+            <td>Knowledge validation, gap identification for study planning</td>
+          </tr>
+          <tr>
+            <td>Advanced DFIR Assessment</td>
+            <td>Complex DFIR scenario testing advanced forensic and investigation skills</td>
+            <td>Advanced DFIR, report writing, evidence presentation</td>
+          </tr>
+          <tr>
+            <td>SOC Interview Simulation</td>
+            <td>Practice SOC interview with scenario-based questions and feedback</td>
+            <td>Interview readiness, communication, analytical thinking under pressure</td>
+          </tr>
+          <tr>
+            <td>Career Path Assessments</td>
+            <td>Personalized skill assessments to determine readiness for each SOC tier</td>
+            <td>Career planning, skill gap analysis, learning path creation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CYBERDEFENDERS SECTION -->
+  <div class="section-card">
+    <h3><i class="bi bi-lock"></i> CYBERDEFENDERS</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Lab Name</th>
+            <th>Description</th>
+            <th>Focus Area</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Blue Team Level 1 (BTL1) Prep</td>
+            <td>Practice labs aligned with Security Blue Team's BTL1 certification</td>
+            <td>BTL1 certification, SOC fundamentals, practical skills assessment</td>
+          </tr>
+          <tr>
+            <td>Blue Team Level 2 (BTL2) Prep</td>
+            <td>Advanced labs for BTL2 certification preparation</td>
+            <td>Advanced DFIR, threat hunting, memory forensics, malware analysis</td>
+          </tr>
+          <tr>
+            <td>Portfolio Lab Series</td>
+            <td>Complete investigation series perfect for building a professional portfolio</td>
+            <td>Portfolio building, investigation documentation, report writing</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GITHUB RESOURCES -->
+  <div class="section-card">
+    <h3><i class="bi bi-github"></i> GITHUB RESOURCES</h3>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>Description</th>
+            <th>Purpose</th>
+            <th>Skills Learned</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://github.com/keraattin/Blue-Team-Roadmap" target="_blank" class="text-cyan">Blue-Team-Roadmap</a></td>
+            <td>Comprehensive roadmap for blue team skill development</td>
+            <td>Career planning, skill gap analysis, learning path creation</td>
+            <td>Roadmap navigation, skill prioritization, career planning</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/cyb3rxp/awesome-soc" target="_blank" class="text-cyan">awesome-soc</a></td>
+            <td>Curated list of SOC tools and resources</td>
+            <td>Explore SOC tools, build your toolchain understanding</td>
+            <td>SOC ecosystem knowledge, tool evaluation skills</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SigmaHQ/sigma" target="_blank" class="text-cyan">Sigma</a></td>
+            <td>Generic signature format for SIEM — detection rule writing</td>
+            <td>Contribute detection rules — valuable portfolio item</td>
+            <td>Detection rule writing, open-source contribution</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" class="text-cyan">Atomic Red Team</a></td>
+            <td>Detection validation tests mapped to MITRE ATT&CK</td>
+            <td>Test your detection rules, validate SOC capabilities</td>
+            <td>Detection validation, purple team concepts</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/SwiftOnSecurity/sysmon-config" target="_blank" class="text-cyan">sysmon-config</a></td>
+            <td>Sysmon configuration for endpoint visibility</td>
+            <td>Deploy Sysmon, understand telemetry optimization</td>
+            <td>Endpoint monitoring, configuration optimization</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/aboutsecurity/blueteam_homelabs" target="_blank" class="text-cyan">blueteam_homelabs</a></td>
+            <td>Guides for building blue team home labs</td>
+            <td>Build a practice SOC at home for portfolio</td>
+            <td>Lab deployment, SOC architecture, hands-on skills</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES" target="_blank" class="text-cyan">EVTX-ATTACK-SAMPLES</a></td>
+            <td>Windows event log samples of attacks</td>
+            <td>Practice log analysis without needing real attacks</td>
+            <td>Event log analysis, attack pattern recognition</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/InQuest/awesome-yara" target="_blank" class="text-cyan">awesome-yara</a></td>
+            <td>YARA resources — malware detection rules</td>
+            <td>Write YARA rules — another portfolio skill</td>
+            <td>YARA rule writing, malware pattern detection</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/A-poc/BlueTeam-Tools" target="_blank" class="text-cyan">BlueTeam-Tools</a></td>
+            <td>Collection of blue team tools with descriptions</td>
+            <td>Learn about blue team tools and their use cases</td>
+            <td>Tool knowledge, workflow optimization</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HANDS-ON LABS -->
+  <div class="section-card">
+    <h3><i class="bi bi-laptop"></i> HANDS-ON LABS</h3>
+
+    <div class="lab-section">
+      <h4 class="text-success">Beginner Lab: Build Your SOC Career Roadmap</h4>
+      <p><strong>Objective:</strong> Create a personalized 12-month SOC career roadmap with specific certifications, labs, and portfolio milestones.</p>
+      <p><strong>Setup:</strong> Digital notebook (Obsidian/Notion/OneNote) or a simple Markdown file. LinkedIn profile. GitHub account.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li>Self-assessment: rate your current skills (1-5) in 15 SOC domains: SIEM, EDR, Windows forensics, Linux, networking, scripting (Python/PowerShell), incident response, threat hunting, malware analysis, cloud security, threat intelligence, log analysis, IDS/IPS, digital forensics, communication/writing.</li>
+          <li>Identify target roles: search for "SOC Analyst L1", "SOC Analyst L2", "Detection Engineer", "DFIR Analyst" on LinkedIn. Read 10 job descriptions. Note common requirements: tools, certs, years of experience.</li>
+          <li>Create a 12-month roadmap:
+            <ul>
+              <li>Month 1-2: Complete TryHackMe SOC L1 path (or equivalent)</li>
+              <li>Month 3: Earn Security+ certification</li>
+              <li>Month 4-5: Deploy home lab SOC (Wazuh + Windows + Kali) — document on GitHub</li>
+              <li>Month 6-7: Earn SC-200 certification</li>
+              <li>Month 8-9: Build portfolio — write 5 blog posts, create 10 Sigma rules</li>
+              <li>Month 10-11: Network — attend 4 security meetups/webinars, connect with 20 recruiters on LinkedIn</li>
+              <li>Month 12: Start applying — tailor resume for 10 positions per week</li>
+            </ul>
+          </li>
+          <li>Set up LinkedIn profile: professional photo, banner, optimized headline, detailed experience, certifications section, featured section with portfolio links.</li>
+          <li>Set up GitHub with initial structure: create a profile README, add repositories for home lab documentation and detection rules.</li>
+          <li>Begin documenting everything you learn: use Obsidian or Notion to keep structured notes organized by domain.</li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> A complete career roadmap document, optimized LinkedIn profile, GitHub profile, and a documented note-taking system. You know exactly what to work on for the next 12 months.</p>
+      <p><strong>Troubleshooting:</strong> Feeling overwhelmed? Focus on ONE thing at a time. Month 1: only TryHackMe. Don't worry about certifications until you've confirmed you enjoy SOC work. Career changes take time — be patient with yourself.</p>
+      <p><strong>Detection Opportunities:</strong> Track your progress weekly. If you miss 2 weeks of planned work, reassess: is the timeline too aggressive? Are you not motivated by this path? Adjust your plan rather than abandoning it.</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-warning">Intermediate Lab: Create an ATS-Optimized Resume & Portfolio</h4>
+      <p><strong>Objective:</strong> Build a professional SOC analyst resume and supporting portfolio that passes ATS screening and impresses hiring managers.</p>
+      <p><strong>Setup:</strong> Google Docs or Word (not PDF until final — many ATS prefer .docx). GitHub Pages for portfolio site. LinkedIn for professional networking.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li><strong>Resume (1 page max for entry/mid, 2 pages for senior):</strong>
+            <ol>
+              <li>Use an ATS-friendly format: single column, no graphics/charts, standard fonts (Calibri, Arial, Georgia), standard section headers.</li>
+              <li>Write your professional summary: "SOC Analyst with [X] years of experience monitoring [SIEM], investigating [EDR], and responding to incidents. Reduced [metric] by [%] through [action]. Certifications: [list 2-3 most relevant]."</li>
+              <li>For each experience bullet, use the formula: "Action + Context + Tool + Metric." Example: "Triaged 200+ daily SIEM alerts using Splunk ES, reducing mean time to detect by 50% through custom correlation rule development."</li>
+              <li>Include a "Projects" section: Home Lab, Sigma Rules Repository, Blog. Treat these as real experience.</li>
+              <li>Save as .docx and PDF. Name: "FirstName_LastName_SOC_Analyst_2025.docx"</li>
+            </ol>
+          </li>
+          <li><strong>Portfolio Website (GitHub Pages):</strong>
+            <ol>
+              <li>Create a GitHub Pages site using a Jekyll theme (Minima/Minimal Mistakes) or Hugo.</li>
+              <li>Pages: Home (about me), Resume (download link), Projects (home lab, detection rules), Blog (write-ups, tutorials), Contact.</li>
+              <li>Projects page: for each project, include: Objective, Architecture (diagram), Tools Used, Steps (with screenshots), Results, Lessons Learned.</li>
+              <li>Blog: write 3-5 posts. Topics: "Building a SOC Home Lab with Wazuh", "Hunting for DNS Tunneling: A Walkthrough", "Creating Your First Sigma Rule", "How I Passed the SC-200 Exam", "Day in the Life of a SOC Analyst."</li>
+            </ol>
+          </li>
+          <li><strong>LinkedIn Optimization:</strong>
+            <ol>
+              <li>Headline: "SOC Analyst | Splunk | Microsoft Sentinel | Incident Response | Threat Hunting" (150+ characters using keywords).</li>
+              <li>About section: expanded version of resume summary with more personality. Include what drives you, your specialties, and what you're looking for.</li>
+              <li>Feature 3 portfolio pieces in the "Featured" section.</li>
+              <li>Get 3 recommendations from colleagues/managers/clients.</li>
+              <li>Enable "Open to Work" (visible to recruiters only).</li>
+            </ol>
+          </li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> An ATS-optimized resume, a live portfolio website, and an optimized LinkedIn profile. You are now ready to start applying.</p>
+      <p><strong>Troubleshooting:</strong> Use jobscan.co or a similar ATS simulator to test your resume against real job descriptions. If your match score is below 60%, add missing keywords from the job description. If you lack professional experience, lean heavily on the Projects section — it's legitimate practical experience.</p>
+      <p><strong>Detection Opportunities:</strong> Track which resume versions get interview callbacks. A/B test different formats and keywords. Use LinkedIn analytics to see which profile sections get the most views.</p>
+    </div>
+
+    <div class="lab-section">
+      <h4 class="text-danger">Advanced Lab: Mock Interview Preparation & Technical Assessment</h4>
+      <p><strong>Objective:</strong> Conduct a full mock SOC interview simulation and create a preparation guide for technical assessments.</p>
+      <p><strong>Setup:</strong> Recording tool (OBS or Zoom), a study partner or mentor, practice interview questions bank (from this module), a home lab for hands-on demonstration.</p>
+      <p><strong>Step-by-Step:</strong>
+        <ol>
+          <li><strong>Create your interview preparation materials:</strong>
+            <ol>
+              <li>Build a "knowledge base" document: 20 common interview questions with STAR-prepared answers. Include: scenario questions, knowledge questions, behavioral questions.</li>
+              <li>Create a "cheat sheet" of key concepts: OSI model ports table, Windows Event IDs cheat sheet, MITRE ATT&CK matrix, common attack types, incident response lifecycle phases.</li>
+              <li>Prepare 5 "stories" (STAR format) covering: a successful investigation, a mistake and what you learned, a difficult stakeholder interaction, a time you went above and beyond, a time you worked on a team.</li>
+            </ol>
+          </li>
+          <li><strong>Mock Interview Session (with partner):</strong>
+            <ol>
+              <li>Session 1 (60 min technical): Partner asks 10 technical questions from the question bank. You answer with STAR where applicable. Partner provides feedback: clarity, structure, accuracy, depth.</li>
+              <li>Session 2 (60 min behavioral): Partner asks 10 behavioral questions. Focus on STAR compliance, confidence, and avoiding common mistakes.</li>
+              <li>Session 3 (30 min hands-on): Partner gives you a scenario and you demonstrate: open SIEM/SOAR tool and walk through an investigation live. Or open a PCAP and analyze it.</li>
+            </ol>
+          </li>
+          <li><strong>Self-Practice:</strong>
+            <ol>
+              <li>Record yourself answering questions. Play back and critique: Do you say "um" too much? Do you ramble? Are you answering the question asked?</li>
+              <li>Practice the "technical whiteboard": describe complex concepts (like how a SIEM correlation rule works) without any tools — just verbal explanation.</li>
+              <li>Write a sample incident report based on a scenario. Practice writing clearly and concisely for both technical and non-technical audiences.</li>
+            </ol>
+          </li>
+          <li><strong>Day before interview checklist:</strong>
+            <ol>
+              <li>Research the company: recent news, security incidents, SOC size, tools used (via LinkedIn of current employees, job postings, tech blogs).</li>
+              <li>Prepare 3 thoughtful questions to ask (see question bank in this module).</li>
+              <li>Test your setup: camera, microphone, internet, background, lighting.</li>
+              <li>Prepare your portfolio link to share during the interview if relevant.</li>
+              <li>Get a good night's sleep.</li>
+            </ol>
+          </li>
+        </ol>
+      </p>
+      <p><strong>Expected Results:</strong> Confident interview performance with STAR-prepared answers, technical knowledge demonstrated clearly, and professional presence. Higher likelihood of job offer.</p>
+      <p><strong>Troubleshooting:</strong> If you freeze during technical questions, practice the "bridging" technique: "That's a great question. Let me think about that for a moment. Here's how I would approach that..." Never pretend to know something you don't — it's better to say "I'm not familiar with that specific topic, but here's how I would research and solve it..."</p>
+      <p><strong>Detection Opportunities:</strong> After each real interview, write down the questions you were asked. Add them to your preparation materials. Track which areas you struggle with and focus your study there. Within 5-10 interviews, your performance should improve noticeably.</p>
+    </div>
+  </div>
+
+  <!-- SOC SCENARIOS -->
+  <div class="section-card">
+    <h3><i class="bi bi-bullseye"></i> SOC SCENARIOS</h3>
+
+    <div class="scenario-box">
+      <h4>Scenario 1: Mid-Career Transition into SOC</h4>
+      <p><strong>What Happened:</strong> An IT support technician with 5 years of experience (Active Directory, Office 365, basic networking) wants to transition into a SOC analyst role. They have no security certifications and no formal security experience.</p>
+      <p><strong>How to Detect (Gap Analysis):</strong> Compare current skills against entry-level SOC requirements: they have strong AD and O365 knowledge (good for cloud SOC), but lack: SIEM experience, EDR exposure, security frameworks knowledge, investigative methodology, scripting.</p>
+      <p><strong>How to Investigate (Plan Creation):</strong>
+        <ol>
+          <li>Bridge the gap in 6 months: Month 1-2: CompTIA Security+ (study 2 hours/day). Month 3: Complete TryHackMe SOC L1 path. Month 4: Build home lab (Wazuh + Windows). Month 5: Blog about lab setup and first investigation. Month 6: Update resume, apply to 20 SOC L1 positions.</li>
+          <li>Leverage existing IT experience in interviews: "My 5 years in IT support gave me deep knowledge of Windows AD, O365, and troubleshooting — skills that directly transfer to investigating security incidents in those environments."</li>
+          <li>Target companies using Microsoft tools (most do) where your O365/AD knowledge is a differentiator.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Apply for both SOC L1 and "Security Operations Center Intern" positions. Consider MSSPs (they often hire career changers). Be willing to take a temporary pay cut or lateral move to get the experience — SOC L1 often pays similar to senior IT support.</p>
+      <p><strong>How to Document:</strong> Keep a career transition journal: weekly progress, skills learned, certifications passed, labs completed, connections made. This becomes a powerful portfolio piece and interview conversation starter.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 2: Negotiating a SOC Job Offer</h4>
+      <p><strong>What Happened:</strong> You receive a job offer for a SOC Analyst L2 position. The offer is $80K/year. Based on your research, the market rate for this role in your area with your experience is $85K-$95K. You have 3 years of SOC experience, Security+ and SC-200 certifications, and a strong home lab portfolio.</p>
+      <p><strong>How to Detect:</strong> Research market rates using: Glassdoor, Levels.fyi, LinkedIn Salary, Indeed, and industry surveys (SANS, (ISC)² Cybersecurity Workforce Study). Also check the company's job postings for salary ranges (some US states require salary ranges in job postings).</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>Prepare your justification: "Based on my research (Glassdoor, LinkedIn), the market rate for this role with my experience level is $85K-$95K. My certifications (Security+, SC-200) and home lab portfolio demonstrate I bring additional skills to the role."</li>
+          <li>Consider total compensation, not just salary: Bonus (5-15% typical), stock/equity (public company), benefits (health, 401K match), training budget ($2K-$10K/year often), certifications/exam fees paid, conference attendance, remote work flexibility.</li>
+          <li>Know your walk-away number: what's the minimum you'll accept? Based on your financial needs and other opportunities.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong>
+        <ol>
+          <li>Express enthusiasm: "I'm very excited about this opportunity and I can see myself contributing to the team."</li>
+          <li>Make a specific counter: "Based on market research and my qualifications, I was hoping for $90K. Is that within the range for this role?"</li>
+          <li>If they can't meet salary, negotiate other items: signing bonus, training budget, certification exam fees, remote days, title bump, guaranteed performance review in 6 months.</li>
+          <li>Get everything in writing before accepting.</li>
+        </ol>
+      </p>
+      <p><strong>How to Document:</strong> Keep a spreadsheet of all applications: company, role, date applied, salary range, offer details, negotiation outcome. This data helps you improve your job search strategy over time.</p>
+    </div>
+
+    <div class="scenario-box">
+      <h4>Scenario 3: Building a Professional Network</h4>
+      <p><strong>What Happened:</strong> You've been in SOC for 2 years but have no professional network. You want to advance your career but don't know opportunities outside your current company. You hear that "most jobs come through networking."</p>
+      <p><strong>How to Detect:</strong> LinkedIn statistics show: 85% of jobs are filled through networking, 70% of people are hired at companies where they have a connection. Your current network size is ~50 (mostly friends/family from college). Target: 500+ relevant connections.</p>
+      <p><strong>How to Investigate:</strong>
+        <ol>
+          <li>LinkedIn strategy: connect with 5 new people daily in cybersecurity (SOC analysts, managers, recruiters). Personalize connection requests: "Hi [Name], I'm a SOC analyst interested in your experience with [topic]. Would love to connect."</li>
+          <li>Engage with content: comment on posts (add value, don't just say "Great post!"). Share articles with your own analysis. Post weekly about your SOC work (anonymized).</li>
+          <li>Attend events: local ISSA (Information Systems Security Association) chapter meetings, BSides (local security conference), SANS webinars, security meetups. Aim for 2 events per month.</li>
+          <li>Join communities: Blue Team Cell, DFIR Discord servers, SOC analyst Slack groups, Reddit r/netsec and r/blueteamsec.</li>
+        </ol>
+      </p>
+      <p><strong>How to Respond:</strong> Within 3 months, aim for: 500+ LinkedIn connections, 20+ meaningful conversations with security professionals, attendance at 2 security events, regular posting on LinkedIn (weekly).</p>
+      <p><strong>How to Document:</strong> Track networking activities in a CRM spreadsheet: name, company, role, how you met, follow-up actions, notes from conversations. "Opportunity comes from relationships — relationships come from consistent, genuine engagement."</p>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE CHECK -->
+  <div class="section-card">
+    <h3><i class="bi bi-question-circle"></i> KNOWLEDGE CHECK</h3>
+
+    <h4>Multiple Choice Questions</h4>
+    <ol class="mcq-list">
+      <li>Which certification is most appropriate for an entry-level SOC analyst transitioning from IT support?
+        <br><strong>Options:</strong> A) CISSP B) CompTIA Security+ C) OSCP D) GCFA
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>What salary range is typical for a Tier 1 SOC analyst in the US (non-remote)?
+        <br><strong>Options:</strong> A) $30K-$45K B) $50K-$75K C) $90K-$120K D) $130K-$160K
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>What does the STAR method stand for in interview preparation?
+        <br><strong>Options:</strong> A) Situation, Task, Action, Result B) Strategy, Tactics, Analysis, Review C) Scope, Timeline, Assets, Risk D) Specific, Technical, Accurate, Relevant
+        <br><strong>Answer:</strong> A
+      </li>
+      <li>Which portfolio project is most impactful for a SOC analyst job application?
+        <br><strong>Options:</strong> A) A completed TryHackMe profile B) A documented home SOC lab with investigation write-ups C) A list of certifications D) A GitHub with forked repositories
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>What is the recommended page length for an entry-level SOC analyst resume?
+        <br><strong>Options:</strong> A) 3 pages maximum B) 1 page C) As long as needed D) 2 pages minimum
+        <br><strong>Answer:</strong> B
+      </li>
+      <li>Which of the following is NOT a blue team specific certification?
+        <br><strong>Options:</strong> A) GCIH B) GCIA C) OSCP D) GCFA
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What percentage of cybersecurity jobs are filled through networking?
+        <br><strong>Options:</strong> A) 25% B) 50% C) 70-85% D) 95%
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>How should you handle a technical question you don't know the answer to in an interview?
+        <br><strong>Options:</strong> A) Make up an answer B) Say "I don't know" and stop C) Explain how you would research and solve the problem D) Change the subject
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>What is the average time to find a cybersecurity job for a mid-level professional?
+        <br><strong>Options:</strong> A) 1-2 weeks B) 1-3 months C) 3-6 months D) 6-12 months
+        <br><strong>Answer:</strong> C
+      </li>
+      <li>Which of the following should you include in a technical interview answer?
+        <br><strong>Options:</strong> A) Only the tools used B) The process, tools used, and outcome C) Only the outcome D) Technical jargon without explanation
+        <br><strong>Answer:</strong> B
+      </li>
+    </ol>
+
+    <h4>Practical Questions</h4>
+    <ol>
+      <li>Write a 2-sentence professional summary for a SOC analyst resume with 2 years of experience.</li>
+      <li>Create a 6-month study plan to go from zero security knowledge to SOC L1-ready. Include specific certifications, labs, and milestones.</li>
+      <li>You have $2,000 budget for certifications this year. Which 3 would you choose and why?</li>
+      <li>Write a STAR answer for: "Tell me about a time you identified a security threat that automated tools missed."</li>
+      <li>A recruiter asks: "Why do you want to work in SOC operations instead of penetration testing?" How do you answer?</li>
+    </ol>
+
+    <h4>Investigation Scenarios</h4>
+    <ol>
+      <li><strong>Scenario A:</strong> You've applied to 50 SOC positions and received no interview offers. Analyze the possible reasons and create a corrective action plan. Consider: resume quality, target roles, geographic limitations, competition level, certifications, portfolio.</li>
+      <li><strong>Scenario B:</strong> You ace the technical interview but are rejected because "another candidate had more SOC experience." How do you respond to the rejection email, and what is your strategy for the next application?</li>
+    </ol>
+
+    <h4>Interview Questions</h4>
+    <ol>
+      <li>"Where do you see your cybersecurity career in 5 years? What steps are you taking to get there?" — Use the STAR approach to show planning and self-awareness.</li>
+      <li>"Describe a security incident you investigated. What was your role, what tools did you use, and what was the outcome?" — Practice this answer until it's smooth and under 2 minutes.</li>
+      <li>Complete this simulated interview: The interviewer says, "I see you have a home lab with Wazuh. Walk me through your lab architecture and tell me about the most interesting thing you've found in it."</li>
+    </ol>
+  </div>
+
+  <!-- PORTFOLIO PROJECTS -->
+  <div class="section-card">
+    <h3><i class="bi bi-folder"></i> PORTFOLIO PROJECTS</h3>
+
+    <div class="project-box">
+      <h4 class="text-success">Beginner: SOC Home Lab Deployment & Documentation</h4>
+      <p><strong>Objective:</strong> Deploy a complete SOC home lab and create detailed documentation suitable for a portfolio.</p>
+      <p><strong>Architecture:</strong> Virtual machines on VMware Workstation or VirtualBox: Windows 10 (workstation with Sysmon), Windows Server 2022 (Active Directory DC), Kali Linux (attack machine), Ubuntu Server with Wazuh (SIEM). Network: internal virtual network with NAT internet access.</p>
+      <p><strong>Tools:</strong> VirtualBox/VMware, Wazuh (SIEM), Sysmon, Atomic Red Team, Kali Linux, TheHive (optional).</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Install VMware Workstation or VirtualBox on a host system with 16GB+ RAM, 200GB+ storage.</li>
+          <li>Create Windows 10 VM (4GB RAM, 2 vCPUs, 60GB disk). Install Sysmon with SwiftOnSecurity config.</li>
+          <li>Create Windows Server 2022 VM (4GB RAM, 2 vCPUs, 60GB disk). Set up as Domain Controller.</li>
+          <li>Create Ubuntu Server VM (4GB RAM, 2 vCPUs, 40GB disk). Install Wazuh server (Wazuh-indexer, Wazuh-server, Wazuh-dashboard).</li>
+          <li>Create Kali Linux VM (2GB RAM, 2 vCPUs, 40GB disk).</li>
+          <li>Join Windows 10 to the domain. Install Wazuh agent on Windows 10 and Windows Server.</li>
+          <li>Verify logs flowing into Wazuh dashboard. Create 3 custom detection rules.</li>
+          <li>Use Atomic Red Team on Windows 10 to simulate attacks (T1059.001 PowerShell, T1003.001 LSASS dump).</li>
+          <li>Investigate the alerts in Wazuh. Write up your investigation methodology.</li>
+          <li>Create architecture diagram in Mermaid or draw.io.</li>
+          <li>Write complete documentation: objective, architecture, deployment steps, rules created, attacks simulated, investigations performed, screenshots.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> GitHub repository with README, architecture diagram, deployment guide, rule explanations, investigation write-ups, and lessons learned. This is your signature portfolio piece.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-warning">Intermediate: Detection Rules Repository</h4>
+      <p><strong>Objective:</strong> Create a GitHub repository of 20+ Sigma detection rules with full documentation, CI/CD validation, and coverage heat map.</p>
+      <p><strong>Architecture:</strong> GitHub repo with organized folder structure, GitHub Actions for validation, CSV coverage matrix, and README with rule index.</p>
+      <p><strong>Tools:</strong> Sigma CLI, GitHub, Python, PySigma, YAML, ATT&CK Navigator.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li>Create GitHub repository: `sigma-detection-rules`.</li>
+          <li>Organize folders by MITRE ATT&CK tactic: `initial-access/`, `execution/`, `persistence/`, `privilege-escalation/`, `defense-evasion/`, `credential-access/`, `lateral-movement/`, `command-and-control/`.</li>
+          <li>Write 20+ Sigma rules following the Sigma specification. Each rule includes: title, id, description, logsource, detection (selection, condition), falsepositives, level, references, tags.</li>
+          <li>Create GitHub Actions workflow: on push/PR -> `sigmac --validate` all rules -> convert to Elasticsearch rules -> run custom tests (check required fields, description length, proper formatting).</li>
+          <li>Create a coverage matrix CSV: list all techniques, mark covered rules, calculate coverage percentage.</li>
+          <li>Include ATT&CK Navigator heatmap showing coverage.</li>
+          <li>Write extensive README: introduction, rule writing standards, how to contribute, coverage statistics, conversion examples.</li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> A professional detection engineering repository demonstrating: Sigma proficiency, understanding of MITRE ATT&CK, CI/CD skills, documentation standards, and attention to quality.</p>
+    </div>
+
+    <div class="project-box">
+      <h4 class="text-danger">Advanced: Full Job Search Campaign</h4>
+      <p><strong>Objective:</strong> Execute a complete job search campaign: optimize all materials, apply to 50 positions, conduct interviews, and negotiate offers. Document the entire process as a case study for your network.</p>
+      <p><strong>Architecture:</strong> Project management approach to job searching: tracking spreadsheet, tailored materials per role, interview practice schedule, offer evaluation framework.</p>
+      <p><strong>Tools:</strong> LinkedIn, Indeed, Glassdoor, resume (ATS-optimized), portfolio website, interview prep documents, offer comparison spreadsheet.</p>
+      <p><strong>Steps:</strong>
+        <ol>
+          <li><strong>Week 1-2: Preparation</strong>
+            <ol>
+              <li>Create master resume. Then create 5 tailored versions (by role type: SOC L1, SOC L2, Detection Engineer, DFIR, Security Engineer).</li>
+              <li>Build portfolio website (see Intermediate project).</li>
+              <li>Optimize LinkedIn: update headline, about, experience, certifications, featured section.</li>
+              <li>Create job search spreadsheet: company, role, date applied, contact (if any), status, notes, interview dates, offer details.</li>
+            </ol>
+          </li>
+          <li><strong>Week 3-8: Active Search</strong>
+            <ol>
+              <li>Apply to 10 positions per week (50 total). Prioritize: directly on company website (not just Easy Apply), applications where you have a referral (reach out to connections first).</li>
+              <li>For each application: if possible, message a current employee (not recruiter) on LinkedIn: "Hi [Name], I just applied for the SOC Analyst role at [Company]. I'm impressed by your team's work. Would you be open to a 5-minute chat about the role and team culture?"</li>
+              <li>Track every application: date, company, role, resume version, cover letter (if needed), contact, status.</li>
+              <li>For every rejection, try to get feedback (most won't respond, but some will).</li>
+            </ol>
+          </li>
+          <li><strong>Week 9-16: Interviews</strong>
+            <ol>
+              <li>Use the interview prep lab from this module for every interview.</li>
+              <li>After each interview, send a thank-you email within 24 hours. Reiterate your enthusiasm and one specific point from the conversation.</li>
+              <li>Track interview questions: what was asked, how you answered, how you could improve.</li>
+              <li>If rejected after final round, ask for feedback. Some companies provide detailed feedback that is invaluable for improvement.</li>
+            </ol>
+          </li>
+          <li><strong>Week 17-20: Offers & Negotiation</strong>
+            <ol>
+              <li>Create offer comparison spreadsheet: salary, bonus, equity, 401K match, training budget, PTO, remote policy, commute, growth opportunities, tools you'll work with, team size, manager experience.</li>
+              <li>Negotiate the best offer: see Scenario 2 for negotiation script.</li>
+              <li>Accept graciously. Decline other offers professionally (maintain the relationship — you may work with them later).</li>
+            </ol>
+          </li>
+        </ol>
+      </p>
+      <p><strong>Documentation:</strong> Write a blog post series: "My 20-Week Job Search Journey to SOC Analyst — Strategies, Wins, and Lessons Learned." Include: preparation process, application stats (50 apps -> 15 interviews -> 3 offers), interview experiences, negotiation results. This becomes an inspirational portfolio piece and networking asset.</p>
+    </div>
+  </div>
+
+  <!-- TOPIC NAVIGATION -->
+  <div class="d-flex justify-content-between mt-4">
+    <a href="/topics/topic12" class="btn btn-outline-cyan"><i class="bi bi-arrow-left"></i> Previous: SOC Projects</a>
+    <a href="/dashboard" class="btn btn-cyan"><i class="bi bi-house"></i> Back to Dashboard</a>
+  </div>
 </div>
